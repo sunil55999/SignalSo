@@ -44,6 +44,19 @@
 * tp\_sl\_adjustor.py – Spread/pip buffer to SL/TP
 * multi\_tp\_manager.py – Up to 100 TP levels
 
+### \[2025-06-23] Risk & Filter Logic Complete
+
+* news\_filter.py – Economic calendar filtering with impact levels
+* signal\_limit\_enforcer.py – Provider and symbol signal limits
+* margin\_level\_checker.py – Real-time margin monitoring and protection
+
+### \[2025-06-23] Strategy Behavior & Logic Complete
+
+* reverse\_strategy.py – Signal inversion and contrarian trading logic
+* grid\_strategy.py – Dynamic grid trading with adaptive spacing
+* multi\_signal\_handler.py – Concurrent signal processing and conflict resolution
+* strategy\_condition\_router.py – Conditional routing and strategy orchestration
+
 ### \[2025-06-23] Stealth / Prop Firm
 
 * randomized\_lot\_inserter.py – Lot variation system

@@ -1,0 +1,57 @@
+{
+    "multi_tp_trades": [
+        {
+            "ticket": 123456,
+            "symbol": "EURUSD",
+            "direction": "buy",
+            "entry_price": 1.1,
+            "initial_volume": 0.5,
+            "remaining_volume": 0.5,
+            "current_sl": 1.095,
+            "config": {
+                "tp_levels": [
+                    {
+                        "level": 1,
+                        "price": 1.105,
+                        "percentage": 30.0,
+                        "status": "pending",
+                        "hit_time": null,
+                        "actual_close_price": null,
+                        "closed_volume": null
+                    },
+                    {
+                        "level": 2,
+                        "price": 1.11,
+                        "percentage": 40.0,
+                        "status": "pending",
+                        "hit_time": null,
+                        "actual_close_price": null,
+                        "closed_volume": null
+                    },
+                    {
+                        "level": 3,
+                        "price": 1.115,
+                        "percentage": 30.0,
+                        "status": "pending",
+                        "hit_time": null,
+                        "actual_close_price": null,
+                        "closed_volume": null
+                    }
+                ],
+                "sl_shift_mode": "break_even",
+                "sl_shift_buffer_pips": 2.0,
+                "min_remaining_volume": 0.01,
+                "max_slippage_pips": 2.0,
+                "enable_auto_monitoring": true,
+                "monitoring_interval": 1.0,
+                "expire_after_hours": 168
+            },
+            "created_time": "2025-06-23T19:15:09.601312",
+            "last_tp_hit": null,
+            "total_closed_volume": 0.0,
+            "total_realized_profit": 0.0,
+            "is_active": true
+        }
+    ],
+    "last_updated": "2025-06-23T19:15:09.616543"
+}

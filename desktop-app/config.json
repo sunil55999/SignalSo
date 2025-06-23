@@ -116,5 +116,326 @@
                 "max_adjustment_pips": 20.0
             }
         }
+    },
+    "multi_tp_manager": {
+        "enabled": true,
+        "default_monitoring_interval": 1.0,
+        "default_sl_shift_mode": "break_even",
+        "default_sl_buffer_pips": 2.0,
+        "default_min_remaining_volume": 0.01,
+        "default_max_slippage_pips": 3.0,
+        "default_expire_hours": 168,
+        "max_tp_levels": 100,
+        "enable_partial_close_notifications": true,
+        "symbol_specific_settings": {
+            "EURUSD": {
+                "min_remaining_volume": 0.01,
+                "max_slippage_pips": 2.0,
+                "sl_buffer_pips": 1.5
+            },
+            "GBPUSD": {
+                "min_remaining_volume": 0.01,
+                "max_slippage_pips": 2.5,
+                "sl_buffer_pips": 2.0
+            },
+            "XAUUSD": {
+                "min_remaining_volume": 0.01,
+                "max_slippage_pips": 10.0,
+                "sl_buffer_pips": 5.0
+            }
+        }
+    },
+    "news_filter": {
+        "enabled": true,
+        "impact_filters": {
+            "critical": true,
+            "high": true,
+            "medium": false,
+            "low": false
+        },
+        "time_buffers": {
+            "critical": 60,
+            "high": 30,
+            "medium": 15,
+            "low": 5
+        },
+        "manual_override_duration": 60,
+        "update_interval": 300,
+        "news_sources": ["forexfactory"],
+        "api_settings": {
+            "forexfactory_url": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
+            "backup_sources": ["investing", "fxstreet"],
+            "request_timeout": 30,
+            "retry_attempts": 3
+        }
+    },
+    "signal_limit_enforcer": {
+        "enabled": true,
+        "symbol_hourly_limit": 3,
+        "symbol_daily_limit": 10,
+        "provider_hourly_limit": 5,
+        "provider_daily_limit": 20,
+        "global_hourly_limit": 15,
+        "global_daily_limit": 50,
+        "cooldown_minutes": 15,
+        "emergency_override_limit": 5,
+        "cleanup_days": 7,
+        "symbol_specific_limits": {
+            "XAUUSD": {"hourly": 2, "daily": 6},
+            "BTCUSD": {"hourly": 1, "daily": 3},
+            "ETHUSD": {"hourly": 1, "daily": 3}
+        },
+        "provider_specific_limits": {
+            "high_frequency_provider": {"hourly": 2, "daily": 8},
+            "premium_provider": {"hourly": 10, "daily": 40}
+        }
+    },
+    "margin_level_checker": {
+        "enabled": true,
+        "monitoring_interval": 30.0,
+        "account_update_interval": 5.0,
+        "alert_cooldown_minutes": 15,
+        "emergency_close_enabled": true,
+        "margin_thresholds": {
+            "safe_level": 300.0,
+            "warning_level": 200.0,
+            "critical_level": 150.0,
+            "margin_call_level": 100.0,
+            "emergency_close_level": 110.0
+        },
+        "symbol_groups": {
+            "major_pairs": {
+                "symbols": ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF"],
+                "risk_multiplier": 1.0,
+                "max_exposure": 50.0
+            },
+            "minor_pairs": {
+                "symbols": ["EURGBP", "EURAUD", "EURCHF", "GBPAUD", "GBPCHF"],
+                "risk_multiplier": 1.2,
+                "max_exposure": 30.0
+            },
+            "exotic_pairs": {
+                "symbols": ["USDZAR", "USDTRY", "USDRUB"],
+                "risk_multiplier": 2.0,
+                "max_exposure": 20.0
+            },
+            "commodities": {
+                "symbols": ["XAUUSD", "XAGUSD", "USOIL", "UKOIL"],
+                "risk_multiplier": 1.5,
+                "max_exposure": 25.0
+            },
+            "crypto": {
+                "symbols": ["BTCUSD", "ETHUSD"],
+                "risk_multiplier": 3.0,
+                "max_exposure": 15.0
+            }
+        }
+    },
+    "reverse_strategy": {
+        "enabled": true,
+        "default_reversal_mode": "full_reverse",
+        "enable_partial_reversals": true,
+        "reversal_confidence_threshold": 0.7,
+        "market_volatility_threshold": 2.0,
+        "reversal_rules": [
+            {
+                "rule_id": "high_volatility_reverse",
+                "name": "High Volatility Reversal",
+                "condition": "high_volatility",
+                "mode": "full_reverse",
+                "enabled": true,
+                "priority": 1,
+                "market_conditions": {
+                    "volatility_threshold": 2.5,
+                    "min_confidence": 0.8
+                }
+            },
+            {
+                "rule_id": "news_event_reverse",
+                "name": "News Event Contrarian",
+                "condition": "news_events",
+                "mode": "direction_only",
+                "enabled": false,
+                "priority": 2,
+                "market_conditions": {
+                    "news_impact_level": "high"
+                }
+            },
+            {
+                "rule_id": "provider_specific_reverse",
+                "name": "Specific Provider Reversal",
+                "condition": "provider_specific",
+                "mode": "full_reverse",
+                "enabled": false,
+                "priority": 3,
+                "providers": ["contrarian_provider"]
+            }
+        ],
+        "symbol_settings": {
+            "EURUSD": {
+                "enable_reversal": true,
+                "reversal_strength": 1.0
+            },
+            "XAUUSD": {
+                "enable_reversal": true,
+                "reversal_strength": 1.5
+            }
+        }
+    },
+    "grid_strategy": {
+        "enabled": true,
+        "monitoring_interval": 5.0,
+        "max_active_grids": 5,
+        "default_grid_spacing_pips": 10.0,
+        "default_profit_target_pips": 20.0,
+        "max_grid_levels": 20,
+        "min_account_balance": 1000.0,
+        "max_risk_percentage": 10.0,
+        "enable_recovery_mode": true,
+        "recovery_multiplier": 1.2,
+        "symbol_configs": {
+            "EURUSD": {
+                "grid_spacing_pips": 8.0,
+                "max_levels": 15,
+                "base_volume": 0.01,
+                "profit_target_pips": 15.0,
+                "max_spread_pips": 2.0
+            },
+            "GBPUSD": {
+                "grid_spacing_pips": 10.0,
+                "max_levels": 12,
+                "base_volume": 0.01,
+                "profit_target_pips": 20.0,
+                "max_spread_pips": 3.0
+            },
+            "XAUUSD": {
+                "grid_spacing_pips": 50.0,
+                "max_levels": 10,
+                "base_volume": 0.01,
+                "profit_target_pips": 100.0,
+                "max_spread_pips": 10.0
+            }
+        }
+    },
+    "multi_signal_handler": {
+        "enabled": true,
+        "processing_interval": 2.0,
+        "signal_expiry_minutes": 30,
+        "max_signals_per_symbol": 10,
+        "conflict_resolution_method": "highest_priority",
+        "enable_signal_merging": true,
+        "merge_tolerance_pips": 5.0,
+        "confidence_threshold": 0.3,
+        "provider_weights": {
+            "premium_provider": 2.0,
+            "standard_provider": 1.0,
+            "trial_provider": 0.5
+        },
+        "priority_mappings": {
+            "vip_provider": "critical",
+            "premium_provider": "high",
+            "standard_provider": "medium",
+            "trial_provider": "low"
+        },
+        "symbol_settings": {
+            "EURUSD": {
+                "max_concurrent_signals": 5,
+                "merge_tolerance_pips": 3.0,
+                "priority_boost": 0.1
+            },
+            "XAUUSD": {
+                "max_concurrent_signals": 3,
+                "merge_tolerance_pips": 20.0,
+                "priority_boost": 0.2
+            }
+        }
+    },
+    "strategy_condition_router": {
+        "enabled": true,
+        "monitoring_interval": 10.0,
+        "market_state_update_interval": 30.0,
+        "enable_fallback_routing": true,
+        "default_action": "process_normal",
+        "max_routing_depth": 3,
+        "routing_rules": [
+            {
+                "rule_id": "high_volatility_to_reverse",
+                "name": "Route High Volatility to Reverse Strategy",
+                "conditions": [
+                    {
+                        "rule_id": "vol_condition",
+                        "name": "High Volatility",
+                        "condition_type": "volatility",
+                        "operator": "greater_than",
+                        "value": 2.0,
+                        "enabled": true,
+                        "priority": 1
+                    }
+                ],
+                "condition_logic": "AND",
+                "target_action": "route_to_reverse",
+                "enabled": true,
+                "priority": 1
+            },
+            {
+                "rule_id": "ranging_market_to_grid",
+                "name": "Route Ranging Market to Grid Strategy",
+                "conditions": [
+                    {
+                        "rule_id": "low_vol_condition",
+                        "name": "Low Volatility",
+                        "condition_type": "volatility",
+                        "operator": "less_than",
+                        "value": 1.0,
+                        "enabled": true,
+                        "priority": 1
+                    },
+                    {
+                        "rule_id": "no_news_condition",
+                        "name": "No News Events",
+                        "condition_type": "news_events",
+                        "operator": "equals",
+                        "value": "none",
+                        "enabled": true,
+                        "priority": 1
+                    }
+                ],
+                "condition_logic": "AND",
+                "target_action": "route_to_grid",
+                "enabled": false,
+                "priority": 2
+            },
+            {
+                "rule_id": "multiple_signals_handler",
+                "name": "Route Multiple Signals to Handler",
+                "conditions": [
+                    {
+                        "rule_id": "multi_signal_condition",
+                        "name": "Multiple Concurrent Signals",
+                        "condition_type": "custom",
+                        "operator": "greater_than",
+                        "value": 2,
+                        "enabled": true,
+                        "priority": 1
+                    }
+                ],
+                "condition_logic": "AND",
+                "target_action": "route_to_multi_handler",
+                "enabled": true,
+                "priority": 3
+            }
+        ],
+        "market_sessions": {
+            "asian": {"start": "21:00", "end": "06:00"},
+            "european": {"start": "07:00", "end": "16:00"},
+            "american": {"start": "13:00", "end": "22:00"}
+        },
+        "symbol_classifications": {
+            "major_pairs": ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"],
+            "minor_pairs": ["EURGBP", "EURAUD", "EURCHF", "GBPAUD", "GBPCHF"],
+            "exotic_pairs": ["USDZAR", "USDTRY", "USDRUB"],
+            "commodities": ["XAUUSD", "XAGUSD", "USOIL", "UKOIL"],
+            "crypto": ["BTCUSD", "ETHUSD"]
+        }
     }
 }

@@ -1,0 +1,18 @@
+{
+    "signal_history": [
+        {
+            "signal_id": "test_001",
+            "symbol": "EURUSD",
+            "provider_id": "test_provider",
+            "provider_name": "Test Provider",
+            "timestamp": "2025-06-23T19:21:51.913799",
+            "signal_type": "trade",
+            "override_used": false
+        }
+    ],
+    "override_state": {
+        "daily_count": 0,
+        "last_reset": "2025-06-23"
+    },
+    "last_updated": "2025-06-23T19:21:51.914401"
+}

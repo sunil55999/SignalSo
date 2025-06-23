@@ -19,7 +19,7 @@
 * ✅ sl\_manager.py
 * ✅ rr\_converter.py
 * ✅ tp\_sl\_adjustor.py
-* 🚧 multi\_tp\_manager.py
+* ✅ multi\_tp\_manager.py
 
 ## 🔐 Phase 8: Risk & Filter Logic
 
@@ -29,18 +29,18 @@
 * 🚧 margin\_filter block
 * ✅ keyword\_blacklist block
 * ✅ spread\_checker.py
-* ⛔ news\_filter.py
-* 🚧 signal\_limit\_enforcer.py
-* ⛔ margin\_level\_checker.py
+* ✅ news\_filter.py
+* ✅ signal\_limit\_enforcer.py
+* ✅ margin\_level\_checker.py
 
 ## 🧠 Phase 9: Strategy Behavior & Logic
 
 * ✅ time\_window block
 * ✅ rr\_condition block
-* 🚧 reverse\_strategy.py
-* ⛔ grid\_strategy.py
-* ⛔ multi\_signal\_handler.py
-* ⛔ strategy\_condition\_router.py
+* ✅ reverse\_strategy.py
+* ✅ grid\_strategy.py
+* ✅ multi\_signal\_handler.py
+* ✅ strategy\_condition\_router.py
 
 ## 🛡️ Phase 5: Prop Firm Stealth
 
