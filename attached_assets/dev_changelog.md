@@ -52,6 +52,15 @@
 - 📊 Capabilities: Trade-signal correlation, provider performance analysis
 - 🕒 Timestamp: 2025-06-23 15:07
 
+## [2025-06-23] Equity Limits Risk Control Engine
+- 📂 `/server/routes/equity_limits.ts`
+- 🧠 Server-side equity-based risk control system with automatic shutdowns
+- 🧪 `/server/tests/test_equity_limits.ts` - Complete API endpoint testing
+- ⚙️ Features: Daily gain/loss limits, automatic terminal shutdown, admin controls
+- 🔧 Integration: Database schema extensions, user authentication, event logging
+- 📊 Capabilities: Real-time equity monitoring, threshold enforcement, audit trails
+- 🕒 Timestamp: 2025-06-23 15:18
+
 ## [2025-06-22] Signal Replay API
 - 📂 `/server/routes/replay.ts`
 - 🧠 Replays old signals to MT5

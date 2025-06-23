@@ -2,42 +2,44 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `ticket_tracker.py` from Phase 2 – Advanced Order Management.
+Implement `equity_limits.ts` from Phase 3 – Risk Controls.
 
 🔧 File to Create:
-/signalos/desktop-app/ticket_tracker.py
+/signalos/server/routes/equity_limits.ts
 
 🧩 Description:
-Develop a system to track MT5 trade tickets and link them to their originating signal messages or providers.
+Create a server-side route and logic to enforce equity-based risk rules.
 
-Required Capabilities:
-- Store ticket number, signal hash, and provider ID
-- Map each open order to its originating message
-- Match trade update commands (e.g., CLOSE, MODIFY) to correct MT5 ticket
-- Integrate with the runtime and Copilot Bot
-- Enable Telegram bot to respond with “Trade #123456 = GBPUSD from @GoldSignals”
+Requirements:
+- Define max % gain or loss allowed per day
+- On trigger: automatically send shutdown command to all terminals
+- Store per-user equity thresholds in DB (linked to account)
+- Endpoint: `POST /equity-limit/check`
+- Auto-reset next day or via admin override
+- Log trip reason: user, equity %, triggered action
 
 🔁 System Impact:
-- Adds trade-ticket mapping to trade log layer
-- Updates runtime context with ticket tracking logic
-- Required by partial close and edit systems
+- Tied to real-time profit/loss monitoring
+- Enforced on server-side, not user-configurable from frontend
+- Dashboard will later query status (active/inactive)
+- Will dispatch notification to Telegram bot when triggered
 
 🧪 Add Tests:
-/signalos/desktop-app/tests/test_ticket_tracker.py
+/signalos/server/tests/test_equity_limits.ts
 
 Test Coverage:
-- Ticket saved on trade open
-- Ticket correctly linked to signal
-- Ticket lookup from command context
-- Edge: same provider, two signals with similar SL/TP
+- Threshold crossed → block new trades
+- Threshold not reached → allow
+- Manual reset by admin API
+- Logging of reason and user context
 
 📂 Tracking:
 Once complete:
 - ✅ Update `feature_status.md`
-- 🧾 Append to `execution_history.md`
-- 📘 Log to `dev_changelog.md`
+- 🧾 Log in `execution_history.md`
+- 📘 Append changelog in `dev_changelog.md`
 
 ❗ Rules:
-- Do NOT skip ahead
-- Do NOT duplicate existing logic
-- Work only inside `/desktop-app/` and `/shared/` if needed
+- DO NOT write frontend for this in this task
+- DO NOT override user limits in DB directly
+- Do NOT proceed to drawdown module until this is ✅ complete

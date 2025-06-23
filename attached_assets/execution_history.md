@@ -65,6 +65,11 @@
 - ✅ Ticket Tracker Engine – `/desktop-app/ticket_tracker.py`
 - ✅ Test suite: Trade ticket tracking and provider mapping – `/desktop-app/tests/test_ticket_tracker.py`
 
+### Equity Limits Risk Control Engine (NEW)
+- ✅ Equity Limits Server Routes – `/server/routes/equity_limits.ts`
+- ✅ Database schema extensions – equity_limits and equity_events tables
+- ✅ Test suite: Risk control API endpoints – `/server/tests/test_equity_limits.ts`
+
 ## 📅 Next Update Expected:
 Please refer to `next_task.md` for what must be done in the current Replit Agent session.
 

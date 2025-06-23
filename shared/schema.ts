@@ -87,12 +87,39 @@ export const syncLogs = pgTable("sync_logs", {
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
+export const equityLimits = pgTable("equity_limits", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  maxDailyGainPercent: decimal("max_daily_gain_percent", { precision: 5, scale: 2 }),
+  maxDailyLossPercent: decimal("max_daily_loss_percent", { precision: 5, scale: 2 }),
+  isActive: boolean("is_active").default(true),
+  lastTriggered: timestamp("last_triggered"),
+  triggerReason: text("trigger_reason"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const equityEvents = pgTable("equity_events", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  eventType: text("event_type").notNull(), // limit_triggered, reset, manual_override
+  equityPercent: decimal("equity_percent", { precision: 5, scale: 2 }),
+  triggerThreshold: decimal("trigger_threshold", { precision: 5, scale: 2 }),
+  action: text("action").notNull(), // shutdown_terminals, block_trades, notify
+  reason: text("reason"),
+  adminUserId: integer("admin_user_id").references(() => users.id),
+  timestamp: timestamp("timestamp").defaultNow(),
+  details: jsonb("details").$type<Record<string, any>>(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   strategies: many(strategies),
   trades: many(trades),
   mt5Status: many(mt5Status),
   syncLogs: many(syncLogs),
+  equityLimits: many(equityLimits),
+  equityEvents: many(equityEvents),
 }));
 
 export const channelsRelations = relations(channels, ({ many }) => ({
@@ -122,6 +149,29 @@ export const tradesRelations = relations(trades, ({ one }) => ({
   user: one(users, {
     fields: [trades.userId],
     references: [users.id],
+  }),
+}));
+
+export const equityLimitsRelations = relations(equityLimits, ({ one, many }) => ({
+  user: one(users, {
+    fields: [equityLimits.userId],
+    references: [users.id],
+  }),
+  events: many(equityEvents),
+}));
+
+export const equityEventsRelations = relations(equityEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [equityEvents.userId],
+    references: [users.id],
+  }),
+  adminUser: one(users, {
+    fields: [equityEvents.adminUserId],
+    references: [users.id],
+  }),
+  equityLimit: one(equityLimits, {
+    fields: [equityEvents.userId],
+    references: [equityLimits.userId],
   }),
 }));
 
@@ -177,6 +227,17 @@ export const insertSyncLogSchema = createInsertSchema(syncLogs).omit({
   timestamp: true,
 });
 
+export const insertEquityLimitSchema = createInsertSchema(equityLimits).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertEquityEventSchema = createInsertSchema(equityEvents).omit({
+  id: true,
+  timestamp: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -192,3 +253,7 @@ export type Mt5Status = typeof mt5Status.$inferSelect;
 export type InsertMt5Status = z.infer<typeof insertMt5StatusSchema>;
 export type SyncLog = typeof syncLogs.$inferSelect;
 export type InsertSyncLog = z.infer<typeof insertSyncLogSchema>;
+export type EquityLimit = typeof equityLimits.$inferSelect;
+export type InsertEquityLimit = z.infer<typeof insertEquityLimitSchema>;
+export type EquityEvent = typeof equityEvents.$inferSelect;
+export type InsertEquityEvent = z.infer<typeof insertEquityEventSchema>;

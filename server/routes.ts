@@ -4,10 +4,14 @@ import { WebSocketServer, WebSocket } from "ws";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertChannelSchema, insertStrategySchema, insertSignalSchema, insertMt5StatusSchema } from "@shared/schema";
+import { setupEquityLimitsRoutes } from "./routes/equity_limits";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
+  
+  // Setup equity limits routes
+  setupEquityLimitsRoutes(app);
 
   // Channel management routes
   app.get("/api/channels", async (req, res) => {
