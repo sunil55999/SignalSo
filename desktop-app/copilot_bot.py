@@ -60,6 +60,7 @@ class SignalOSCopilot:
         self.application.add_handler(CommandHandler("stats", self.stats_command))
         self.application.add_handler(CommandHandler("signals", self.signals_command))
         self.application.add_handler(CommandHandler("config", self.config_command))
+        self.application.add_handler(CommandHandler("close", self.close_command))
         
         # Handle text messages for signal parsing
         self.application.add_handler(
@@ -397,6 +398,65 @@ For support, contact your system administrator.
         """
         
         await update.message.reply_text(config_message, parse_mode='Markdown')
+    
+    async def close_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /close command for partial trade closures"""
+        if not self._is_authorized(update.effective_chat.id):
+            return
+        
+        if not context.args:
+            help_text = """
+🔹 **Partial Close Commands**
+
+**Usage Examples:**
+• `/close 50%` - Close 50% of position
+• `/close 1.5` - Close 1.5 lots
+• `/close 25% 12345` - Close 25% of ticket 12345
+
+**Supported Formats:**
+• Percentage: 5% to 95%
+• Lot size: 0.01 lots minimum
+• Optional ticket number as second argument
+            """
+            await update.message.reply_text(help_text, parse_mode='Markdown')
+            return
+        
+        # Parse command arguments
+        close_arg = context.args[0]
+        ticket_arg = context.args[1] if len(context.args) > 1 else None
+        
+        # Build close command string
+        close_command = f"/CLOSE {close_arg}"
+        
+        # Send partial close request to server
+        try:
+            close_data = {
+                "command": close_command,
+                "ticket": int(ticket_arg) if ticket_arg else None,
+                "source": "telegram_bot",
+                "user_id": update.effective_user.id
+            }
+            
+            close_result = await self._api_request("/trades/partial-close", "POST", close_data)
+            
+            if "error" in close_result:
+                await update.message.reply_text(f"❌ Close failed: {close_result['error']}")
+            else:
+                success_msg = f"""
+✅ **Partial Close Executed**
+
+• Ticket: {close_result.get('original_ticket', 'N/A')}
+• Closed: {close_result.get('closed_lots', 0)} lots
+• Remaining: {close_result.get('remaining_lots', 0)} lots
+• Price: {close_result.get('close_price', 'N/A')}
+                """
+                await update.message.reply_text(success_msg, parse_mode='Markdown')
+                
+        except ValueError:
+            await update.message.reply_text("❌ Invalid ticket number. Must be a number.")
+        except Exception as e:
+            await update.message.reply_text(f"❌ Close command failed: {str(e)}")
+            self.logger.error(f"Close command error: {e}")
     
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle text messages for signal parsing"""

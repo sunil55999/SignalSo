@@ -36,53 +36,59 @@ Do NOT use or touch:
 ## 🚧 HOW TO START EVERY SESSION
 
 1. Read `/attached_assets/SignalOS Replit Upgrade Plan.md`
-
-2. Find the next feature in **Phase 1** that is `[⛔] Not Started` in `/attached_assets/feature_status.md`
-
-3. Add a new entry in `/attached_assets/dev_changelog.md`:
-
-   - 📂 File you’ll work on
-   - 🧠 Task description
-   - 🕒 Current timestamp
-
-4. Implement feature strictly as defined in the upgrade plan.
-
-5. Create required tests.
-
-6. Mark feature as `[✅]` or `[🚧]` in `/attached_assets/feature_status.md`
-
-7. Commit and move to the next feature.
+2. Read `/attached_assets/execution_history.md` (see what’s already done)
+3. Read `/attached_assets/next_task.md` (defines current module)
+4. Log changes to `/attached_assets/dev_changelog.md`
+5. Implement task
+6. Mark complete in `/attached_assets/feature_status.md`
+7. Append update to `/attached_assets/execution_history.md`
 
 ---
 
-## 🧪 TESTING
+## 🧪 TESTING REQUIREMENTS
 
-For every module, create test files in:
+Every new file/module must have tests in:
 
 - `/desktop-app/tests/`
 - `/server/tests/`
 - `/client/__tests__/`
 
-All tests must match real-world signal formats, retry conditions, or WebSocket output.
+Example test cases:
+
+- Retry conditions
+- Invalid SL/TP parsing
+- MT5 bridge failure recovery
+- Strategy logic branch coverage
 
 ---
 
 ## 🚀 DEPLOYMENT SETUP
 
-Every module must:
+Every build must:
 
-- Use `.env.template` properly
-- Be compatible with Docker and PM2
-- Support logs and restart safety
+- Use `.env.template`
+- Support PM2 or Docker
+- Include log outputs to `/logs/`
+- Be tested with terminal simulator
 
 ---
 
-## 🔒 FINAL RULES
+## 🔒 FINAL SAFETY RULES
 
-- Log your changes (dev\_changelog.md)
-- Track your status (feature\_status.md)
-- Follow the upgrade plan line-by-line
-- NEVER skip steps or write duplicate logic
+- DO NOT duplicate features
+- DO NOT create random new files
+- Always consult `execution_history.md` and `next_task.md`
+- If unsure, request clarification in `execution_history.md`
 
-You are building SignalOS for production. Keep it modular. Keep it clean. Keep it tracked.
+---
+
+## 🎯 SignalOS Finish Criteria
+
+You are finished when:
+
+- All features in `feature_status.md` are ✅
+- `execution_history.md` and `dev_changelog.md` are complete
+- `next_task.md` says "No pending items."
+
+This prompt governs every development session for SignalOS and prevents all redundancy or wasted code.
 

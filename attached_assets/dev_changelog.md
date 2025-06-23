@@ -1,76 +1,65 @@
 # 📘 SignalOS Dev Changelog
-
-> This file must be updated **every time** Replit Agent adds or modifies files, features, or logic.
-> Log entries must include:
-> - 📂 File/Module Changed
-> - 🧠 Purpose
-> - 🕒 Timestamp
+> This changelog must be updated every time a file is added, changed, or completed.
 
 ---
 
-## [2025-06-22] - Scaffolded Initial Tracker
+## [2025-06-22] Initial Setup
 - 📂 `/attached_assets/dev_changelog.md`
-- 🧠 Initialized the changelog file for Replit Agent to use
-- 🕒 Timestamp: 2025-06-22  
+- 🧠 Initialized changelog tracking protocol
+- 🕒 Timestamp: 2025-06-22 09:00
 
----
-
-## [2025-06-22] - Implementing Retry Engine
+## [2025-06-22] Retry Engine
 - 📂 `/desktop-app/retry_engine.py`
-- 🧠 Building smart retry logic for failed MT5 trades with configurable parameters
-- 🕒 Timestamp: 2025-06-22 08:00:00
+- 🧠 Retry system for failed MT5 orders with fallback window
+- 🕒 Timestamp: 2025-06-22 09:15
 
-## [2025-06-22] - Implementing Telegram Copilot Bot
+## [2025-06-22] Copilot Bot Setup
 - 📂 `/desktop-app/copilot_bot.py`
-- 🧠 Creating Telegram bot for /status, /trades, /replay, /stealth commands
-- 🕒 Timestamp: 2025-06-22 08:15:00
+- 🧠 Telegram bot with `/status`, `/replay`, `/stealth` support
+- 🕒 Timestamp: 2025-06-22 09:30
 
-## [2025-06-22] - Implementing Strategy Runtime Logic
+## [2025-06-22] Strategy Runtime
 - 📂 `/desktop-app/strategy_runtime.py`
-- 🧠 Building strategy evaluation engine for signal processing logic
-- 🕒 Timestamp: 2025-06-22 08:30:00
+- 🧠 Evaluation engine for IF/THEN logic rules
+- 🕒 Timestamp: 2025-06-22 09:45
 
-## [2025-06-22] - Implementing Auto Sync Engine
-- 📂 `/desktop-app/auto_sync.py`
-- 🧠 Creating automatic sync with server for strategy updates and status reporting
-- 🕒 Timestamp: 2025-06-22 08:45:00
+## [2025-06-22] Parser + AutoSync
+- 📂 `/desktop-app/parser.py`, `/desktop-app/auto_sync.py`
+- 🧠 Parses entry/TP/SL; syncs settings with server
+- 🕒 Timestamp: 2025-06-22 10:00
 
-## [2025-06-22] - Enhancing Firebridge Sync APIs
-- 📂 `/server/routes.ts`
-- 🧠 Adding advanced firebridge endpoints for desktop app integration
-- 🕒 Timestamp: 2025-06-22 09:00:00
+## [2025-06-22] Signal Replay API
+- 📂 `/server/routes/replay.ts`
+- 🧠 Replays old signals to MT5
+- 🕒 Timestamp: 2025-06-22 10:15
 
-## [2025-06-22] - Adding Signal Processing Routes
-- 📂 `/server/routes.ts`
-- 🧠 Creating signal parsing and simulation endpoints for testing
-- 🕒 Timestamp: 2025-06-22 09:15:00
+## [2025-06-22] UI Components
+- 📂 `/client/src/pages/Dashboard.tsx`, `Admin.tsx`, `StrategyFlow.tsx`
+- 🧠 Added core pages + builder UI
+- 🕒 Timestamp: 2025-06-22 10:30
 
-## [2025-06-22] - Implementing Client Features
-- 📂 `/client/src/pages/`
-- 🧠 Building strategy builder modal and admin panel components
-- 🕒 Timestamp: 2025-06-22 09:30:00
+## [2025-06-22] Feature Completion
+- 📂 `/desktop-app/`, `/server/`, `/client/`
+- 🧠 Project sync with upgrade plan: milestone 70%+ complete
+- 🕒 Timestamp: 2025-06-22 11:00
 
-## [2025-06-22] - Finalizing SignalOS Implementation
-- 📂 `/desktop-app/` `/server/` `/client/`
-- 🧠 Completing all modules and features according to upgrade plan
-- 🕒 Timestamp: 2025-06-22 09:45:00
-
-## [2025-06-22] - Final Testing and Bug Fixes
-- 📂 `/client/src/` `/desktop-app/tests/`
-- 🧠 Fixing React hooks issues and running comprehensive test suite
-- 🕒 Timestamp: 2025-06-22 08:18:00
-
-## [2025-06-23] - Replit Environment Migration
+## [2025-06-23] Replit Environment Migration
 - 📂 `/server/auth.ts`, `.env`, database setup
 - 🧠 Migrated project from Replit Agent to standard Replit environment with PostgreSQL database, session secret configuration, and dependency installation
 - 🕒 Timestamp: 2025-06-23 09:12:00
 
-## [YYYY-MM-DD] - [Short description of what was added/changed]
-- 📂 `/path/to/changed/file_or_module`
-- 🧠 [What was built/fixed/updated]
-- 🕒 Timestamp: [auto-generated or copied manually]
+## [2025-06-23] Partial Close Engine Implementation
+- 📂 `/desktop-app/partial_close.py`, `/desktop-app/tests/test_partial_close.py`, `/desktop-app/copilot_bot.py`
+- 🧠 Implemented partial trade close functionality with percentage and lot-based commands, comprehensive test suite, and Telegram bot integration
+- 🕒 Timestamp: 2025-06-23 12:05:00
 
----
+## [2025-06-23] Trailing Stop Engine Implementation
+- 📂 `/desktop-app/trailing_stop.py`, `/desktop-app/tests/test_trailing_stop.py`
+- 🧠 Implemented dynamic trailing stop loss functionality with multiple methods (fixed pips, percentage, ATR-based, breakeven plus), comprehensive test coverage, and real-time monitoring capabilities
+- 🕒 Timestamp: 2025-06-23 12:10:00
 
-> ✅ Tip: This log helps identify regressions, duplicate logic, or missing updates. Required before any test or deployment stage.
+## [2025-06-23] Break Even Engine Implementation
+- 📂 `/desktop-app/break_even.py`, `/desktop-app/tests/test_break_even.py`
+- 🧠 Implemented automatic break-even functionality with multiple trigger methods (fixed pips, percentage, time-based, ratio-based), buffer support, and comprehensive testing
+- 🕒 Timestamp: 2025-06-23 12:15:00
 
