@@ -35,6 +35,14 @@
 - ⚙️ Features: Multi-ratio calculations, SL/TP integration, real-time optimization
 - 🕒 Timestamp: 2025-06-23 14:40
 
+## [2025-06-23] Edit Trade on Signal Change Engine
+- 📂 `/desktop-app/edit_trade_on_signal_change.py`
+- 🧠 Detects Telegram signal edits and automatically adjusts open trades
+- 🧪 `/desktop-app/tests/test_edit_trade_on_signal_change.py` - Complete test coverage
+- ⚙️ Features: Signal version tracking, change detection, MT5 trade modification
+- 🔧 Integration: Parser callbacks, MT5 bridge, configurable edit windows
+- 🕒 Timestamp: 2025-06-23 14:58
+
 ## [2025-06-22] Signal Replay API
 - 📂 `/server/routes/replay.ts`
 - 🧠 Replays old signals to MT5

@@ -108,6 +108,8 @@ SignalOS is a comprehensive trading automation platform that parses Telegram sig
 ## Changelog
 
 - June 23, 2025. Initial setup
+- June 23, 2025. Implemented R:R Converter Engine for risk-reward ratio calculations and optimal positioning
+- June 23, 2025. Implemented Edit Trade on Signal Change Engine for automatic trade adjustments when Telegram signals are edited
 
 ## User Preferences
 

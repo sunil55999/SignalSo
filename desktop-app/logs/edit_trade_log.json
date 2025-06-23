@@ -1,0 +1,24 @@
+{
+  "edit_events": [
+    {
+      "message_id": 12345,
+      "signal_versions": [
+        {
+          "message_id": 12345,
+          "content_hash": "a8197b8f711fd415f48fcfde29516cee",
+          "entry_price": 1.1,
+          "stop_loss": 1.095,
+          "take_profit": 1.105,
+          "lot_size": 0.1,
+          "timestamp": "2025-06-23T14:58:25.987842",
+          "raw_content": "EURUSD BUY 1.1000 SL 1.0950 TP 1.1050"
+        }
+      ],
+      "associated_trades": [
+        67890
+      ],
+      "modifications": [],
+      "last_processed": "2025-06-23T14:58:25.987853"
+    }
+  ]
+}

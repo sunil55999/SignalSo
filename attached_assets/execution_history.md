@@ -57,6 +57,10 @@
 - ✅ R:R Converter Engine – `/desktop-app/rr_converter.py`
 - ✅ Test suite: R:R converter logic – `/desktop-app/tests/test_rr_converter.py`
 
+### Edit Trade on Signal Change Engine (NEW)
+- ✅ Edit Trade Engine – `/desktop-app/edit_trade_on_signal_change.py`
+- ✅ Test suite: Signal edit detection and trade modification – `/desktop-app/tests/test_edit_trade_on_signal_change.py`
+
 ## 📅 Next Update Expected:
 Please refer to `next_task.md` for what must be done in the current Replit Agent session.
 
