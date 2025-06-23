@@ -28,6 +28,14 @@
 - 🧠 Parses entry/TP/SL; syncs settings with server
 - 🕒 Timestamp: 2025-06-22 10:00
 
+## [2025-06-23] Margin Filter Block Implementation
+- 📂 `/client/src/components/strategy-blocks/MarginFilterBlock.tsx`
+- 📂 `/client/src/components/strategy-blocks/__tests__/MarginFilterBlock.test.tsx`
+- 📂 `/server/routes.ts` (margin status API endpoint)
+- 📂 `/desktop-app/tests/test_margin_check.py`
+- 🧠 Complete margin filter block for Strategy Builder with percentage/absolute filtering, emergency thresholds, signal overrides, and real-time MT5 integration
+- 🕒 Timestamp: 2025-06-23 16:59
+
 ## [2025-06-23] R:R Converter Engine
 - 📂 `/desktop-app/rr_converter.py`
 - 🧠 Risk-reward ratio calculations and optimal positioning

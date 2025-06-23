@@ -40,7 +40,7 @@
 - ✅ strategy_flow.tsx (basic)
 - ✅ time_window block
 - ✅ rr_condition block
-- 🚧 margin_filter block
+- ✅ margin_filter block
 - ⛔ keyword_blacklist block
 
 ---

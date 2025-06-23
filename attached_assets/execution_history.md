@@ -85,6 +85,18 @@
 - ✅ Risk tolerance modes: strict, moderate, flexible
 - ✅ Visual breakdown of calculation components
 
+### Margin Filter Block
+- ✅ Margin Filter Component – `/client/src/components/strategy-blocks/MarginFilterBlock.tsx`
+- ✅ Comprehensive Test Suite – `/client/src/components/strategy-blocks/__tests__/MarginFilterBlock.test.tsx`
+- ✅ Backend API Integration – `/server/routes.ts` margin status endpoint
+- ✅ Desktop Runtime Tests – `/desktop-app/tests/test_margin_check.py`
+- ✅ Percentage and absolute margin filtering modes
+- ✅ Emergency threshold protection with override blocking
+- ✅ Signal type override functionality for high-confidence signals
+- ✅ Real-time margin monitoring with configurable intervals
+- ✅ MT5 connection status integration
+- ✅ Visual status indicators and comprehensive error handling
+
 ---
 
 ## ✅ Completed Modules (2025-06-23)

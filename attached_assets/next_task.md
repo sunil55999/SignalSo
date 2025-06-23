@@ -2,44 +2,44 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `margin_filter` block from Phase 4 – Strategy Builder Blocks.
+Implement the `margin_filter block` for the Strategy Builder in Phase 4.
 
-🔧 File to Create:
-/client/src/components/strategy-blocks/MarginFilterBlock.tsx
+🔧 File to Modify:
+/client/src/components/StrategyBlocks/MarginFilterBlock.tsx  
+(You may create this if it doesn’t exist yet)
 
 🧩 Description:
-Build a strategy builder block that filters signals based on margin requirements and account balance.
+Create a visual block that filters signals based on current free margin % or absolute margin value.
 
-Requirements:
-- Visual block for drag-and-drop strategy builder
-- Calculate required margin for signal lot size
-- Check available margin against minimum thresholds
-- Support different account leverage settings
-- Block connections: input (signal), output (filtered signal)
-- Real-time margin calculation with account balance integration
+Capabilities:
+- Allow user to set margin % threshold (e.g. “Only trade if margin > 25%”)
+- Block signals if margin check fails at runtime
+- Optionally allow override for specific signal types
+- Connects to user’s terminal context via cloud sync (or simulation engine)
+- Visual builder: accepts one input, one output, and dynamic config panel
 
-🔁 System Impact:
-- Integrates with existing strategy flow builder
-- Links to desktop-app account balance monitoring
-- Affects signal processing pipeline in strategy runtime
-- Updates strategy execution conditions based on margin availability
+🔁 System Integration:
+- Ties into backend `/api/margin/status` or runtime margin monitor (MT5 bridge)
+- Runtime strategy flow must skip signal if margin < configured threshold
+- Error/log pushed to dashboard or Copilot Bot if blocked
 
 🧪 Add Tests:
-/client/src/components/strategy-blocks/__tests__/MarginFilterBlock.test.tsx
+/client/src/__tests__/StrategyBlocks/MarginFilterBlock.test.tsx  
+/backend/desktop-app/tests/test_margin_check.py (if runtime logic added)
 
 Test Cases:
-- Margin calculation accuracy for different symbols
-- Account balance threshold validation
-- Leverage setting impact on margin requirements
-- Block connection and data flow validation
+- Margin = 50% → passes
+- Margin = 10% → fails (signal blocked)
+- Override = true → signal allowed
+- Invalid config → error message visible
 
 📂 Tracking:
 Once complete:
 - ✅ Update `feature_status.md`
 - 🧾 Append to `execution_history.md`
-- 📘 Log the change in `dev_changelog.md`
+- 📘 Log in `dev_changelog.md`
 
 ❗ Rules:
-- DO NOT use hardcoded margin requirements - calculate dynamically per symbol
-- DO NOT bypass account balance checks
-- DO NOT ignore leverage settings in margin calculations
+- Do NOT confuse with equity limits (this is free margin based)
+- Do NOT skip test coverage
+- Keep UI/UX consistent with other blocks

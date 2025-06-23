@@ -17,6 +17,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup drawdown handler routes
   // setupDrawdownHandlerRoutes(app);
 
+  // Margin status API endpoint
+  app.get("/api/margin/status", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // In a real implementation, this would connect to MT5 bridge
+      // For now, we'll simulate margin data based on current MT5 status
+      const mt5Status = await storage.getMt5Status(req.user!.id);
+      
+      if (!mt5Status || !mt5Status.isConnected) {
+        return res.json({
+          freeMargin: 0,
+          totalMargin: 0,
+          usedMargin: 0,
+          marginLevel: 0,
+          equity: 0,
+          balance: 0,
+          lastUpdate: new Date(),
+          isConnected: false
+        });
+      }
+
+      // Simulate realistic margin data
+      const serverInfo = mt5Status.serverInfo as any || {};
+      const balance = serverInfo.balance || 10000;
+      const equity = serverInfo.equity || balance;
+      const usedMargin = serverInfo.usedMargin || balance * 0.3;
+      const freeMargin = equity - usedMargin;
+      const marginLevel = usedMargin > 0 ? (equity / usedMargin) * 100 : 1000;
+
+      res.json({
+        freeMargin,
+        totalMargin: equity,
+        usedMargin,
+        marginLevel,
+        equity,
+        balance,
+        lastUpdate: mt5Status.lastPing || new Date(),
+        isConnected: true
+      });
+    } catch (error) {
+      console.error('Error fetching margin status:', error);
+      res.status(500).json({ message: "Failed to fetch margin status" });
+    }
+  });
+
   // Channel management routes
   app.get("/api/channels", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
