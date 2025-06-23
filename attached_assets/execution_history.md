@@ -80,6 +80,17 @@
 - ✅ Test suite: Drawdown detection and risk management – `/signalos/server/tests/test_drawdown_handler.ts`
 - ✅ Integration with main server routes and authentication
 
+### Signal Conflict Resolver Engine (NEW)
+- ✅ Signal Conflict Resolver – `/signalos/desktop-app/signal_conflict_resolver.py`
+- ✅ Comprehensive conflict detection for opposite directions, provider conflicts, time overlaps, and duplicates
+- ✅ Configurable resolution strategies: close existing, reject new, warn only, allow both (hedge mode)
+- ✅ Provider priority-based resolution with confidence scoring
+- ✅ Symbol-specific and provider-specific configuration support
+- ✅ Real-time conflict monitoring with automatic cleanup of old signals
+- ✅ Integration hooks for MT5 bridge, parser, and Telegram copilot bot
+- ✅ Test suite: Complete conflict scenarios and resolution workflows – `/signalos/desktop-app/tests/test_signal_conflict_resolver.py`
+- ✅ Statistics tracking and configuration management
+
 ## 📅 Next Update Expected:
 Please refer to `next_task.md` for what must be done in the current Replit Agent session.
 

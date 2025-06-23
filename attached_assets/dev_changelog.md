@@ -120,3 +120,12 @@
 - 📊 Capabilities: Live account balance tracking, peak balance calculation, violation logging, Telegram bot alerts, admin dashboard
 - 🕒 Timestamp: 2025-06-23 16:10:00
 
+## [2025-06-23] Signal Conflict Resolver Engine Implementation
+- 📂 `/signalos/desktop-app/signal_conflict_resolver.py`, `/signalos/desktop-app/tests/test_signal_conflict_resolver.py`
+- 🧠 Implemented comprehensive signal conflict detection and resolution system for managing opposing signals, provider conflicts, and duplicate signals
+- 🧪 Complete test suite covering opposite direction conflicts, provider priority resolution, time overlap detection, duplicate signal handling, and hedge mode functionality
+- ⚙️ Features: Multiple conflict types (opposite direction, provider, time overlap, duplicate), configurable resolution strategies (close existing, reject new, warn only, allow both), provider priority weighting, confidence-based resolution
+- 🔧 Integration: MT5 bridge for trade closure, parser integration for signal registration, Telegram copilot bot for notifications, configurable symbol and provider settings
+- 📊 Capabilities: Real-time conflict monitoring, statistics tracking, automatic signal cleanup, configuration management, conflict history persistence
+- 🕒 Timestamp: 2025-06-23 16:20:00
+

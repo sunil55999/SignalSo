@@ -2,46 +2,44 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `signal_conflict_resolver.py` from Phase 3 – Risk Controls.
+Implement `time_window` block from Phase 4 – Strategy Builder Blocks.
 
 🔧 File to Create:
-/desktop-app/signal_conflict_resolver.py
+/signalos/client/src/components/strategy-blocks/TimeWindowBlock.tsx
 
 🧩 Description:
-Build a desktop module to detect and resolve conflicting signals from different providers.
+Build a strategy builder block that allows users to set time-based filters for signal execution.
 
 Requirements:
-- Detect when multiple providers send opposing signals for same pair
-- If conflict detected:
-  - ✅ Pause trade execution for conflicting pair
-  - ✅ Log conflict details (providers, signals, timestamps)
-  - ✅ Optionally, execute strongest signal based on confidence
-- Admins can configure conflict resolution strategies
-- Support provider priority weighting
-- Auto-resume after conflict resolution window expires
+- Visual block for drag-and-drop strategy builder
+- Configure trading time windows (e.g., 8:00-16:00 UTC)
+- Support multiple time zones and session overlaps
+- Weekend/holiday filtering options
+- Block connections: input (signal), output (filtered signal)
+- Real-time validation of current time against windows
 
 🔁 System Impact:
-- Integrates with signal parser and strategy runtime
-- Depends on provider confidence scoring system
-- Affects trade execution flow and provider statistics
-- Linked to Telegram bot notification system
+- Integrates with existing strategy flow builder
+- Affects signal processing pipeline in strategy runtime
+- Links to desktop-app time validation logic
+- Updates strategy execution conditions
 
 🧪 Add Tests:
-/desktop-app/tests/test_signal_conflict_resolver.py
+/signalos/client/src/components/strategy-blocks/__tests__/TimeWindowBlock.test.tsx
 
-Test Scenarios:
-- Detect BUY vs SELL conflict → pause execution
-- Priority-based resolution → execute higher priority
-- Time window expiry → auto-resume normal flow
-- Multiple pair conflict handling
+Test Cases:
+- Time window validation during market hours
+- Timezone conversion accuracy
+- Weekend filtering behavior
+- Block connection and data flow
 
 📂 Tracking:
 Once complete:
 - ✅ Update `feature_status.md`
-- 🧾 Log in `execution_history.md`
-- 📘 Append changelog in `dev_changelog.md`
+- 🧾 Append to `execution_history.md`
+- 📘 Log the change in `dev_changelog.md`
 
 ❗ Rules:
-- DO NOT hardcode provider priorities — pull from config
-- DO NOT block all trading, only conflicting pairs
-- DO NOT ignore low-confidence signals without evaluation
+- DO NOT hardcode time zones - use proper timezone libraries
+- DO NOT bypass weekend checks in forex markets
+- DO NOT skip responsive design for mobile strategy building
