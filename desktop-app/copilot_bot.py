@@ -61,6 +61,7 @@ class SignalOSCopilot:
         self.application.add_handler(CommandHandler("signals", self.signals_command))
         self.application.add_handler(CommandHandler("config", self.config_command))
         self.application.add_handler(CommandHandler("close", self.close_command))
+        self.application.add_handler(CommandHandler("range", self.range_command))
         
         # Handle text messages for signal parsing
         self.application.add_handler(
@@ -457,6 +458,72 @@ For support, contact your system administrator.
         except Exception as e:
             await update.message.reply_text(f"❌ Close command failed: {str(e)}")
             self.logger.error(f"Close command error: {e}")
+    
+    async def range_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /range command for entry range orders"""
+        if not self._is_authorized(update.effective_chat.id):
+            return
+        
+        if not context.args:
+            help_text = """
+🔹 **Entry Range Commands**
+
+**Usage Examples:**
+• `/range 1.2000-1.2020 AVERAGE` - Average entry across range
+• `/range 1.1950/1.1970 SCALE` - Scale into position
+• `/range 1.2010 TO 1.2030 BEST` - Best entry in range
+• `/range 1.1980-1.2000 SECOND` - Second best entry
+
+**Supported Logic:**
+• AVERAGE - Equal lots at multiple levels
+• BEST - Single order at optimal price
+• SECOND - Single order at second-best price
+• SCALE - Progressive scaling with lot multiplier
+
+**Format:** Upper and lower bounds with entry logic
+            """
+            await update.message.reply_text(help_text, parse_mode='Markdown')
+            return
+        
+        # Combine all arguments to form the range command
+        range_command = " ".join(context.args)
+        
+        # Extract symbol and direction from context or use defaults
+        symbol = "EURUSD"  # Default symbol
+        direction = "BUY"   # Default direction
+        lot_size = 1.0      # Default lot size
+        
+        # Send entry range request to server
+        try:
+            range_data = {
+                "command": f"RANGE {range_command}",
+                "symbol": symbol,
+                "direction": direction,
+                "lot_size": lot_size,
+                "source": "telegram_bot",
+                "user_id": update.effective_user.id
+            }
+            
+            range_result = await self._api_request("/trades/entry-range", "POST", range_data)
+            
+            if "error" in range_result:
+                await update.message.reply_text(f"❌ Range setup failed: {range_result['error']}")
+            else:
+                success_msg = f"""
+✅ **Entry Range Created**
+
+• Symbol: {range_result.get('symbol', symbol)}
+• Range: {range_result.get('lower_bound', 'N/A')} - {range_result.get('upper_bound', 'N/A')}
+• Logic: {range_result.get('entry_logic', 'N/A')}
+• Total Size: {range_result.get('total_lot_size', lot_size)} lots
+• Pending Orders: {range_result.get('pending_orders', 0)}
+• Signal ID: {range_result.get('signal_id', 'N/A')}
+                """
+                await update.message.reply_text(success_msg, parse_mode='Markdown')
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ Range command failed: {str(e)}")
+            self.logger.error(f"Range command error: {e}")
     
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle text messages for signal parsing"""

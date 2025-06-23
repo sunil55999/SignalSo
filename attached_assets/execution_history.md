@@ -14,6 +14,7 @@
 - ✅ Partial Close Engine – `/desktop-app/partial_close.py`
 - ✅ Trailing Stop Engine – `/desktop-app/trailing_stop.py`
 - ✅ Break Even Engine – `/desktop-app/break_even.py`
+- ✅ Entry Range Engine – `/desktop-app/entry_range.py`
 - ✅ Firebridge Sync API – `/server/routes/firebridge.ts`
 - ✅ WebSocket Handler – `/server/ws/server.ts`
 
@@ -33,6 +34,7 @@
 - ✅ Test suite: partial close logic – `/desktop-app/tests/test_partial_close.py`
 - ✅ Test suite: trailing stop logic – `/desktop-app/tests/test_trailing_stop.py`
 - ✅ Test suite: break even logic – `/desktop-app/tests/test_break_even.py`
+- ✅ Test suite: entry range logic – `/desktop-app/tests/test_entry_range.py`
 - ✅ WebSocket + MT5 response mock – `/client/__tests__/mock_socket.test.ts`
 
 ---

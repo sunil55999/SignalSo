@@ -63,3 +63,8 @@
 - 🧠 Implemented automatic break-even functionality with multiple trigger methods (fixed pips, percentage, time-based, ratio-based), buffer support, and comprehensive testing
 - 🕒 Timestamp: 2025-06-23 12:15:00
 
+## [2025-06-23] Entry Range Engine Implementation
+- 📂 `/desktop-app/entry_range.py`, `/desktop-app/tests/test_entry_range.py`, `/desktop-app/copilot_bot.py`
+- 🧠 Implemented entry range functionality for pending orders with upper/lower bounds, multiple entry strategies (average, best, second, scale-in), partial fill handling, and Telegram bot integration
+- 🕒 Timestamp: 2025-06-23 12:20:00
+

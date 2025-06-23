@@ -3,28 +3,28 @@
 ## 📅 Date: 2025-06-23
 
 ## 🧠 Task:
-You must now implement the **entry range logic** in the Desktop App engine.
+You must now implement the **TP manager logic** in Phase 2 Advanced Order Management.
 
 ## 🔧 File to Create:
-- `/desktop-app/entry_range.py`
+- `/desktop-app/tp_manager.py`
 
 ## 🧩 Description:
-Implement entry range functionality for pending orders:
-- Support entry ranges with upper and lower bounds
-- Handle partial fills within the range
-- Scale position size based on entry quality
-- Integration with pending order management
-- Support for limit orders and stop orders within range
+Implement advanced take profit management:
+- Support for multiple TP levels (TP1, TP2, TP3, TP4, TP5)
+- Partial close automation when TP levels are hit
+- Dynamic TP adjustment based on market conditions
+- Integration with existing partial close and break even engines
+- TP hit detection and automated actions
 
 ## 🔁 System Impact:
 - Updates strategy runtime logic
-- Will need integration with `mt5_bridge.py` for pending order placement
-- Should work with existing trade management engines
-- Integration with signal parser for range commands
+- Integrates with `partial_close.py` and `break_even.py`
+- Will need integration with `mt5_bridge.py` for TP modifications
+- Integration with signal parser for TP commands
 
 ## 🧪 Add Tests:
-- `/desktop-app/tests/test_entry_range.py`
-- Cover: range validation, partial fills, scaling logic, edge cases
+- `/desktop-app/tests/test_tp_manager.py`
+- Cover: multiple TP levels, partial closes, dynamic adjustments, edge cases
 
 ## 📂 Tracking:
 Once complete:

@@ -16,7 +16,7 @@
 - ✅ partial_close.py
 - ✅ trailing_stop.py
 - ✅ break_even.py
-- ⛔ entry_range.py
+- ✅ entry_range.py
 
 ---
 
