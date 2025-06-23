@@ -48,7 +48,7 @@
 ## PHASE 5: PROP FIRM STEALTH
 - ✅ magic_number_hider.py
 - ✅ comment_cleaner.py
-- ⛔ randomized_lot_inserter.py
+- ✅ randomized_lot_inserter.py
 - ⛔ end_of_week_sl_remover.py
 
 ---

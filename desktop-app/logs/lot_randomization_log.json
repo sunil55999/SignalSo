@@ -1,0 +1,15 @@
+{
+  "randomizations": [
+    {
+      "original_lot": 0.1,
+      "randomized_lot": 0.102,
+      "variance_applied": 0.001999999999999988,
+      "seed_used": "ea1364d7",
+      "timestamp": "2025-06-23T17:14:25.756344",
+      "symbol": "EURUSD",
+      "signal_id": "integration_test",
+      "reason": "Applied 0.001802 variance"
+    }
+  ],
+  "last_updated": "2025-06-23T17:14:25.756650"
+}

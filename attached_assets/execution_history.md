@@ -111,6 +111,22 @@
 
 ---
 
+## ✅ Phase 5: Prop Firm Stealth Systems (2025-06-23)
+
+### Randomized Lot Inserter
+- ✅ Lot Randomization Engine – `/desktop-app/randomized_lot_inserter.py`
+- ✅ Comprehensive Test Suite – `/desktop-app/tests/test_randomized_lot_inserter.py`
+- ✅ Deterministic seeded randomization for testability and reproducibility
+- ✅ Configurable variance ranges with bounds validation and rounding
+- ✅ Repeat avoidance system to prevent identical lot sizes
+- ✅ Per-symbol tracking with separate randomization histories
+- ✅ Integration with strategy runtime and MT5 bridge systems
+- ✅ Configuration persistence and real-time parameter updates
+- ✅ Statistics tracking with detailed logging and Copilot Bot notifications
+- ✅ Edge case handling for invalid lot sizes and boundary conditions
+
+---
+
 ## ✅ Completed Modules (2025-06-23)
 
 ### R:R Converter Engine (NEW)

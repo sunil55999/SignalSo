@@ -2,36 +2,35 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement the next Phase 5 module: `randomized_lot_inserter.py` for the Prop Firm Stealth system.
+Implement `randomized_lot_inserter.py` from Phase 5 – Prop Firm Stealth Systems.
 
 🔧 File to Create:
-/desktop-app/randomized_lot_inserter.py
+/signalos/desktop-app/randomized_lot_inserter.py
 
 🧩 Description:
-This module should randomly insert small dummy trades with varying lot sizes to obfuscate trading patterns from prop firm detection algorithms.
+Build a stealth utility that randomizes lot sizes slightly per trade to avoid detection by prop firm tracking systems.
 
 Capabilities:
-- Generate random lot sizes within configurable ranges (e.g., 0.01-0.05)
-- Insert dummy trades at random intervals (not correlated with real signals)
-- Use different symbols from a rotation list to avoid pattern detection
-- Automatically close dummy trades after random durations (30s-5min)
-- Respect daily/weekly limits to avoid excessive trading
-- Log all dummy trades separately from real strategy trades
+- Intercept trade before it is dispatched to MT5
+- Modify lot size within a configurable variance range (e.g., ±0.003)
+- Prevent identical repeated lot sizes across sessions
+- Support optional rounding behavior (e.g., round to 0.01)
+- Configurable on a per-user or per-strategy basis
 
 🔁 System Integration:
-- Integrates with MT5 bridge for trade execution
-- Coordinates with main strategy to avoid interference
-- Respects account balance and margin requirements
-- Can be enabled/disabled per strategy or globally
+- Hook into strategy runtime before trade execution
+- Pull variance config from synced user profile or JSON
+- Log applied randomization and final lot size
+- Send log to Copilot Bot (optional toggle)
 
 🧪 Add Tests:
-/desktop-app/tests/test_randomized_lot_inserter.py
+/signalos/desktop-app/tests/test_randomized_lot_inserter.py
 
 Test Scenarios:
-- Dummy trades generated within configured parameters
-- No interference with real strategy trades
-- Proper logging and tracking of dummy vs real trades
-- Margin and balance validation before dummy trade execution
+- Trade with default lot 0.10 → randomized to 0.102 / 0.098
+- Config range set to ±0.005 → respects bounds
+- Edge case: rounding enabled
+- Consistency check: same signal doesn't repeat lot size exactly
 
 📂 Tracking:
 Once complete:
@@ -40,6 +39,6 @@ Once complete:
 - 📘 Log in `dev_changelog.md`
 
 ❗ Rules:
-- Dummy trades must be clearly distinguishable from real trades in logs
-- Never interfere with or delay real signal execution
-- Respect prop firm trading rules and limits
+- DO NOT use hardcoded randomness — always make it seedable/testable
+- DO NOT override user-configured lot if override is disabled
+- Ensure changes are reflected in MT5 dispatch but logged securely
