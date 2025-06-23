@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  signalos-server:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+      - SESSION_SECRET=${SESSION_SECRET}
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    networks:
+      - signalos-network
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: signalos
+      POSTGRES_USER: signalos
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - signalos-network
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    networks:
+      - signalos-network
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  signalos-network:
+    driver: bridge

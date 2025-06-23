@@ -1,4 +1,5 @@
 import { useAuth } from "@/hooks/use-auth";
+import { useLocation } from "wouter";
 
 interface SidebarProps {
   activeTab: string;
@@ -7,13 +8,14 @@ interface SidebarProps {
 
 export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const { user, logoutMutation } = useAuth();
+  const [, navigate] = useLocation();
 
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: "fas fa-tachometer-alt" },
+    { id: "dashboard", label: "Dashboard", icon: "fas fa-tachometer-alt", path: "/" },
     { id: "signals", label: "Signals", icon: "fas fa-signal" },
     { id: "strategy", label: "Strategy Builder", icon: "fas fa-project-diagram" },
     { id: "trades", label: "Live Trades", icon: "fas fa-exchange-alt" },
-    { id: "admin", label: "Admin Panel", icon: "fas fa-users-cog" },
+    { id: "admin", label: "Admin Panel", icon: "fas fa-users-cog", path: "/admin" },
     { id: "logs", label: "Logs & Reports", icon: "fas fa-file-alt" },
   ];
 
@@ -34,7 +36,13 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         {menuItems.map((item) => (
           <button
             key={item.id}
-            onClick={() => onTabChange(item.id)}
+            onClick={() => {
+              if (item.path) {
+                navigate(item.path);
+              } else {
+                onTabChange(item.id);
+              }
+            }}
             className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg font-medium transition-colors ${
               activeTab === item.id
                 ? "bg-primary/10 text-primary"

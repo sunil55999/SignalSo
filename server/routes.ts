@@ -146,21 +146,176 @@ export async function registerRoutes(app: Express): Promise<Server> {
     
     try {
       const id = parseInt(req.params.id);
+      const { forceReplay = false, modifyParams = {} } = req.body;
+      
       const signal = await storage.getSignal(id);
       
       if (!signal) {
         return res.status(404).json({ message: "Signal not found" });
       }
       
-      // Reset signal status to pending for replay
-      const replayedSignal = await storage.updateSignal(id, { status: "pending" });
+      // Check if signal can be replayed
+      if (!forceReplay && signal.status === "executed") {
+        return res.status(400).json({ 
+          message: "Signal already executed. Use forceReplay=true to override.",
+          currentStatus: signal.status
+        });
+      }
       
-      // Broadcast replay event to desktop app
-      broadcastToClients('signal_replay', replayedSignal);
+      // Apply parameter modifications if provided
+      const updatedSignal = {
+        status: "pending",
+        ...modifyParams,
+        // Preserve original timestamps and ID
+        id: signal.id,
+        createdAt: signal.createdAt
+      };
       
-      res.json(replayedSignal);
+      const replayedSignal = await storage.updateSignal(id, updatedSignal);
+      
+      // Log replay action
+      await storage.createSyncLog({
+        userId: req.user!.id,
+        action: "signal_replay",
+        status: "success",
+        details: { 
+          signalId: id,
+          originalStatus: signal.status,
+          modifiedParams: modifyParams,
+          forceReplay,
+          replayedBy: req.user!.username
+        }
+      });
+      
+      // Broadcast replay event to desktop app with priority
+      broadcastToClients('signal_replay', {
+        signal: replayedSignal,
+        priority: "high",
+        replayedBy: req.user!.id,
+        timestamp: new Date().toISOString()
+      });
+      
+      res.json({
+        success: true,
+        signal: replayedSignal,
+        replayId: `replay_${id}_${Date.now()}`,
+        message: "Signal queued for replay execution"
+      });
     } catch (error) {
-      res.status(500).json({ message: "Failed to replay signal" });
+      console.error("Signal replay error:", error);
+      res.status(500).json({ message: "Failed to replay signal", error: error.message });
+    }
+  });
+
+  // Signal parsing and simulation routes
+  app.post("/api/signals/parse", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { rawMessage, channelId, simulate = false } = req.body;
+      
+      if (!rawMessage) {
+        return res.status(400).json({ message: "rawMessage is required" });
+      }
+      
+      // Basic signal parsing logic (simplified)
+      const parsedSignal = parseSignalMessage(rawMessage);
+      
+      if (!parsedSignal.valid) {
+        return res.status(400).json({ 
+          message: "Failed to parse signal",
+          errors: parsedSignal.errors,
+          rawMessage 
+        });
+      }
+      
+      if (simulate) {
+        // Return parsed data without saving
+        res.json({
+          parsed: true,
+          simulation: true,
+          signal: parsedSignal.data,
+          confidence: parsedSignal.confidence,
+          extractedFields: parsedSignal.extractedFields
+        });
+      } else {
+        // Save parsed signal to database
+        const signalData = {
+          channelId: channelId || null,
+          symbol: parsedSignal.data.symbol,
+          action: parsedSignal.data.action,
+          entry: parsedSignal.data.entry,
+          stopLoss: parsedSignal.data.stopLoss,
+          takeProfit1: parsedSignal.data.takeProfit1,
+          takeProfit2: parsedSignal.data.takeProfit2,
+          takeProfit3: parsedSignal.data.takeProfit3,
+          takeProfit4: parsedSignal.data.takeProfit4,
+          takeProfit5: parsedSignal.data.takeProfit5,
+          confidence: parsedSignal.confidence,
+          status: "pending",
+          rawMessage: rawMessage,
+          parsedData: parsedSignal.data
+        };
+        
+        const signal = await storage.createSignal(signalData);
+        
+        // Broadcast new signal
+        broadcastToClients('signal_created', signal);
+        
+        res.status(201).json({
+          parsed: true,
+          saved: true,
+          signal: signal,
+          confidence: parsedSignal.confidence
+        });
+      }
+    } catch (error) {
+      console.error("Signal parsing error:", error);
+      res.status(500).json({ message: "Signal parsing failed", error: error.message });
+    }
+  });
+
+  app.post("/api/signals/simulate", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { signalData, marketConditions = {}, accountInfo = {} } = req.body;
+      
+      if (!signalData) {
+        return res.status(400).json({ message: "signalData is required" });
+      }
+      
+      // Simulate trade execution with current market conditions
+      const simulation = simulateTradeExecution(signalData, marketConditions, accountInfo);
+      
+      res.json({
+        simulation: true,
+        input: {
+          signal: signalData,
+          marketConditions,
+          accountInfo
+        },
+        results: simulation,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Signal simulation error:", error);
+      res.status(500).json({ message: "Signal simulation failed", error: error.message });
+    }
+  });
+
+  app.get("/api/signals/formats", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const supportedFormats = getSupportedSignalFormats();
+      res.json({
+        formats: supportedFormats,
+        parserVersion: "2.0.0",
+        lastUpdated: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to get signal formats" });
     }
   });
 
@@ -256,24 +411,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, terminalStatus, parserStatus } = req.body;
       
+      // Validate required fields
+      if (!userId || !terminalStatus) {
+        return res.status(400).json({ message: "Missing required fields: userId, terminalStatus" });
+      }
+      
+      // Update MT5 status if provided
+      if (terminalStatus.modules?.mt5) {
+        const mt5Data = terminalStatus.modules.mt5;
+        await storage.updateMt5Status(userId, {
+          terminalId: terminalStatus.terminal_id,
+          isConnected: mt5Data.connected || false,
+          serverInfo: mt5Data.account_info || {},
+          latency: mt5Data.latency || null
+        });
+      }
+      
       // Log the sync event
       await storage.createSyncLog({
         userId,
         action: "sync_user",
         status: "success",
-        details: { terminalStatus, parserStatus }
+        details: { terminalStatus, parserStatus, syncVersion: "2.0" }
       });
       
       // Get user's current strategy
       const strategies = await storage.getUserStrategies(userId);
       const activeStrategy = strategies.find(s => s.isActive);
       
-      res.json({
-        strategy: activeStrategy,
+      // Get pending signals for processing
+      const pendingSignals = await storage.getSignals(10);
+      const userPendingSignals = pendingSignals.filter(s => s.status === "pending");
+      
+      // Broadcast sync event to WebSocket clients
+      broadcastToClients('desktop_sync', { 
+        userId, 
+        terminalId: terminalStatus.terminal_id,
+        connected: terminalStatus.modules?.mt5?.connected || false,
         timestamp: new Date().toISOString()
       });
+      
+      res.json({
+        strategy: activeStrategy,
+        pendingSignals: userPendingSignals,
+        serverConfig: {
+          retryInterval: 60,
+          maxRetries: 3,
+          stealthMode: false
+        },
+        timestamp: new Date().toISOString(),
+        syncId: `sync_${userId}_${Date.now()}`
+      });
     } catch (error) {
-      res.status(500).json({ message: "Sync failed" });
+      console.error("Firebridge sync error:", error);
+      res.status(500).json({ message: "Sync failed", error: error.message });
     }
   });
 
@@ -281,19 +472,177 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId, error, details } = req.body;
       
+      if (!userId || !error) {
+        return res.status(400).json({ message: "Missing required fields: userId, error" });
+      }
+      
       await storage.createSyncLog({
         userId,
         action: "error_alert",
         status: "error",
-        details: { error, ...details }
+        details: { 
+          error, 
+          errorType: details?.errorType || "unknown",
+          timestamp: new Date().toISOString(),
+          ...details 
+        }
       });
       
-      // Broadcast error to WebSocket clients
-      broadcastToClients('error_alert', { userId, error, details });
+      // Broadcast error to WebSocket clients with severity
+      const severity = details?.severity || "medium";
+      broadcastToClients('error_alert', { 
+        userId, 
+        error, 
+        details, 
+        severity,
+        timestamp: new Date().toISOString()
+      });
       
-      res.sendStatus(200);
+      res.json({ 
+        acknowledged: true, 
+        alertId: `alert_${userId}_${Date.now()}`,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
-      res.status(500).json({ message: "Failed to log error" });
+      console.error("Error alert processing failed:", error);
+      res.status(500).json({ message: "Failed to log error", error: error.message });
+    }
+  });
+
+  app.get("/api/firebridge/pull-strategy/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid userId" });
+      }
+      
+      const strategies = await storage.getUserStrategies(userId);
+      const activeStrategy = strategies.find(s => s.isActive);
+      
+      if (!activeStrategy) {
+        return res.status(404).json({ message: "No active strategy found" });
+      }
+      
+      // Log strategy pull
+      await storage.createSyncLog({
+        userId,
+        action: "pull_strategy",
+        status: "success",
+        details: { strategyId: activeStrategy.id, strategyName: activeStrategy.name }
+      });
+      
+      res.json({
+        strategy: activeStrategy,
+        lastModified: activeStrategy.updatedAt,
+        version: activeStrategy.id,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Strategy pull error:", error);
+      res.status(500).json({ message: "Failed to pull strategy", error: error.message });
+    }
+  });
+
+  app.post("/api/firebridge/push-trade-result", async (req, res) => {
+    try {
+      const { userId, signalId, tradeResult, mt5Ticket } = req.body;
+      
+      if (!userId || !signalId || !tradeResult) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Update signal status based on trade result
+      const signal = await storage.getSignal(signalId);
+      if (signal) {
+        const newStatus = tradeResult.success ? "executed" : "failed";
+        await storage.updateSignal(signalId, { status: newStatus });
+        
+        // Create trade record if successful
+        if (tradeResult.success && mt5Ticket) {
+          await storage.createTrade({
+            signalId: signalId,
+            userId: userId,
+            mt5Ticket: mt5Ticket,
+            symbol: signal.symbol,
+            action: signal.action,
+            lotSize: tradeResult.lotSize || "0.01",
+            entryPrice: tradeResult.entryPrice || signal.entry,
+            currentPrice: tradeResult.currentPrice || signal.entry,
+            stopLoss: signal.stopLoss,
+            takeProfit: signal.takeProfit1,
+            profit: "0.00",
+            status: "open"
+          });
+        }
+      }
+      
+      // Log trade result
+      await storage.createSyncLog({
+        userId,
+        action: "trade_result",
+        status: tradeResult.success ? "success" : "failed",
+        details: { 
+          signalId, 
+          mt5Ticket, 
+          tradeResult,
+          processingTime: tradeResult.processingTime || 0
+        }
+      });
+      
+      // Broadcast trade update
+      broadcastToClients('trade_executed', {
+        userId,
+        signalId,
+        success: tradeResult.success,
+        mt5Ticket,
+        timestamp: new Date().toISOString()
+      });
+      
+      res.json({ 
+        acknowledged: true,
+        signalUpdated: !!signal,
+        tradeCreated: !!(tradeResult.success && mt5Ticket),
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Trade result processing error:", error);
+      res.status(500).json({ message: "Failed to process trade result", error: error.message });
+    }
+  });
+
+  app.post("/api/firebridge/heartbeat", async (req, res) => {
+    try {
+      const { userId, terminalId, status } = req.body;
+      
+      if (!userId || !terminalId) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Update MT5 status with heartbeat
+      await storage.updateMt5Status(userId, {
+        terminalId,
+        isConnected: status?.connected || false,
+        latency: status?.latency || null,
+        serverInfo: status?.serverInfo || {}
+      });
+      
+      // Broadcast heartbeat to monitoring clients
+      broadcastToClients('heartbeat', {
+        userId,
+        terminalId,
+        status,
+        timestamp: new Date().toISOString()
+      });
+      
+      res.json({ 
+        received: true,
+        timestamp: new Date().toISOString(),
+        nextHeartbeat: 30 // seconds
+      });
+    } catch (error) {
+      console.error("Heartbeat processing error:", error);
+      res.status(500).json({ message: "Heartbeat failed", error: error.message });
     }
   });
 
@@ -338,4 +687,188 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   return httpServer;
+}
+
+// Signal parsing helper functions
+function parseSignalMessage(rawMessage: string) {
+  try {
+    const message = rawMessage.toUpperCase().trim();
+    const lines = message.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    const result = {
+      valid: false,
+      errors: [] as string[],
+      confidence: 0,
+      data: {} as any,
+      extractedFields: [] as string[]
+    };
+    
+    // Extract action (BUY/SELL)
+    const actionMatch = message.match(/\b(BUY|SELL)\b/);
+    if (!actionMatch) {
+      result.errors.push("No BUY/SELL action found");
+      return result;
+    }
+    result.data.action = actionMatch[1];
+    result.extractedFields.push("action");
+    
+    // Extract symbol
+    const symbolMatch = message.match(/\b([A-Z]{6}|[A-Z]{3}\/[A-Z]{3})\b/);
+    if (!symbolMatch) {
+      result.errors.push("No currency pair found");
+      return result;
+    }
+    result.data.symbol = symbolMatch[1].replace('/', '');
+    result.extractedFields.push("symbol");
+    
+    // Extract entry price
+    const entryMatch = message.match(/ENTRY[:\s]*([0-9]+\.?[0-9]*)/i);
+    if (entryMatch) {
+      result.data.entry = entryMatch[1];
+      result.extractedFields.push("entry");
+    }
+    
+    // Extract stop loss
+    const slMatch = message.match(/S\.?L\.?[:\s]*([0-9]+\.?[0-9]*)/i);
+    if (slMatch) {
+      result.data.stopLoss = slMatch[1];
+      result.extractedFields.push("stopLoss");
+    }
+    
+    // Extract take profit levels
+    for (let i = 1; i <= 5; i++) {
+      const tpMatch = message.match(new RegExp(`T\.?P\.?${i}[:\\s]*([0-9]+\\.?[0-9]*)`, 'i'));
+      if (tpMatch) {
+        result.data[`takeProfit${i}`] = tpMatch[1];
+        result.extractedFields.push(`takeProfit${i}`);
+      }
+    }
+    
+    // Calculate confidence based on extracted fields
+    let confidence = 0;
+    if (result.data.action && result.data.symbol) confidence += 40;
+    if (result.data.entry) confidence += 20;
+    if (result.data.stopLoss) confidence += 20;
+    if (result.data.takeProfit1) confidence += 15;
+    if (result.extractedFields.length >= 4) confidence += 5;
+    
+    result.confidence = Math.min(confidence, 100);
+    result.valid = result.confidence >= 60; // Minimum 60% confidence required
+    
+    if (!result.valid) {
+      result.errors.push(`Confidence too low: ${result.confidence}% (minimum 60% required)`);
+    }
+    
+    return result;
+  } catch (error) {
+    return {
+      valid: false,
+      errors: [`Parsing error: ${error.message}`],
+      confidence: 0,
+      data: {},
+      extractedFields: []
+    };
+  }
+}
+
+function simulateTradeExecution(signalData: any, marketConditions: any, accountInfo: any) {
+  const simulation = {
+    success: true,
+    estimatedOutcome: {} as any,
+    riskAssessment: {} as any,
+    marketImpact: {} as any,
+    warnings: [] as string[]
+  };
+  
+  try {
+    const entry = parseFloat(signalData.entry || "0");
+    const stopLoss = parseFloat(signalData.stopLoss || "0");
+    const takeProfit = parseFloat(signalData.takeProfit1 || "0");
+    const lotSize = parseFloat(signalData.lotSize || "0.01");
+    const balance = parseFloat(accountInfo.balance || "10000");
+    
+    // Calculate risk
+    if (entry && stopLoss) {
+      const riskPips = Math.abs(entry - stopLoss) * 10000; // Simplified pip calculation
+      const riskAmount = riskPips * lotSize * 1; // $1 per pip per standard lot
+      const riskPercent = (riskAmount / balance) * 100;
+      
+      simulation.riskAssessment = {
+        riskPips: riskPips.toFixed(1),
+        riskAmount: riskAmount.toFixed(2),
+        riskPercent: riskPercent.toFixed(2)
+      };
+      
+      if (riskPercent > 5) {
+        simulation.warnings.push("High risk: Risk exceeds 5% of account balance");
+      }
+    }
+    
+    // Calculate potential profit
+    if (entry && takeProfit) {
+      const profitPips = Math.abs(takeProfit - entry) * 10000;
+      const profitAmount = profitPips * lotSize * 1;
+      
+      simulation.estimatedOutcome = {
+        profitPips: profitPips.toFixed(1),
+        profitAmount: profitAmount.toFixed(2),
+        riskRewardRatio: stopLoss ? (profitPips / Math.abs(entry - stopLoss) / 10000).toFixed(2) : "N/A"
+      };
+    }
+    
+    // Market conditions assessment
+    const spread = parseFloat(marketConditions.spread || "2");
+    const volatility = marketConditions.volatility || "normal";
+    
+    simulation.marketImpact = {
+      spreadCost: (spread * lotSize * 1).toFixed(2),
+      volatility: volatility,
+      executionProbability: spread > 5 ? "medium" : "high"
+    };
+    
+    if (spread > 5) {
+      simulation.warnings.push("Wide spread detected, execution may be difficult");
+    }
+    
+    if (volatility === "high") {
+      simulation.warnings.push("High volatility may cause slippage");
+    }
+    
+    simulation.success = simulation.warnings.length < 3; // Fail if too many warnings
+    
+  } catch (error) {
+    simulation.success = false;
+    simulation.warnings.push(`Simulation error: ${error.message}`);
+  }
+  
+  return simulation;
+}
+
+function getSupportedSignalFormats() {
+  return [
+    {
+      name: "Standard Format",
+      description: "BUY/SELL SYMBOL Entry: X.XXXX SL: X.XXXX TP1: X.XXXX",
+      example: "BUY EURUSD\nEntry: 1.1000\nSL: 1.0950\nTP1: 1.1050\nTP2: 1.1100",
+      confidence: "high"
+    },
+    {
+      name: "Compact Format",
+      description: "ACTION SYMBOL E:X.X SL:X.X TP:X.X",
+      example: "BUY GBPUSD E:1.2500 SL:1.2450 TP:1.2600",
+      confidence: "medium"
+    },
+    {
+      name: "Verbose Format",
+      description: "Full text with signal details",
+      example: "Signal: BUY EURUSD at 1.1000, stop loss 1.0950, take profit 1.1050",
+      confidence: "medium"
+    },
+    {
+      name: "Multi-TP Format",
+      description: "Signal with multiple take profit levels",
+      example: "SELL USDJPY\nEntry: 110.50\nSL: 111.00\nTP1: 110.00\nTP2: 109.50\nTP3: 109.00",
+      confidence: "high"
+    }
+  ];
 }
