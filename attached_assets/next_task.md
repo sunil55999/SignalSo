@@ -3,29 +3,29 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement the `margin_level_checker.py` module from **Phase 8: Risk & Filter Logic**.
+Implement the `trigger_pending_order.py` module from **Phase 6: Advanced Order Management**.
 
 🔧 File to Create:
-`/desktop-app/margin_level_checker.py`
+`/desktop-app/trigger_pending_order.py`
 
 🧩 Description:
-Develop a margin level monitoring system that prevents new trades when account margin falls below safe thresholds.
+Develop a pending order execution system that monitors market conditions and triggers pending orders when prices reach specified levels.
 
 Key Features:
 
-* Monitor MT5 account margin level in real-time
-* Configurable margin level thresholds (warning and blocking levels)
-* Block new trades when margin drops below minimum safe level
-* Send alerts when margin approaches danger zones
-* Integration with strategy runtime for pre-trade validation
-* Historical margin tracking for analysis
+* Monitor pending LIMIT and STOP orders for execution triggers
+* Real-time price monitoring with configurable slippage tolerance
+* Support for partial fills and order modification
+* Integration with retry engine for failed executions
+* Order expiration handling and cleanup
+* Position size validation before execution
 
 🧪 Required Tests:
-`/desktop-app/tests/test_margin_level_checker.py`
+`/desktop-app/tests/test_trigger_pending_order.py`
 
-* Test margin level calculations and thresholds
-* Test trade blocking at different margin levels
-* Simulate low margin scenarios
+* Test pending order trigger conditions
+* Test slippage tolerance and partial fills
+* Test order expiration and cleanup scenarios
 
 📂 Tracking Instructions:
 
@@ -35,6 +35,6 @@ Key Features:
 
 ❗ Rules:
 
-* Use mock MT5 account data for testing
-* All logs must go to `/logs/risk_management.log`
-* Prioritize account safety over trade execution
+* Only log open trades (don’t track closed ones unless recovery is needed)
+* Use signal UUID or hash as index key
+* No external dependencies — JSON storage only

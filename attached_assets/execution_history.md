@@ -27,7 +27,8 @@
 * rr\_converter.py – Risk\:Reward handling
 * edit\_trade\_on\_signal\_change.py – Dynamic update on signal edit
 * trigger\_pending\_order.py – Executes pending entries
-* smart\_entry\_mode.py – Optimal entry execution
+* ticket\_tracker.py – Signal-to-ticket mapping and trade lifecycle management
+* smart\_entry\_mode.py – Intelligent entry execution with price optimization
 
 ### \[2025-06-23] Risk & Control Systems
 

@@ -8,21 +8,45 @@
       "lot_size": 0.1,
       "stop_loss": 1.095,
       "take_profit": 1.105,
-      "open_time": "2025-06-23T15:06:25.859221",
+      "open_time": "2025-06-23T18:46:00.731298",
       "signal_source": {
-        "provider_id": "goldsignals",
-        "provider_name": "Gold Signals",
-        "channel_name": "@GoldSignals",
-        "message_id": 12345,
-        "signal_hash": "1df779b6e9e95b7a546432b10d9b1446"
+        "provider_id": "test_provider",
+        "provider_name": "Test Provider",
+        "channel_name": null,
+        "message_id": null,
+        "signal_hash": "642aca31f0c17990f5d719adf6940d8b"
       },
       "status": "closed",
-      "close_time": "2025-06-23T15:06:25.860091",
+      "close_time": "2025-06-23T18:46:00.734554",
       "close_price": 1.1025,
       "profit": 25.0,
       "commission": null,
       "swap": null,
-      "comment": "Auto trade from signal"
+      "comment": null
+    },
+    {
+      "ticket": 987654,
+      "symbol": "GBPUSD",
+      "direction": "sell",
+      "entry_price": 1.25,
+      "lot_size": 0.2,
+      "stop_loss": 1.252,
+      "take_profit": 1.245,
+      "open_time": "2025-06-23T18:47:26.327183",
+      "signal_source": {
+        "provider_id": "verification_provider",
+        "provider_name": "Verification Provider",
+        "channel_name": null,
+        "message_id": null,
+        "signal_hash": "2fc0434df17f1d016ca19455eabc4d21"
+      },
+      "status": "closed",
+      "close_time": "2025-06-23T18:47:26.332269",
+      "close_price": 1.246,
+      "profit": 8.0,
+      "commission": null,
+      "swap": null,
+      "comment": null
     }
   ],
   "ticket_updates": [
@@ -33,6 +57,30 @@
       "new_value": "closed",
       "update_time": "2025-06-23T15:06:25.860095",
       "reason": "Status update"
+    },
+    {
+      "ticket": 123456,
+      "update_type": "status_change",
+      "old_value": "open",
+      "new_value": "closed",
+      "update_time": "2025-06-23T18:46:00.734560",
+      "reason": "TP hit"
+    },
+    {
+      "ticket": 987654,
+      "update_type": "stop_loss",
+      "old_value": 1.255,
+      "new_value": 1.252,
+      "update_time": "2025-06-23T18:47:26.330430",
+      "reason": "Move SL closer"
+    },
+    {
+      "ticket": 987654,
+      "update_type": "status_change",
+      "old_value": "modified",
+      "new_value": "closed",
+      "update_time": "2025-06-23T18:47:26.332273",
+      "reason": "Manual close"
     }
   ]
 }

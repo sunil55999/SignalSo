@@ -9,8 +9,8 @@
 * ✅ retry\_engine.py
 * ✅ edit\_trade\_on\_signal\_change.py
 * ✅ strategy\_runtime.py
-* 🚧 ticket\_tracker.py
-* 🚧 smart\_entry\_mode.py
+* ✅ ticket\_tracker.py
+* ✅ smart\_entry\_mode.py
 * 🚧 trigger\_pending\_order.py
 
 ## 💰 Phase 7: TP & SL Enhancements

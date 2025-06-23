@@ -358,7 +358,12 @@ class TicketTracker:
             
             # Send notification if enabled
             if self.config.get('enable_telegram_notifications', True) and self.copilot_bot:
-                asyncio.create_task(self._send_trade_notification(trade_ticket, 'opened'))
+                try:
+                    # Try to create task if event loop is running
+                    asyncio.create_task(self._send_trade_notification(trade_ticket, 'opened'))
+                except RuntimeError:
+                    # No event loop running, skip notification
+                    self.logger.debug("No event loop running, skipping telegram notification")
             
             return True
             
