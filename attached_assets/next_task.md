@@ -2,36 +2,38 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `equity_limits.ts` from Phase 3 – Risk Controls.
+Implement `drawdown_handler.ts` from Phase 3 – Risk Controls.
 
 🔧 File to Create:
-/signalos/server/routes/equity_limits.ts
+/signalos/server/routes/drawdown_handler.ts
 
 🧩 Description:
-Create a server-side route and logic to enforce equity-based risk rules.
+Build a backend module to enforce drawdown limits per account, per provider, and per group of trades.
 
 Requirements:
-- Define max % gain or loss allowed per day
-- On trigger: automatically send shutdown command to all terminals
-- Store per-user equity thresholds in DB (linked to account)
-- Endpoint: `POST /equity-limit/check`
-- Auto-reset next day or via admin override
-- Log trip reason: user, equity %, triggered action
+- Monitor live drawdown as % of current balance
+- If threshold is hit:
+  - ✅ Close all open trades for user
+  - ✅ Optionally, close only trades from a flagged provider
+  - ✅ Optionally, close trades by pair or session tag
+- Admins can configure drawdown rules per user or provider
+- Log trigger reason, trade list closed, % drawdown
+- Auto-disable trade reception for flagged providers until reset
 
 🔁 System Impact:
-- Tied to real-time profit/loss monitoring
-- Enforced on server-side, not user-configurable from frontend
-- Dashboard will later query status (active/inactive)
-- Will dispatch notification to Telegram bot when triggered
+- Integrates with MT5 command executor and user database
+- Depends on real-time P&L tracking from MT5 bridge
+- Affects user strategy engine (can trigger shutdowns)
+- Linked to Telegram bot notification system
 
 🧪 Add Tests:
-/signalos/server/tests/test_equity_limits.ts
+/signalos/server/tests/test_drawdown_handler.ts
 
-Test Coverage:
-- Threshold crossed → block new trades
-- Threshold not reached → allow
-- Manual reset by admin API
-- Logging of reason and user context
+Test Scenarios:
+- Trigger global drawdown → all trades closed
+- Trigger provider drawdown only
+- Ignore threshold when trades already closed
+- Admin reset / restart of trading after trigger
 
 📂 Tracking:
 Once complete:
@@ -40,6 +42,6 @@ Once complete:
 - 📘 Append changelog in `dev_changelog.md`
 
 ❗ Rules:
-- DO NOT write frontend for this in this task
-- DO NOT override user limits in DB directly
-- Do NOT proceed to drawdown module until this is ✅ complete
+- DO NOT hardcode thresholds — pull from DB
+- DO NOT mix this with equity_limits.ts logic
+- DO NOT send duplicate close commands to MT5
