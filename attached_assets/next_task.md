@@ -2,36 +2,36 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `time_window` block from Phase 4 – Strategy Builder Blocks.
+Implement `margin_filter` block from Phase 4 – Strategy Builder Blocks.
 
 🔧 File to Create:
-/signalos/client/src/components/strategy-blocks/TimeWindowBlock.tsx
+/client/src/components/strategy-blocks/MarginFilterBlock.tsx
 
 🧩 Description:
-Build a strategy builder block that allows users to set time-based filters for signal execution.
+Build a strategy builder block that filters signals based on margin requirements and account balance.
 
 Requirements:
 - Visual block for drag-and-drop strategy builder
-- Configure trading time windows (e.g., 8:00-16:00 UTC)
-- Support multiple time zones and session overlaps
-- Weekend/holiday filtering options
+- Calculate required margin for signal lot size
+- Check available margin against minimum thresholds
+- Support different account leverage settings
 - Block connections: input (signal), output (filtered signal)
-- Real-time validation of current time against windows
+- Real-time margin calculation with account balance integration
 
 🔁 System Impact:
 - Integrates with existing strategy flow builder
+- Links to desktop-app account balance monitoring
 - Affects signal processing pipeline in strategy runtime
-- Links to desktop-app time validation logic
-- Updates strategy execution conditions
+- Updates strategy execution conditions based on margin availability
 
 🧪 Add Tests:
-/signalos/client/src/components/strategy-blocks/__tests__/TimeWindowBlock.test.tsx
+/client/src/components/strategy-blocks/__tests__/MarginFilterBlock.test.tsx
 
 Test Cases:
-- Time window validation during market hours
-- Timezone conversion accuracy
-- Weekend filtering behavior
-- Block connection and data flow
+- Margin calculation accuracy for different symbols
+- Account balance threshold validation
+- Leverage setting impact on margin requirements
+- Block connection and data flow validation
 
 📂 Tracking:
 Once complete:
@@ -40,6 +40,6 @@ Once complete:
 - 📘 Log the change in `dev_changelog.md`
 
 ❗ Rules:
-- DO NOT hardcode time zones - use proper timezone libraries
-- DO NOT bypass weekend checks in forex markets
-- DO NOT skip responsive design for mobile strategy building
+- DO NOT use hardcoded margin requirements - calculate dynamically per symbol
+- DO NOT bypass account balance checks
+- DO NOT ignore leverage settings in margin calculations

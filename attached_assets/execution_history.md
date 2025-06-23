@@ -51,6 +51,42 @@
 
 ---
 
+## ✅ Phase 3: Risk Controls (2025-06-23)
+
+### Signal Conflict Resolver
+- ✅ Conflict Detection Engine – `/desktop-app/signal_conflict_resolver.py`
+- ✅ Comprehensive Test Suite – `/desktop-app/tests/test_signal_conflict_resolver.py`
+- ✅ 4 conflict types: opposite direction, provider conflicts, time overlaps, duplicates
+- ✅ Configurable resolution strategies with provider priority weighting
+- ✅ Real-time signal tracking with MT5 bridge integration
+- ✅ Async/await pattern with comprehensive error handling
+
+---
+
+## ✅ Phase 4: Strategy Builder Blocks (2025-06-23)
+
+### Time Window Block
+- ✅ Time Window Filter Component – `/client/src/components/strategy-blocks/TimeWindowBlock.tsx`
+- ✅ Comprehensive Test Suite – `/client/src/components/strategy-blocks/__tests__/TimeWindowBlock.test.tsx`
+- ✅ Multiple time windows with timezone support (UTC, EST, GMT, JST, etc.)
+- ✅ Weekend and holiday exclusion filters
+- ✅ Real-time validation with live clock display
+- ✅ Overnight time window support (e.g., 22:00-06:00)
+- ✅ Day-of-week selection with visual toggles
+- ✅ Strategy builder integration with input/output connections
+
+### Risk-Reward Block
+- ✅ R:R Filter Component – `/client/src/components/strategy-blocks/RiskRewardBlock.tsx`
+- ✅ Comprehensive Test Suite – `/client/src/components/strategy-blocks/__tests__/RiskRewardBlock.test.tsx`
+- ✅ Multiple calculation methods: simple, weighted average, conservative
+- ✅ Support for up to 5 take profit levels with configurable weights
+- ✅ Dynamic pip value calculation for different symbol types
+- ✅ Real-time R:R validation with confidence scoring
+- ✅ Risk tolerance modes: strict, moderate, flexible
+- ✅ Visual breakdown of calculation components
+
+---
+
 ## ✅ Completed Modules (2025-06-23)
 
 ### R:R Converter Engine (NEW)

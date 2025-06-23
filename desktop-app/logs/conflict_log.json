@@ -1,0 +1,15 @@
+[
+  {
+    "conflict_type": "time_overlap",
+    "new_signal": {
+      "signal_id": "test_sell",
+      "provider_id": "provider_a",
+      "symbol": "EURUSD",
+      "direction": "sell",
+      "timestamp": "2025-06-23T16:27:53.270607"
+    },
+    "reason": " | Time overlap with 1 recent signals",
+    "timestamp": "2025-06-23T16:27:53.270967",
+    "resolution_action": null
+  }
+]

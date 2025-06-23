@@ -38,9 +38,9 @@
 
 ## PHASE 4: STRATEGY BUILDER BLOCKS
 - ✅ strategy_flow.tsx (basic)
-- 🚧 add time_window block
-- 🚧 add rr_condition block
-- ⛔ margin_filter block
+- ✅ time_window block
+- ✅ rr_condition block
+- 🚧 margin_filter block
 - ⛔ keyword_blacklist block
 
 ---
