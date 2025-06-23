@@ -114,6 +114,7 @@ SignalOS is a comprehensive trading automation platform that parses Telegram sig
 - June 23, 2025. Implemented Signal Conflict Resolver Engine with 4 conflict types and configurable resolution strategies
 - June 23, 2025. Implemented Time Window Block for Strategy Builder with timezone support and real-time validation
 - June 23, 2025. Implemented Risk-Reward Block for Strategy Builder with multiple calculation methods and TP level support
+- June 23, 2025. Implemented Spread Checker Module with real-time trade blocking based on bid/ask spread thresholds, symbol-specific limits, and comprehensive integration with trading systems
 
 ## User Preferences
 

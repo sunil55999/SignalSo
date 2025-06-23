@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass, asdict
 from enum import Enum
+from spread_checker import spread_checker, SpreadCheckResult
 
 class ConditionType(Enum):
     CONFIDENCE_THRESHOLD = "confidence_threshold"
@@ -174,6 +175,31 @@ class StrategyRuntime:
             context = SignalContext(signal_data=signal_data)
         
         self.logger.info(f"Evaluating signal {signal_data.get('id')} against strategy {self.current_strategy.name}")
+        
+        # Check spread before proceeding with strategy evaluation
+        symbol = signal_data.get('symbol', '')
+        if symbol:
+            spread_check_result, spread_info = spread_checker.check_spread_before_trade(symbol, signal_data)
+            if spread_check_result == SpreadCheckResult.BLOCKED_HIGH_SPREAD:
+                self.logger.warning(f"Signal blocked due to high spread: {symbol}")
+                return {
+                    "action": ActionType.SKIP_TRADE.value,
+                    "signal": signal_data,
+                    "parameters": {"reason": "high_spread", "spread_info": spread_info.to_dict() if spread_info else None},
+                    "applied_rules": [{"rule_id": "spread_filter", "rule_name": "Spread Filter", "action_type": "skip_trade"}],
+                    "strategy_id": self.current_strategy.id,
+                    "evaluation_timestamp": datetime.now().isoformat()
+                }
+            elif spread_check_result in [SpreadCheckResult.BLOCKED_NO_QUOTES, SpreadCheckResult.BLOCKED_STALE_QUOTES]:
+                self.logger.warning(f"Signal blocked due to quote issues: {symbol}")
+                return {
+                    "action": ActionType.SKIP_TRADE.value,
+                    "signal": signal_data,
+                    "parameters": {"reason": "quote_issues", "spread_info": spread_info.to_dict() if spread_info else None},
+                    "applied_rules": [{"rule_id": "spread_filter", "rule_name": "Spread Filter", "action_type": "skip_trade"}],
+                    "strategy_id": self.current_strategy.id,
+                    "evaluation_timestamp": datetime.now().isoformat()
+                }
         
         modified_signal = signal_data.copy()
         final_action = ActionType.EXECUTE_NORMAL

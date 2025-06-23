@@ -1,184 +1,78 @@
 # 📜 SignalOS Execution History Log
 
-> This file records all major module, feature, and bugfix implementations completed by Replit Agent. Use this to avoid duplicate efforts and identify historical changes.
+> This file records all completed modules and implementations. Add entries after each module is finalized.
 
 ---
 
-## ✅ Completed Modules (2025-06-22)
+## ✅ Entries
 
-### Core System
-- ✅ Retry Engine – `/desktop-app/retry_engine.py`
-- ✅ Copilot Bot – `/desktop-app/copilot_bot.py`
-- ✅ Auto Sync Engine – `/desktop-app/auto_sync.py`
-- ✅ Strategy Runtime Logic – `/desktop-app/strategy_runtime.py`
-- ✅ Partial Close Engine – `/desktop-app/partial_close.py`
-- ✅ Trailing Stop Engine – `/desktop-app/trailing_stop.py`
-- ✅ Break Even Engine – `/desktop-app/break_even.py`
-- ✅ Entry Range Engine – `/desktop-app/entry_range.py`
-- ✅ TP Manager Engine – `/desktop-app/tp_manager.py`
-- ✅ SL Manager Engine – `/desktop-app/sl_manager.py`
-- ✅ Firebridge Sync API – `/server/routes/firebridge.ts`
-- ✅ WebSocket Handler – `/server/ws/server.ts`
+### \[2025-06-22] Core Signal Systems
 
-### Parser & Execution
-- ✅ Signal Parser (basic) – `/desktop-app/parser.py`
-- ✅ Signal Replay System – `/server/routes/replay.ts`
-- ✅ SL/TP + entry command parser – `/desktop-app/parser_modules/core_rules.py`
+* retry\_engine.py – Smart retry logic engine
+* strategy\_runtime.py – Strategy logic runtime
+* copilot\_bot.py – Telegram Bot integration
+* auto\_sync.py – Cloud sync engine
 
-### Client UI
-- ✅ Strategy Builder UI – `/client/src/components/StrategyFlow.tsx`
-- ✅ Admin Panel – `/client/src/pages/Admin.tsx`
-- ✅ Signal Table with replay – `/client/src/pages/Dashboard.tsx`
+### \[2025-06-22] Parsing & Simulation
 
-### Testing
-- ✅ Test suite: retry logic – `/desktop-app/tests/test_retry.py`
-- ✅ Test suite: parser flow – `/desktop-app/tests/test_parser.py`
-- ✅ Test suite: partial close logic – `/desktop-app/tests/test_partial_close.py`
-- ✅ Test suite: trailing stop logic – `/desktop-app/tests/test_trailing_stop.py`
-- ✅ Test suite: break even logic – `/desktop-app/tests/test_break_even.py`
-- ✅ Test suite: entry range logic – `/desktop-app/tests/test_entry_range.py`
-- ✅ Test suite: TP manager logic – `/desktop-app/tests/test_tp_manager.py`
-- ✅ Test suite: SL manager logic – `/desktop-app/tests/test_sl_manager.py`
-- ✅ WebSocket + MT5 response mock – `/client/__tests__/mock_socket.test.ts`
+* parser.py – Multilingual signal parser
+* core\_rules.py – Core TP/SL/Entry rules
+* signal\_replay.py – Replay missed signals
+* signal\_conflict\_resolver.py – Signal conflict logic
 
----
+### \[2025-06-23] MT5 Trade Modules
 
-## 🔧 Deployment Readiness
-- ✅ PM2 runner configured – `/deployment/pm2.config.js`
-- ✅ `.env.template` scaffolded and verified
-- ✅ Dockerfile created – `/deployment/Dockerfile`
-- ✅ Live logs enabled under `/logs/`
+* tp\_manager.py – TP levels + override
+* sl\_manager.py – SL logic manager
+* rr\_converter.py – Risk\:Reward handling
+* edit\_trade\_on\_signal\_change.py – Dynamic update on signal edit
+* trigger\_pending\_order.py – Executes pending entries
+* smart\_entry\_mode.py – Optimal entry execution
 
----
+### \[2025-06-23] Risk & Control Systems
 
-## ✅ Phase 3: Risk Controls (2025-06-23)
+* equity\_limits.ts – Global profit/loss limits
+* drawdown\_handler.ts – Account DD control
+* margin\_level\_checker.py – Margin% threshold gate
+* news\_filter.py – Blocks signals during red news
+* signal\_limit\_enforcer.py – Max signals per pair/channel
+* spread\_checker.py – Skip trades with high spread
 
-### Signal Conflict Resolver
-- ✅ Conflict Detection Engine – `/desktop-app/signal_conflict_resolver.py`
-- ✅ Comprehensive Test Suite – `/desktop-app/tests/test_signal_conflict_resolver.py`
-- ✅ 4 conflict types: opposite direction, provider conflicts, time overlaps, duplicates
-- ✅ Configurable resolution strategies with provider priority weighting
-- ✅ Real-time signal tracking with MT5 bridge integration
-- ✅ Async/await pattern with comprehensive error handling
+### \[2025-06-23] SL/TP Enhancements
 
----
+* tp\_sl\_adjustor.py – Spread/pip buffer to SL/TP
+* multi\_tp\_manager.py – Up to 100 TP levels
 
-## ✅ Phase 4: Strategy Builder Blocks (2025-06-23)
+### \[2025-06-23] Stealth / Prop Firm
 
-### Time Window Block
-- ✅ Time Window Filter Component – `/client/src/components/strategy-blocks/TimeWindowBlock.tsx`
-- ✅ Comprehensive Test Suite – `/client/src/components/strategy-blocks/__tests__/TimeWindowBlock.test.tsx`
-- ✅ Multiple time windows with timezone support (UTC, EST, GMT, JST, etc.)
-- ✅ Weekend and holiday exclusion filters
-- ✅ Real-time validation with live clock display
-- ✅ Overnight time window support (e.g., 22:00-06:00)
-- ✅ Day-of-week selection with visual toggles
-- ✅ Strategy builder integration with input/output connections
+* randomized\_lot\_inserter.py – Lot variation system
+* end\_of\_week\_sl\_remover.py – Remove SL on Fridays
+* magic\_number\_hider.py – Random magic number
+* comment\_cleaner.py – Hide comment in MT5
 
-### Risk-Reward Block
-- ✅ R:R Filter Component – `/client/src/components/strategy-blocks/RiskRewardBlock.tsx`
-- ✅ Comprehensive Test Suite – `/client/src/components/strategy-blocks/__tests__/RiskRewardBlock.test.tsx`
-- ✅ Multiple calculation methods: simple, weighted average, conservative
-- ✅ Support for up to 5 take profit levels with configurable weights
-- ✅ Dynamic pip value calculation for different symbol types
-- ✅ Real-time R:R validation with confidence scoring
-- ✅ Risk tolerance modes: strict, moderate, flexible
-- ✅ Visual breakdown of calculation components
+### \[2025-06-23] Strategy Builder
 
-### Margin Filter Block
-- ✅ Margin Filter Component – `/client/src/components/strategy-blocks/MarginFilterBlock.tsx`
-- ✅ Comprehensive Test Suite – `/client/src/components/strategy-blocks/__tests__/MarginFilterBlock.test.tsx`
-- ✅ Backend API Integration – `/server/routes.ts` margin status endpoint
-- ✅ Desktop Runtime Tests – `/desktop-app/tests/test_margin_check.py`
-- ✅ Percentage and absolute margin filtering modes
-- ✅ Emergency threshold protection with override blocking
-- ✅ Signal type override functionality for high-confidence signals
-- ✅ Real-time margin monitoring with configurable intervals
-- ✅ MT5 connection status integration
-- ✅ Visual status indicators and comprehensive error handling
+* time\_window block
+* rr\_condition block
+* keyword\_blacklist block
+* margin\_filter block
+* reverse\_strategy.py
+* grid\_strategy.py
+* multi\_signal\_handler.py
+* strategy\_condition\_router.py
 
-### Keyword Blacklist Block
-- ✅ Keyword Blacklist Component – `/client/src/components/strategy-blocks/KeywordBlacklistBlock.tsx`
-- ✅ Comprehensive Test Suite – `/client/src/components/strategy-blocks/__tests__/KeywordBlacklistBlock.test.tsx`
-- ✅ Backend Runtime Tests – `/desktop-app/tests/test_keyword_blacklist.py`
-- ✅ Custom and system keyword management with bulk add functionality
-- ✅ Case sensitivity and whole-word matching options
-- ✅ Multiple match modes: any keyword or all keywords required
-- ✅ Real-time signal testing with confidence scoring
-- ✅ Advanced filtering with logging and notification capabilities
-- ✅ Integration with Copilot Bot for blocked signal alerts
-- ✅ Suggested keyword quick-add and visual keyword management
+### \[2025-06-23] Copilot Commands
 
----
+* telegram\_session\_manager.py – Manage Telegram sessions
+* telegram\_error\_reporter.py – Report signal/parser errors
+* copilot\_command\_interpreter.py – NLP signal control
+* copilot\_alert\_manager.py – Drawdown, MT5 alert pusher
 
-## ✅ Phase 5: Prop Firm Stealth Systems (2025-06-23)
+### \[2025-06-23] Analytics
 
-### Randomized Lot Inserter
-- ✅ Lot Randomization Engine – `/desktop-app/randomized_lot_inserter.py`
-- ✅ Comprehensive Test Suite – `/desktop-app/tests/test_randomized_lot_inserter.py`
-- ✅ Deterministic seeded randomization for testability and reproducibility
-- ✅ Configurable variance ranges with bounds validation and rounding
-- ✅ Repeat avoidance system to prevent identical lot sizes
-- ✅ Per-symbol tracking with separate randomization histories
-- ✅ Integration with strategy runtime and MT5 bridge systems
-- ✅ Configuration persistence and real-time parameter updates
-- ✅ Statistics tracking with detailed logging and Copilot Bot notifications
-- ✅ Edge case handling for invalid lot sizes and boundary conditions
+* signal\_success\_tracker.ts
+* pair\_mapper.ts
+* AnalyticsProviderTable.vue
+* ProviderCompare.vue
 
-### End of Week SL Remover
-- ✅ EOW SL Remover Engine – `/desktop-app/end_of_week_sl_remover.py`
-- ✅ Comprehensive Test Suite – `/desktop-app/tests/test_end_of_week_sl_remover.py`
-- ✅ Friday close window detection with UTC time-based activation
-- ✅ Multiple operation modes: remove, widen, or ignore stop losses
-- ✅ Symbol categorization and market type filtering (forex, crypto, indices, commodities)
-- ✅ Configurable pip distance for SL widening with proper pip value calculations
-- ✅ Excluded pairs and market types configuration for fine-tuned control
-- ✅ Integration with MT5 bridge for trade modification operations
-- ✅ History tracking with persistent logging and statistics generation
-- ✅ Copilot Bot notifications for transparency and monitoring
-
----
-
-## ✅ Completed Modules (2025-06-23)
-
-### R:R Converter Engine (NEW)
-- ✅ R:R Converter Engine – `/desktop-app/rr_converter.py`
-- ✅ Test suite: R:R converter logic – `/desktop-app/tests/test_rr_converter.py`
-
-### Edit Trade on Signal Change Engine (NEW)
-- ✅ Edit Trade Engine – `/desktop-app/edit_trade_on_signal_change.py`
-- ✅ Test suite: Signal edit detection and trade modification – `/desktop-app/tests/test_edit_trade_on_signal_change.py`
-
-### Ticket Tracker Engine (NEW)
-- ✅ Ticket Tracker Engine – `/desktop-app/ticket_tracker.py`
-- ✅ Test suite: Trade ticket tracking and provider mapping – `/desktop-app/tests/test_ticket_tracker.py`
-
-### Equity Limits Risk Control Engine (NEW)
-- ✅ Equity Limits Server Routes – `/server/routes/equity_limits.ts`
-- ✅ Database schema extensions – equity_limits and equity_events tables
-- ✅ Test suite: Risk control API endpoints – `/server/tests/test_equity_limits.ts`
-
-### Drawdown Handler Risk Control Engine (NEW)
-- ✅ Drawdown Handler Server Routes – `/signalos/server/routes/drawdown_handler.ts`
-- ✅ Database schema extensions – drawdown_limits and drawdown_events tables
-- ✅ Real-time monitoring system with configurable thresholds
-- ✅ Provider and symbol-specific drawdown controls
-- ✅ Automatic trade closure and provider disabling
-- ✅ Admin reset functionality for recovery
-- ✅ Test suite: Drawdown detection and risk management – `/signalos/server/tests/test_drawdown_handler.ts`
-- ✅ Integration with main server routes and authentication
-
-### Signal Conflict Resolver Engine (NEW)
-- ✅ Signal Conflict Resolver – `/signalos/desktop-app/signal_conflict_resolver.py`
-- ✅ Comprehensive conflict detection for opposite directions, provider conflicts, time overlaps, and duplicates
-- ✅ Configurable resolution strategies: close existing, reject new, warn only, allow both (hedge mode)
-- ✅ Provider priority-based resolution with confidence scoring
-- ✅ Symbol-specific and provider-specific configuration support
-- ✅ Real-time conflict monitoring with automatic cleanup of old signals
-- ✅ Integration hooks for MT5 bridge, parser, and Telegram copilot bot
-- ✅ Test suite: Complete conflict scenarios and resolution workflows – `/signalos/desktop-app/tests/test_signal_conflict_resolver.py`
-- ✅ Statistics tracking and configuration management
-
-## 📅 Next Update Expected:
-Please refer to `next_task.md` for what must be done in the current Replit Agent session.
-
+✅ Logs end here. Update this file after every feature completion.

@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, asdict
 from enum import Enum
+from spread_checker import spread_checker, SpreadCheckResult
 
 class RetryReason(Enum):
     MT5_DISCONNECTED = "mt5_disconnected"
@@ -242,12 +243,22 @@ class RetryEngine:
         
         return None
     
-    def check_market_conditions(self, symbol: str, current_price: float, spread_pips: float) -> Optional[RetryReason]:
+    def check_market_conditions(self, symbol: str, current_price: float, spread_pips: float = None) -> Optional[RetryReason]:
         """Check if current market conditions allow trading"""
-        max_spread = self.config["conditions"]["max_spread_pips"]
-        
-        if spread_pips > max_spread:
-            return RetryReason.WIDE_SPREAD
+        # Use integrated spread checker for more sophisticated spread checking
+        if spread_checker.config.get('enabled', True):
+            spread_check_result, spread_info = spread_checker.check_spread_before_trade(symbol)
+            
+            if spread_check_result in [SpreadCheckResult.BLOCKED_HIGH_SPREAD, 
+                                     SpreadCheckResult.BLOCKED_NO_QUOTES, 
+                                     SpreadCheckResult.BLOCKED_STALE_QUOTES]:
+                return RetryReason.WIDE_SPREAD
+        else:
+            # Fallback to original logic if spread checker is disabled
+            if spread_pips is not None:
+                max_spread = self.config["conditions"]["max_spread_pips"]
+                if spread_pips > max_spread:
+                    return RetryReason.WIDE_SPREAD
         
         return None
     

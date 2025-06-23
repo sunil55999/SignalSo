@@ -1,49 +1,40 @@
-📌 NEXT TASK – Replit Agent Build Guide (Auto Updated)
+# 📌 NEXT TASK – Replit Agent Build Guide (Auto Updated per Phase)
+
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `end_of_week_sl_remover.py` from Phase 5 – Prop Firm Stealth Features.
+Implement the `margin_level_checker.py` module from **Phase 8: Risk & Filter Logic**.
 
 🔧 File to Create:
-/signalos/desktop-app/end_of_week_sl_remover.py
+`/desktop-app/margin_level_checker.py`
 
 🧩 Description:
-This module will remove or adjust stop-losses before the market closes on Fridays, to prevent SL spikes or broker flagging.
+Develop a margin level monitoring system that prevents new trades when account margin falls below safe thresholds.
 
 Key Features:
-- Check if current time is near market close (Friday 15:30–16:59 UTC)
-- Option to:
-  - Remove SL completely
-  - Move SL far enough to avoid accidental hit
-  - Skip affected trades (configurable)
-- Configurable in strategy settings:
-  - Mode: `remove`, `widen`, or `ignore`
-  - Pairs to exclude (e.g., crypto)
-  - Prop firm mode on/off
-- Log all actions with timestamp and reason
 
-🔁 System Integration:
-- Hook into strategy runtime OR post-trade validator
-- Works with MT5 bridge to update trade SL before close
-- Compatible with stealth SL masking logic
-- Can notify Copilot Bot of changes (optional)
+* Monitor MT5 account margin level in real-time
+* Configurable margin level thresholds (warning and blocking levels)
+* Block new trades when margin drops below minimum safe level
+* Send alerts when margin approaches danger zones
+* Integration with strategy runtime for pre-trade validation
+* Historical margin tracking for analysis
 
-🧪 Add Tests:
-/signalos/desktop-app/tests/test_end_of_week_sl_remover.py
+🧪 Required Tests:
+`/desktop-app/tests/test_margin_level_checker.py`
 
-Test Cases:
-- SL removed before Friday close
-- SL widened (moved 300 pips away)
-- Time-based activation (only triggers on Friday UTC)
-- Edge: trade with no SL – skip or log
+* Test margin level calculations and thresholds
+* Test trade blocking at different margin levels
+* Simulate low margin scenarios
 
-📂 Tracking:
-Once complete:
-- ✅ Update `feature_status.md`
-- 🧾 Append to `execution_history.md`
-- 📘 Log in `dev_changelog.md`
+📂 Tracking Instructions:
+
+* ✅ Update `/attached_assets/feature_status.md`
+* 📘 Append log in `/attached_assets/dev_changelog.md`
+* 🧾 Register task in `/attached_assets/execution_history.md`
 
 ❗ Rules:
-- DO NOT apply outside Friday close window
-- DO NOT modify SL if strategy config disables it
-- DO NOT leak SL adjustment in MT5 comment/log
+
+* Use mock MT5 account data for testing
+* All logs must go to `/logs/risk_management.log`
+* Prioritize account safety over trade execution
