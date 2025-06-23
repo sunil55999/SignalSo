@@ -61,6 +61,10 @@
 - ✅ Edit Trade Engine – `/desktop-app/edit_trade_on_signal_change.py`
 - ✅ Test suite: Signal edit detection and trade modification – `/desktop-app/tests/test_edit_trade_on_signal_change.py`
 
+### Ticket Tracker Engine (NEW)
+- ✅ Ticket Tracker Engine – `/desktop-app/ticket_tracker.py`
+- ✅ Test suite: Trade ticket tracking and provider mapping – `/desktop-app/tests/test_ticket_tracker.py`
+
 ## 📅 Next Update Expected:
 Please refer to `next_task.md` for what must be done in the current Replit Agent session.
 

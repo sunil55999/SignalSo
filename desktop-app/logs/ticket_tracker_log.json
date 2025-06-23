@@ -1,0 +1,38 @@
+{
+  "tracked_tickets": [
+    {
+      "ticket": 123456,
+      "symbol": "EURUSD",
+      "direction": "buy",
+      "entry_price": 1.1,
+      "lot_size": 0.1,
+      "stop_loss": 1.095,
+      "take_profit": 1.105,
+      "open_time": "2025-06-23T15:06:25.859221",
+      "signal_source": {
+        "provider_id": "goldsignals",
+        "provider_name": "Gold Signals",
+        "channel_name": "@GoldSignals",
+        "message_id": 12345,
+        "signal_hash": "1df779b6e9e95b7a546432b10d9b1446"
+      },
+      "status": "closed",
+      "close_time": "2025-06-23T15:06:25.860091",
+      "close_price": 1.1025,
+      "profit": 25.0,
+      "commission": null,
+      "swap": null,
+      "comment": "Auto trade from signal"
+    }
+  ],
+  "ticket_updates": [
+    {
+      "ticket": 123456,
+      "update_type": "status_change",
+      "old_value": "open",
+      "new_value": "closed",
+      "update_time": "2025-06-23T15:06:25.860095",
+      "reason": "Status update"
+    }
+  ]
+}

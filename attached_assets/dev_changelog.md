@@ -43,6 +43,15 @@
 - 🔧 Integration: Parser callbacks, MT5 bridge, configurable edit windows
 - 🕒 Timestamp: 2025-06-23 14:58
 
+## [2025-06-23] Ticket Tracker Engine
+- 📂 `/desktop-app/ticket_tracker.py`
+- 🧠 Tracks MT5 trade tickets and links them to originating signals/providers
+- 🧪 `/desktop-app/tests/test_ticket_tracker.py` - Comprehensive test coverage
+- ⚙️ Features: Signal hash mapping, provider statistics, ticket lifecycle tracking
+- 🔧 Integration: Copilot bot responses, MT5 bridge, signal parsing
+- 📊 Capabilities: Trade-signal correlation, provider performance analysis
+- 🕒 Timestamp: 2025-06-23 15:07
+
 ## [2025-06-22] Signal Replay API
 - 📂 `/server/routes/replay.ts`
 - 🧠 Replays old signals to MT5

@@ -2,41 +2,42 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `edit_trade_on_signal_change.py` from Phase 2 – Advanced Order Management.
+Implement `ticket_tracker.py` from Phase 2 – Advanced Order Management.
 
 🔧 File to Create:
-/signalos/desktop-app/edit_trade_on_signal_change.py
+/signalos/desktop-app/ticket_tracker.py
 
 🧩 Description:
-Build logic that detects when a Telegram signal message is edited and automatically adjusts the open order accordingly.
+Develop a system to track MT5 trade tickets and link them to their originating signal messages or providers.
 
-Requirements:
-- Detect message edits from the parser system
-- Compare entry/SL/TP values to existing trade
-- Modify MT5 order if needed (without reopening)
-- Log changes to the order: what changed and why
+Required Capabilities:
+- Store ticket number, signal hash, and provider ID
+- Map each open order to its originating message
+- Match trade update commands (e.g., CLOSE, MODIFY) to correct MT5 ticket
+- Integrate with the runtime and Copilot Bot
+- Enable Telegram bot to respond with “Trade #123456 = GBPUSD from @GoldSignals”
 
 🔁 System Impact:
-- Updates runtime strategy logic
-- Connects to parser edit event listener
-- Updates open trade via MT5 bridge
-- Logs all trade modifications for auditing
+- Adds trade-ticket mapping to trade log layer
+- Updates runtime context with ticket tracking logic
+- Required by partial close and edit systems
 
 🧪 Add Tests:
-/signalos/desktop-app/tests/test_edit_trade_on_signal_change.py
-Test Cases:
-- Trade updated due to TP change
-- SL changed after signal edit
-- No change detected → no action taken
-- Edge case: signal changed after trade closed
+/signalos/desktop-app/tests/test_ticket_tracker.py
+
+Test Coverage:
+- Ticket saved on trade open
+- Ticket correctly linked to signal
+- Ticket lookup from command context
+- Edge: same provider, two signals with similar SL/TP
 
 📂 Tracking:
 Once complete:
-- Update feature_status.md
-- Log in execution_history.md
-- Add changelog entry to dev_changelog.md
+- ✅ Update `feature_status.md`
+- 🧾 Append to `execution_history.md`
+- 📘 Log to `dev_changelog.md`
 
 ❗ Rules:
-DO NOT continue to next module until this is ✅ done.
-DO NOT reimplement existing files.
-DO NOT create files outside allowed folders.
+- Do NOT skip ahead
+- Do NOT duplicate existing logic
+- Work only inside `/desktop-app/` and `/shared/` if needed
