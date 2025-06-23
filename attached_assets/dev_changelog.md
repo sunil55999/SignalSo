@@ -36,6 +36,13 @@
 - 🧠 Complete margin filter block for Strategy Builder with percentage/absolute filtering, emergency thresholds, signal overrides, and real-time MT5 integration
 - 🕒 Timestamp: 2025-06-23 16:59
 
+## [2025-06-23] Keyword Blacklist Block Implementation
+- 📂 `/client/src/components/strategy-blocks/KeywordBlacklistBlock.tsx`
+- 📂 `/client/src/components/strategy-blocks/__tests__/KeywordBlacklistBlock.test.tsx`
+- 📂 `/desktop-app/tests/test_keyword_blacklist.py`
+- 🧠 Complete keyword blacklist block with custom/system keywords, case sensitivity, whole-word matching, bulk add, and Copilot Bot integration for signal filtering
+- 🕒 Timestamp: 2025-06-23 17:04
+
 ## [2025-06-23] R:R Converter Engine
 - 📂 `/desktop-app/rr_converter.py`
 - 🧠 Risk-reward ratio calculations and optimal positioning

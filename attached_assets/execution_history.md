@@ -97,6 +97,18 @@
 - ✅ MT5 connection status integration
 - ✅ Visual status indicators and comprehensive error handling
 
+### Keyword Blacklist Block
+- ✅ Keyword Blacklist Component – `/client/src/components/strategy-blocks/KeywordBlacklistBlock.tsx`
+- ✅ Comprehensive Test Suite – `/client/src/components/strategy-blocks/__tests__/KeywordBlacklistBlock.test.tsx`
+- ✅ Backend Runtime Tests – `/desktop-app/tests/test_keyword_blacklist.py`
+- ✅ Custom and system keyword management with bulk add functionality
+- ✅ Case sensitivity and whole-word matching options
+- ✅ Multiple match modes: any keyword or all keywords required
+- ✅ Real-time signal testing with confidence scoring
+- ✅ Advanced filtering with logging and notification capabilities
+- ✅ Integration with Copilot Bot for blocked signal alerts
+- ✅ Suggested keyword quick-add and visual keyword management
+
 ---
 
 ## ✅ Completed Modules (2025-06-23)

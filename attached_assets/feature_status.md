@@ -41,7 +41,7 @@
 - ✅ time_window block
 - ✅ rr_condition block
 - ✅ margin_filter block
-- ⛔ keyword_blacklist block
+- ✅ keyword_blacklist block
 
 ---
 

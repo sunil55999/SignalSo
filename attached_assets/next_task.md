@@ -2,36 +2,36 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement the `margin_filter block` for the Strategy Builder in Phase 4.
+Implement the next Phase 5 module: `randomized_lot_inserter.py` for the Prop Firm Stealth system.
 
-🔧 File to Modify:
-/client/src/components/StrategyBlocks/MarginFilterBlock.tsx  
-(You may create this if it doesn’t exist yet)
+🔧 File to Create:
+/desktop-app/randomized_lot_inserter.py
 
 🧩 Description:
-Create a visual block that filters signals based on current free margin % or absolute margin value.
+This module should randomly insert small dummy trades with varying lot sizes to obfuscate trading patterns from prop firm detection algorithms.
 
 Capabilities:
-- Allow user to set margin % threshold (e.g. “Only trade if margin > 25%”)
-- Block signals if margin check fails at runtime
-- Optionally allow override for specific signal types
-- Connects to user’s terminal context via cloud sync (or simulation engine)
-- Visual builder: accepts one input, one output, and dynamic config panel
+- Generate random lot sizes within configurable ranges (e.g., 0.01-0.05)
+- Insert dummy trades at random intervals (not correlated with real signals)
+- Use different symbols from a rotation list to avoid pattern detection
+- Automatically close dummy trades after random durations (30s-5min)
+- Respect daily/weekly limits to avoid excessive trading
+- Log all dummy trades separately from real strategy trades
 
 🔁 System Integration:
-- Ties into backend `/api/margin/status` or runtime margin monitor (MT5 bridge)
-- Runtime strategy flow must skip signal if margin < configured threshold
-- Error/log pushed to dashboard or Copilot Bot if blocked
+- Integrates with MT5 bridge for trade execution
+- Coordinates with main strategy to avoid interference
+- Respects account balance and margin requirements
+- Can be enabled/disabled per strategy or globally
 
 🧪 Add Tests:
-/client/src/__tests__/StrategyBlocks/MarginFilterBlock.test.tsx  
-/backend/desktop-app/tests/test_margin_check.py (if runtime logic added)
+/desktop-app/tests/test_randomized_lot_inserter.py
 
-Test Cases:
-- Margin = 50% → passes
-- Margin = 10% → fails (signal blocked)
-- Override = true → signal allowed
-- Invalid config → error message visible
+Test Scenarios:
+- Dummy trades generated within configured parameters
+- No interference with real strategy trades
+- Proper logging and tracking of dummy vs real trades
+- Margin and balance validation before dummy trade execution
 
 📂 Tracking:
 Once complete:
@@ -40,6 +40,6 @@ Once complete:
 - 📘 Log in `dev_changelog.md`
 
 ❗ Rules:
-- Do NOT confuse with equity limits (this is free margin based)
-- Do NOT skip test coverage
-- Keep UI/UX consistent with other blocks
+- Dummy trades must be clearly distinguishable from real trades in logs
+- Never interfere with or delay real signal execution
+- Respect prop firm trading rules and limits
