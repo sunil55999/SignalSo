@@ -63,6 +63,7 @@ class SignalOSCopilot:
         self.application.add_handler(CommandHandler("close", self.close_command))
         self.application.add_handler(CommandHandler("range", self.range_command))
         self.application.add_handler(CommandHandler("tp", self.tp_command))
+        self.application.add_handler(CommandHandler("sl", self.sl_command))
         
         # Handle text messages for signal parsing
         self.application.add_handler(
@@ -775,6 +776,259 @@ For support, contact your system administrator.
             
         except Exception as e:
             self.logger.error(f"Failed to send TP hit notification: {e}")
+    
+    async def sl_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /sl command for SL management"""
+        if not self._is_authorized(update.effective_chat.id):
+            return
+        
+        if not context.args:
+            help_text = """
+🔹 **SL Management Commands**
+
+**View SL Status:**
+• `/sl status` - Show all active SL positions
+• `/sl status 12345` - Show specific position SL status
+
+**SL Command Examples:**
+• `SL to breakeven after TP1`
+• `Trail SL by 20 pips when 15 pips profit`
+• `Move SL to TP1 after TP2 hit`
+• `ATR SL with 2x multiplier`
+
+**Manual SL Actions:**
+• `/sl move 12345 1.2020` - Move SL to specific price
+• `/sl trail 12345 15` - Set trailing distance in pips
+
+**SL Statistics:**
+• `/sl stats` - Show SL performance statistics
+            """
+            await update.message.reply_text(help_text, parse_mode='Markdown')
+            return
+        
+        command = context.args[0].lower()
+        
+        try:
+            if command == "status":
+                await self._handle_sl_status(update, context.args[1:])
+            elif command == "stats":
+                await self._handle_sl_stats(update)
+            elif command == "move":
+                await self._handle_sl_move(update, context.args[1:])
+            elif command == "trail":
+                await self._handle_sl_trail(update, context.args[1:])
+            else:
+                await update.message.reply_text("❌ Unknown SL command. Use `/sl` for help.")
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ SL command failed: {str(e)}")
+            self.logger.error(f"SL command error: {e}")
+    
+    async def _handle_sl_status(self, update: Update, args: List[str]):
+        """Handle SL status command"""
+        try:
+            if args and len(args) > 0:
+                # Show specific position status
+                ticket = int(args[0])
+                sl_result = await self._api_request(f"/trades/sl-status/{ticket}", "GET")
+            else:
+                # Show all SL positions
+                sl_result = await self._api_request("/trades/sl-status", "GET")
+            
+            if "error" in sl_result:
+                await update.message.reply_text(f"❌ SL status failed: {sl_result['error']}")
+                return
+            
+            if args and len(args) > 0:
+                # Single position status
+                if sl_result:
+                    status_msg = f"""
+📊 **SL Status - Position {sl_result['ticket']}**
+
+• Symbol: {sl_result['symbol']}
+• Direction: {sl_result['direction'].upper()}
+• Entry: {sl_result['entry_price']}
+• Original SL: {sl_result.get('original_sl', 'None')}
+• Current SL: {sl_result.get('current_sl', 'None')}
+• Best Price: {sl_result.get('best_price_achieved', 'N/A')}
+• Adjustments: {sl_result.get('sl_adjustments_count', 0)}
+• Moves Today: {sl_result.get('sl_moves_today', 0)}
+• Breakeven: {'Yes' if sl_result.get('breakeven_triggered') else 'No'}
+
+**SL Rules:**
+"""
+                    for rule in sl_result.get('rules', []):
+                        status_icon = "✅" if rule['enabled'] else "❌"
+                        status_msg += f"{status_icon} {rule['strategy'].title()}: {rule['action'].replace('_', ' ').title()}"
+                        if rule.get('condition'):
+                            status_msg += f" ({rule['condition']})"
+                        status_msg += "\n"
+                    
+                    await update.message.reply_text(status_msg, parse_mode='Markdown')
+                else:
+                    await update.message.reply_text(f"❌ No SL position found for ticket {args[0]}")
+            else:
+                # All positions overview
+                if sl_result.get('positions'):
+                    status_msg = "📊 **Active SL Positions**\n\n"
+                    for position in sl_result['positions'][:10]:  # Limit to 10 for readability
+                        adjustments = position.get('sl_adjustments_count', 0)
+                        moves_today = position.get('sl_moves_today', 0)
+                        
+                        status_msg += f"🔹 **{position['ticket']}** ({position['symbol']})\n"
+                        status_msg += f"   Current SL: {position.get('current_sl', 'None')}\n"
+                        status_msg += f"   Adjustments: {adjustments} total, {moves_today} today\n\n"
+                    
+                    if len(sl_result['positions']) > 10:
+                        status_msg += f"... and {len(sl_result['positions']) - 10} more positions"
+                    
+                    await update.message.reply_text(status_msg, parse_mode='Markdown')
+                else:
+                    await update.message.reply_text("📊 No active SL positions found.")
+                    
+        except ValueError:
+            await update.message.reply_text("❌ Invalid ticket number. Must be a number.")
+        except Exception as e:
+            await update.message.reply_text(f"❌ SL status failed: {str(e)}")
+    
+    async def _handle_sl_stats(self, update: Update):
+        """Handle SL statistics command"""
+        try:
+            stats_result = await self._api_request("/trades/sl-stats", "GET")
+            
+            if "error" in stats_result:
+                await update.message.reply_text(f"❌ SL stats failed: {stats_result['error']}")
+                return
+            
+            stats_msg = f"""
+📈 **SL Management Statistics**
+
+**Positions:**
+• Total: {stats_result.get('total_positions', 0)}
+• Active: {stats_result.get('active_positions', 0)}
+
+**Adjustments:**
+• Total: {stats_result.get('total_adjustments', 0)}
+• Successful: {stats_result.get('successful_adjustments', 0)}
+• Avg Profit at Adjustment: {stats_result.get('average_profit_at_adjustment', 0):.1f} pips
+
+**Strategies Used:**
+"""
+            
+            strategies = stats_result.get('strategies_used', {})
+            if strategies:
+                for strategy, count in strategies.items():
+                    stats_msg += f"• {strategy.replace('_', ' ').title()}: {count}\n"
+            else:
+                stats_msg += "• No strategies executed yet\n"
+            
+            stats_msg += "\n**Actions Taken:**\n"
+            actions = stats_result.get('actions_taken', {})
+            if actions:
+                for action, count in actions.items():
+                    stats_msg += f"• {action.replace('_', ' ').title()}: {count}\n"
+            else:
+                stats_msg += "• No actions taken yet\n"
+            
+            await update.message.reply_text(stats_msg, parse_mode='Markdown')
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ SL stats failed: {str(e)}")
+    
+    async def _handle_sl_move(self, update: Update, args: List[str]):
+        """Handle manual SL move command"""
+        if len(args) < 2:
+            await update.message.reply_text("❌ Usage: `/sl move <ticket> <new_sl_price>`")
+            return
+        
+        try:
+            ticket = int(args[0])
+            new_sl = float(args[1])
+            
+            move_data = {
+                "ticket": ticket,
+                "new_sl": new_sl,
+                "manual_override": True,
+                "source": "telegram_bot",
+                "user_id": update.effective_user.id
+            }
+            
+            move_result = await self._api_request("/trades/sl-move", "POST", move_data)
+            
+            if "error" in move_result:
+                await update.message.reply_text(f"❌ SL move failed: {move_result['error']}")
+            else:
+                success_msg = f"""
+✅ **SL Moved Successfully**
+
+• Position: {ticket}
+• Old SL: {move_result.get('old_sl', 'None')}
+• New SL: {new_sl}
+• Current Price: {move_result.get('current_price', 'N/A')}
+• Distance: {move_result.get('distance_pips', 'N/A')} pips
+                """
+                await update.message.reply_text(success_msg, parse_mode='Markdown')
+                
+        except ValueError:
+            await update.message.reply_text("❌ Invalid numbers. Please check ticket and SL price format.")
+        except Exception as e:
+            await update.message.reply_text(f"❌ SL move failed: {str(e)}")
+    
+    async def _handle_sl_trail(self, update: Update, args: List[str]):
+        """Handle trailing SL setup command"""
+        if len(args) < 2:
+            await update.message.reply_text("❌ Usage: `/sl trail <ticket> <trail_distance_pips>`")
+            return
+        
+        try:
+            ticket = int(args[0])
+            trail_distance = float(args[1])
+            
+            trail_data = {
+                "ticket": ticket,
+                "trail_distance": trail_distance,
+                "source": "telegram_bot",
+                "user_id": update.effective_user.id
+            }
+            
+            trail_result = await self._api_request("/trades/sl-trail", "POST", trail_data)
+            
+            if "error" in trail_result:
+                await update.message.reply_text(f"❌ SL trail setup failed: {trail_result['error']}")
+            else:
+                success_msg = f"""
+✅ **Trailing SL Activated**
+
+• Position: {ticket}
+• Trail Distance: {trail_distance} pips
+• Current SL: {trail_result.get('current_sl', 'N/A')}
+• Status: Active trailing enabled
+                """
+                await update.message.reply_text(success_msg, parse_mode='Markdown')
+                
+        except ValueError:
+            await update.message.reply_text("❌ Invalid numbers. Please check ticket and distance format.")
+        except Exception as e:
+            await update.message.reply_text(f"❌ SL trail setup failed: {str(e)}")
+    
+    async def send_sl_adjustment_notification(self, sl_info: Dict[str, Any]):
+        """Send SL adjustment notification to authorized users"""
+        try:
+            notification_msg = f"""
+🎯 **SL Adjusted!**
+
+• Position: {sl_info['ticket']} ({sl_info['symbol']})
+• Old SL: {sl_info.get('old_sl', 'None')}
+• New SL: {sl_info['new_sl']}
+• Reason: {sl_info['adjustment_reason']}
+• Strategy: {sl_info['strategy_used'].replace('_', ' ').title()}
+• Current Profit: {sl_info['profit_pips']:.1f} pips
+            """
+            
+            await self.send_alert(notification_msg)
+            
+        except Exception as e:
+            self.logger.error(f"Failed to send SL adjustment notification: {e}")
     
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle text messages for signal parsing"""
