@@ -49,6 +49,12 @@
 - 🧠 Prop firm stealth lot randomization with deterministic seeding, variance bounds, repeat avoidance, per-symbol tracking, and comprehensive configuration management
 - 🕒 Timestamp: 2025-06-23 17:15
 
+## [2025-06-23] End of Week SL Remover Implementation
+- 📂 `/desktop-app/end_of_week_sl_remover.py`
+- 📂 `/desktop-app/tests/test_end_of_week_sl_remover.py`
+- 🧠 Prop firm stealth feature to remove/widen stop losses before Friday market close with time-based activation, symbol filtering, and MT5 integration
+- 🕒 Timestamp: 2025-06-23 17:25
+
 ## [2025-06-23] R:R Converter Engine
 - 📂 `/desktop-app/rr_converter.py`
 - 🧠 Risk-reward ratio calculations and optimal positioning

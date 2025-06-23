@@ -2,35 +2,40 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `randomized_lot_inserter.py` from Phase 5 – Prop Firm Stealth Systems.
+Implement `end_of_week_sl_remover.py` from Phase 5 – Prop Firm Stealth Features.
 
 🔧 File to Create:
-/signalos/desktop-app/randomized_lot_inserter.py
+/signalos/desktop-app/end_of_week_sl_remover.py
 
 🧩 Description:
-Build a stealth utility that randomizes lot sizes slightly per trade to avoid detection by prop firm tracking systems.
+This module will remove or adjust stop-losses before the market closes on Fridays, to prevent SL spikes or broker flagging.
 
-Capabilities:
-- Intercept trade before it is dispatched to MT5
-- Modify lot size within a configurable variance range (e.g., ±0.003)
-- Prevent identical repeated lot sizes across sessions
-- Support optional rounding behavior (e.g., round to 0.01)
-- Configurable on a per-user or per-strategy basis
+Key Features:
+- Check if current time is near market close (Friday 15:30–16:59 UTC)
+- Option to:
+  - Remove SL completely
+  - Move SL far enough to avoid accidental hit
+  - Skip affected trades (configurable)
+- Configurable in strategy settings:
+  - Mode: `remove`, `widen`, or `ignore`
+  - Pairs to exclude (e.g., crypto)
+  - Prop firm mode on/off
+- Log all actions with timestamp and reason
 
 🔁 System Integration:
-- Hook into strategy runtime before trade execution
-- Pull variance config from synced user profile or JSON
-- Log applied randomization and final lot size
-- Send log to Copilot Bot (optional toggle)
+- Hook into strategy runtime OR post-trade validator
+- Works with MT5 bridge to update trade SL before close
+- Compatible with stealth SL masking logic
+- Can notify Copilot Bot of changes (optional)
 
 🧪 Add Tests:
-/signalos/desktop-app/tests/test_randomized_lot_inserter.py
+/signalos/desktop-app/tests/test_end_of_week_sl_remover.py
 
-Test Scenarios:
-- Trade with default lot 0.10 → randomized to 0.102 / 0.098
-- Config range set to ±0.005 → respects bounds
-- Edge case: rounding enabled
-- Consistency check: same signal doesn't repeat lot size exactly
+Test Cases:
+- SL removed before Friday close
+- SL widened (moved 300 pips away)
+- Time-based activation (only triggers on Friday UTC)
+- Edge: trade with no SL – skip or log
 
 📂 Tracking:
 Once complete:
@@ -39,6 +44,6 @@ Once complete:
 - 📘 Log in `dev_changelog.md`
 
 ❗ Rules:
-- DO NOT use hardcoded randomness — always make it seedable/testable
-- DO NOT override user-configured lot if override is disabled
-- Ensure changes are reflected in MT5 dispatch but logged securely
+- DO NOT apply outside Friday close window
+- DO NOT modify SL if strategy config disables it
+- DO NOT leak SL adjustment in MT5 comment/log

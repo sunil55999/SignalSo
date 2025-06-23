@@ -125,6 +125,18 @@
 - ✅ Statistics tracking with detailed logging and Copilot Bot notifications
 - ✅ Edge case handling for invalid lot sizes and boundary conditions
 
+### End of Week SL Remover
+- ✅ EOW SL Remover Engine – `/desktop-app/end_of_week_sl_remover.py`
+- ✅ Comprehensive Test Suite – `/desktop-app/tests/test_end_of_week_sl_remover.py`
+- ✅ Friday close window detection with UTC time-based activation
+- ✅ Multiple operation modes: remove, widen, or ignore stop losses
+- ✅ Symbol categorization and market type filtering (forex, crypto, indices, commodities)
+- ✅ Configurable pip distance for SL widening with proper pip value calculations
+- ✅ Excluded pairs and market types configuration for fine-tuned control
+- ✅ Integration with MT5 bridge for trade modification operations
+- ✅ History tracking with persistent logging and statistics generation
+- ✅ Copilot Bot notifications for transparency and monitoring
+
 ---
 
 ## ✅ Completed Modules (2025-06-23)
