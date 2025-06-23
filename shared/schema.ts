@@ -112,6 +112,36 @@ export const equityEvents = pgTable("equity_events", {
   details: jsonb("details").$type<Record<string, any>>(),
 });
 
+export const drawdownLimits = pgTable("drawdown_limits", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  providerId: integer("provider_id").references(() => channels.id), // null for global limits
+  symbol: text("symbol"), // null for all symbols
+  maxDrawdownPercent: decimal("max_drawdown_percent", { precision: 5, scale: 2 }).notNull(),
+  isActive: boolean("is_active").default(true),
+  autoDisable: boolean("auto_disable").default(true), // Auto-disable provider after breach
+  notifyOnly: boolean("notify_only").default(false), // Only notify, don't close trades
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const drawdownEvents = pgTable("drawdown_events", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  limitId: integer("limit_id").references(() => drawdownLimits.id).notNull(),
+  eventType: text("event_type").notNull(), // breach_detected, trades_closed, provider_disabled, admin_reset
+  drawdownPercent: decimal("drawdown_percent", { precision: 5, scale: 2 }).notNull(),
+  triggerThreshold: decimal("trigger_threshold", { precision: 5, scale: 2 }).notNull(),
+  accountBalance: decimal("account_balance", { precision: 10, scale: 2 }),
+  tradesAffected: integer("trades_affected").default(0),
+  closedTrades: jsonb("closed_trades").$type<number[]>().default([]),
+  providerId: integer("provider_id").references(() => channels.id),
+  symbol: text("symbol"),
+  adminUserId: integer("admin_user_id").references(() => users.id),
+  timestamp: timestamp("timestamp").defaultNow(),
+  details: jsonb("details").$type<Record<string, any>>(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   strategies: many(strategies),
@@ -172,6 +202,37 @@ export const equityEventsRelations = relations(equityEvents, ({ one }) => ({
   equityLimit: one(equityLimits, {
     fields: [equityEvents.userId],
     references: [equityLimits.userId],
+  }),
+}));
+
+export const drawdownLimitsRelations = relations(drawdownLimits, ({ one, many }) => ({
+  user: one(users, {
+    fields: [drawdownLimits.userId],
+    references: [users.id],
+  }),
+  provider: one(channels, {
+    fields: [drawdownLimits.providerId],
+    references: [channels.id],
+  }),
+  events: many(drawdownEvents),
+}));
+
+export const drawdownEventsRelations = relations(drawdownEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [drawdownEvents.userId],
+    references: [users.id],
+  }),
+  limit: one(drawdownLimits, {
+    fields: [drawdownEvents.limitId],
+    references: [drawdownLimits.id],
+  }),
+  provider: one(channels, {
+    fields: [drawdownEvents.providerId],
+    references: [channels.id],
+  }),
+  adminUser: one(users, {
+    fields: [drawdownEvents.adminUserId],
+    references: [users.id],
   }),
 }));
 
@@ -238,6 +299,17 @@ export const insertEquityEventSchema = createInsertSchema(equityEvents).omit({
   timestamp: true,
 });
 
+export const insertDrawdownLimitSchema = createInsertSchema(drawdownLimits).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDrawdownEventSchema = createInsertSchema(drawdownEvents).omit({
+  id: true,
+  timestamp: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -257,3 +329,7 @@ export type EquityLimit = typeof equityLimits.$inferSelect;
 export type InsertEquityLimit = z.infer<typeof insertEquityLimitSchema>;
 export type EquityEvent = typeof equityEvents.$inferSelect;
 export type InsertEquityEvent = z.infer<typeof insertEquityEventSchema>;
+export type DrawdownLimit = typeof drawdownLimits.$inferSelect;
+export type InsertDrawdownLimit = z.infer<typeof insertDrawdownLimitSchema>;
+export type DrawdownEvent = typeof drawdownEvents.$inferSelect;
+export type InsertDrawdownEvent = z.infer<typeof insertDrawdownEventSchema>;

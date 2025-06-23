@@ -2,38 +2,38 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `drawdown_handler.ts` from Phase 3 – Risk Controls.
+Implement `signal_conflict_resolver.py` from Phase 3 – Risk Controls.
 
 🔧 File to Create:
-/signalos/server/routes/drawdown_handler.ts
+/desktop-app/signal_conflict_resolver.py
 
 🧩 Description:
-Build a backend module to enforce drawdown limits per account, per provider, and per group of trades.
+Build a desktop module to detect and resolve conflicting signals from different providers.
 
 Requirements:
-- Monitor live drawdown as % of current balance
-- If threshold is hit:
-  - ✅ Close all open trades for user
-  - ✅ Optionally, close only trades from a flagged provider
-  - ✅ Optionally, close trades by pair or session tag
-- Admins can configure drawdown rules per user or provider
-- Log trigger reason, trade list closed, % drawdown
-- Auto-disable trade reception for flagged providers until reset
+- Detect when multiple providers send opposing signals for same pair
+- If conflict detected:
+  - ✅ Pause trade execution for conflicting pair
+  - ✅ Log conflict details (providers, signals, timestamps)
+  - ✅ Optionally, execute strongest signal based on confidence
+- Admins can configure conflict resolution strategies
+- Support provider priority weighting
+- Auto-resume after conflict resolution window expires
 
 🔁 System Impact:
-- Integrates with MT5 command executor and user database
-- Depends on real-time P&L tracking from MT5 bridge
-- Affects user strategy engine (can trigger shutdowns)
+- Integrates with signal parser and strategy runtime
+- Depends on provider confidence scoring system
+- Affects trade execution flow and provider statistics
 - Linked to Telegram bot notification system
 
 🧪 Add Tests:
-/signalos/server/tests/test_drawdown_handler.ts
+/desktop-app/tests/test_signal_conflict_resolver.py
 
 Test Scenarios:
-- Trigger global drawdown → all trades closed
-- Trigger provider drawdown only
-- Ignore threshold when trades already closed
-- Admin reset / restart of trading after trigger
+- Detect BUY vs SELL conflict → pause execution
+- Priority-based resolution → execute higher priority
+- Time window expiry → auto-resume normal flow
+- Multiple pair conflict handling
 
 📂 Tracking:
 Once complete:
@@ -42,6 +42,6 @@ Once complete:
 - 📘 Append changelog in `dev_changelog.md`
 
 ❗ Rules:
-- DO NOT hardcode thresholds — pull from DB
-- DO NOT mix this with equity_limits.ts logic
-- DO NOT send duplicate close commands to MT5
+- DO NOT hardcode provider priorities — pull from config
+- DO NOT block all trading, only conflicting pairs
+- DO NOT ignore low-confidence signals without evaluation

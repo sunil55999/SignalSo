@@ -31,7 +31,7 @@
 
 ## PHASE 3: RISK CONTROLS
 - ✅ equity_limits.ts
-- ⛔ drawdown_handler.ts
+- ✅ drawdown_handler.ts
 - ⛔ signal_conflict_resolver.py
 
 ---

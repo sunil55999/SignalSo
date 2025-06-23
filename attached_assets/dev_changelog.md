@@ -111,3 +111,12 @@
 - 🧠 Implemented advanced stop loss management with dynamic adjustments, multiple strategies (trailing, ATR-based, percentage, R:R-based), signal parsing, real-time monitoring, comprehensive testing, and full Telegram bot integration
 - 🕒 Timestamp: 2025-06-23 12:45:00
 
+## [2025-06-23] Drawdown Handler Risk Control Engine Implementation
+- 📂 `/signalos/server/routes/drawdown_handler.ts`, `/signalos/server/tests/test_drawdown_handler.ts`
+- 🧠 Implemented comprehensive drawdown monitoring and risk control system with real-time monitoring, automatic trade closure, provider-specific limits, and admin controls
+- 🧪 Complete test suite covering global drawdown, provider-specific shutdown, admin reset functionality, and false trigger prevention
+- ⚙️ Features: Real-time % drawdown monitoring, configurable thresholds per user/provider/symbol, automatic MT5 trade closure, provider auto-disable, admin reset capabilities
+- 🔧 Integration: Database schema extensions (drawdown_limits, drawdown_events tables), main server routes, authentication, WebSocket notifications
+- 📊 Capabilities: Live account balance tracking, peak balance calculation, violation logging, Telegram bot alerts, admin dashboard
+- 🕒 Timestamp: 2025-06-23 16:10:00
+

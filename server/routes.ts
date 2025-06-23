@@ -5,6 +5,7 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertChannelSchema, insertStrategySchema, insertSignalSchema, insertMt5StatusSchema } from "@shared/schema";
 import { setupEquityLimitsRoutes } from "./routes/equity_limits";
+import { setupDrawdownHandlerRoutes } from "../signalos/server/routes/drawdown_handler";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -12,6 +13,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup equity limits routes
   setupEquityLimitsRoutes(app);
+  
+  // Setup drawdown handler routes
+  setupDrawdownHandlerRoutes(app);
 
   // Channel management routes
   app.get("/api/channels", async (req, res) => {

@@ -70,6 +70,16 @@
 - ✅ Database schema extensions – equity_limits and equity_events tables
 - ✅ Test suite: Risk control API endpoints – `/server/tests/test_equity_limits.ts`
 
+### Drawdown Handler Risk Control Engine (NEW)
+- ✅ Drawdown Handler Server Routes – `/signalos/server/routes/drawdown_handler.ts`
+- ✅ Database schema extensions – drawdown_limits and drawdown_events tables
+- ✅ Real-time monitoring system with configurable thresholds
+- ✅ Provider and symbol-specific drawdown controls
+- ✅ Automatic trade closure and provider disabling
+- ✅ Admin reset functionality for recovery
+- ✅ Test suite: Drawdown detection and risk management – `/signalos/server/tests/test_drawdown_handler.ts`
+- ✅ Integration with main server routes and authentication
+
 ## 📅 Next Update Expected:
 Please refer to `next_task.md` for what must be done in the current Replit Agent session.
 
