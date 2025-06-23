@@ -117,6 +117,8 @@ SignalOS is a comprehensive trading automation platform that parses Telegram sig
 - June 23, 2025. Implemented Spread Checker Module with real-time trade blocking based on bid/ask spread thresholds, symbol-specific limits, and comprehensive integration with trading systems
 - June 23, 2025. Completed Ticket Tracker Module with signal-to-ticket mapping, provider statistics, trade lifecycle management, and comprehensive search functionality
 - June 23, 2025. Implemented Smart Entry Mode with intelligent price optimization, real-time monitoring, and integration with spread checking for optimal trade execution
+- June 23, 2025. Completed Trigger Pending Order module with comprehensive pending order monitoring, automatic execution triggers, and manual override capabilities
+- June 23, 2025. Implemented TP/SL Adjustor with dynamic spread-based adjustments, pip buffers, and symbol-specific rules for optimal trade management
 
 ## User Preferences
 

@@ -3,29 +3,30 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement the `trigger_pending_order.py` module from **Phase 6: Advanced Order Management**.
+Implement the `multi_tp_manager.py` module from **Phase 7: TP & SL Enhancements**.
 
 🔧 File to Create:
-`/desktop-app/trigger_pending_order.py`
+`/desktop-app/multi_tp_manager.py`
 
 🧩 Description:
-Develop a pending order execution system that monitors market conditions and triggers pending orders when prices reach specified levels.
+Build an advanced take profit management system that supports up to 100 TP levels with partial closure functionality and dynamic SL shifting.
 
 Key Features:
 
-* Monitor pending LIMIT and STOP orders for execution triggers
-* Real-time price monitoring with configurable slippage tolerance
-* Support for partial fills and order modification
-* Integration with retry engine for failed executions
-* Order expiration handling and cleanup
-* Position size validation before execution
+* Support for multiple TP levels (up to 100) per trade
+* Partial position closure at each TP level
+* Automatic SL shifting to break-even after first TP hit
+* Volume distribution across TP levels
+* Integration with existing ticket tracker and TP manager
+* Real-time monitoring of TP level hits
 
 🧪 Required Tests:
-`/desktop-app/tests/test_trigger_pending_order.py`
+`/desktop-app/tests/test_multi_tp_manager.py`
 
-* Test pending order trigger conditions
-* Test slippage tolerance and partial fills
-* Test order expiration and cleanup scenarios
+* Test multiple TP level setup and monitoring
+* Test partial closure at TP levels
+* Test SL shifting to break-even
+* Test volume distribution calculations
 
 📂 Tracking Instructions:
 
@@ -35,6 +36,6 @@ Key Features:
 
 ❗ Rules:
 
-* Only log open trades (don’t track closed ones unless recovery is needed)
-* Use signal UUID or hash as index key
-* No external dependencies — JSON storage only
+* Use real-time price monitoring for TP level detection
+* All logs must go to `/logs/multi_tp_manager.log`
+* Ensure partial closures maintain proper lot size calculations

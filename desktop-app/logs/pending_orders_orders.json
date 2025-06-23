@@ -1,0 +1,27 @@
+{
+    "pending_orders": [
+        {
+            "order_id": "PO_EURUSD_1750705390_0",
+            "signal_id": "test_signal_001",
+            "symbol": "EURUSD",
+            "order_type": "buy_limit",
+            "trigger_price": 1.095,
+            "volume": 0.1,
+            "stop_loss": 1.09,
+            "take_profit": 1.1,
+            "slippage_pips": 2.0,
+            "expiry_time": "2025-06-30T19:03:10.949020",
+            "status": "pending",
+            "created_time": "2025-06-23T19:03:10.949040",
+            "provider_id": "test_provider",
+            "provider_name": null,
+            "comment": null,
+            "triggered_time": null,
+            "triggered_price": null,
+            "mt5_ticket": null,
+            "attempts": 0,
+            "last_error": null
+        }
+    ],
+    "last_updated": "2025-06-23T19:03:10.967343"
+}

@@ -58,5 +58,63 @@
                 "max_wait_seconds": 600
             }
         }
+    },
+    "trigger_pending_order": {
+        "enabled": true,
+        "default_mode": "auto",
+        "price_check_interval": 1.0,
+        "max_slippage_pips": 3.0,
+        "max_trigger_attempts": 3,
+        "order_expiry_hours": 168,
+        "cleanup_expired_hours": 24,
+        "enable_notifications": true,
+        "symbol_specific_settings": {
+            "EURUSD": {
+                "max_slippage_pips": 2.0,
+                "price_check_interval": 0.5
+            },
+            "GBPUSD": {
+                "max_slippage_pips": 2.5,
+                "price_check_interval": 0.5
+            },
+            "XAUUSD": {
+                "max_slippage_pips": 10.0,
+                "price_check_interval": 1.0
+            }
+        }
+    },
+    "tp_sl_adjustor": {
+        "enabled": true,
+        "monitoring_interval": 30.0,
+        "min_adjustment_interval": 300,
+        "default_spread_threshold": 3.0,
+        "default_sl_buffer_pips": 2.0,
+        "default_tp_buffer_pips": 2.0,
+        "max_adjustment_per_session": 5.0,
+        "enable_volatility_adjustments": true,
+        "enable_spread_adjustments": true,
+        "symbol_specific_rules": {
+            "EURUSD": {
+                "spread_threshold": 2.0,
+                "sl_buffer_pips": 1.5,
+                "tp_buffer_pips": 1.5,
+                "min_distance_pips": 10.0,
+                "max_adjustment_pips": 3.0
+            },
+            "GBPUSD": {
+                "spread_threshold": 2.5,
+                "sl_buffer_pips": 2.0,
+                "tp_buffer_pips": 2.0,
+                "min_distance_pips": 12.0,
+                "max_adjustment_pips": 4.0
+            },
+            "XAUUSD": {
+                "spread_threshold": 8.0,
+                "sl_buffer_pips": 5.0,
+                "tp_buffer_pips": 5.0,
+                "min_distance_pips": 50.0,
+                "max_adjustment_pips": 20.0
+            }
+        }
     }
 }

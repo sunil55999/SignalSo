@@ -11,14 +11,14 @@
 * ✅ strategy\_runtime.py
 * ✅ ticket\_tracker.py
 * ✅ smart\_entry\_mode.py
-* 🚧 trigger\_pending\_order.py
+* ✅ trigger\_pending\_order.py
 
 ## 💰 Phase 7: TP & SL Enhancements
 
 * ✅ tp\_manager.py
 * ✅ sl\_manager.py
 * ✅ rr\_converter.py
-* 🚧 tp\_sl\_adjustor.py
+* ✅ tp\_sl\_adjustor.py
 * 🚧 multi\_tp\_manager.py
 
 ## 🔐 Phase 8: Risk & Filter Logic
