@@ -15,6 +15,7 @@
 - ✅ Trailing Stop Engine – `/desktop-app/trailing_stop.py`
 - ✅ Break Even Engine – `/desktop-app/break_even.py`
 - ✅ Entry Range Engine – `/desktop-app/entry_range.py`
+- ✅ TP Manager Engine – `/desktop-app/tp_manager.py`
 - ✅ Firebridge Sync API – `/server/routes/firebridge.ts`
 - ✅ WebSocket Handler – `/server/ws/server.ts`
 
@@ -35,6 +36,7 @@
 - ✅ Test suite: trailing stop logic – `/desktop-app/tests/test_trailing_stop.py`
 - ✅ Test suite: break even logic – `/desktop-app/tests/test_break_even.py`
 - ✅ Test suite: entry range logic – `/desktop-app/tests/test_entry_range.py`
+- ✅ Test suite: TP manager logic – `/desktop-app/tests/test_tp_manager.py`
 - ✅ WebSocket + MT5 response mock – `/client/__tests__/mock_socket.test.ts`
 
 ---

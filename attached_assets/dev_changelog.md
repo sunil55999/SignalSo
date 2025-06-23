@@ -68,3 +68,8 @@
 - 🧠 Implemented entry range functionality for pending orders with upper/lower bounds, multiple entry strategies (average, best, second, scale-in), partial fill handling, and Telegram bot integration
 - 🕒 Timestamp: 2025-06-23 12:20:00
 
+## [2025-06-23] TP Manager Engine Implementation
+- 📂 `/desktop-app/tp_manager.py`, `/desktop-app/tests/test_tp_manager.py`, `/desktop-app/copilot_bot.py`
+- 🧠 Implemented advanced take profit management with multiple TP levels (TP1-TP5), automated partial closes, dynamic SL movement, signal parsing, comprehensive testing, and full Telegram bot integration
+- 🕒 Timestamp: 2025-06-23 12:25:00
+

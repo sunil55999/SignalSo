@@ -21,7 +21,7 @@
 ---
 
 ## PHASE 2: ADVANCED ORDER MANAGEMENT
-- ⛔ tp_manager.py
+- ✅ tp_manager.py
 - ⛔ rr_converter.py
 - ⛔ sl_dynamic_movement.py
 - ⛔ edit_trade_on_signal_change.py

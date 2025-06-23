@@ -62,6 +62,7 @@ class SignalOSCopilot:
         self.application.add_handler(CommandHandler("config", self.config_command))
         self.application.add_handler(CommandHandler("close", self.close_command))
         self.application.add_handler(CommandHandler("range", self.range_command))
+        self.application.add_handler(CommandHandler("tp", self.tp_command))
         
         # Handle text messages for signal parsing
         self.application.add_handler(
@@ -524,6 +525,256 @@ For support, contact your system administrator.
         except Exception as e:
             await update.message.reply_text(f"❌ Range command failed: {str(e)}")
             self.logger.error(f"Range command error: {e}")
+    
+    async def tp_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle /tp command for TP management"""
+        if not self._is_authorized(update.effective_chat.id):
+            return
+        
+        if not context.args:
+            help_text = """
+🔹 **TP Management Commands**
+
+**View TP Status:**
+• `/tp status` - Show all active TP positions
+• `/tp status 12345` - Show specific position TP status
+
+**TP Level Examples:**
+• `TP1: 1.2050 TP2: 1.2080 TP3: 1.2120`
+• `TP 1.2050 (25%), 1.2080 (25%), 1.2120 (50%)`
+• `Take Profit 1.2050, 1.2080, 1.2120`
+
+**Manual TP Actions:**
+• `/tp hit 12345 1` - Manually trigger TP1 for position
+• `/tp modify 12345 2 1.2085` - Modify TP2 price
+
+**TP Statistics:**
+• `/tp stats` - Show TP performance statistics
+            """
+            await update.message.reply_text(help_text, parse_mode='Markdown')
+            return
+        
+        command = context.args[0].lower()
+        
+        try:
+            if command == "status":
+                await self._handle_tp_status(update, context.args[1:])
+            elif command == "stats":
+                await self._handle_tp_stats(update)
+            elif command == "hit":
+                await self._handle_tp_hit(update, context.args[1:])
+            elif command == "modify":
+                await self._handle_tp_modify(update, context.args[1:])
+            else:
+                await update.message.reply_text("❌ Unknown TP command. Use `/tp` for help.")
+                
+        except Exception as e:
+            await update.message.reply_text(f"❌ TP command failed: {str(e)}")
+            self.logger.error(f"TP command error: {e}")
+    
+    async def _handle_tp_status(self, update: Update, args: List[str]):
+        """Handle TP status command"""
+        try:
+            if args and len(args) > 0:
+                # Show specific position status
+                ticket = int(args[0])
+                tp_result = await self._api_request(f"/trades/tp-status/{ticket}", "GET")
+            else:
+                # Show all TP positions
+                tp_result = await self._api_request("/trades/tp-status", "GET")
+            
+            if "error" in tp_result:
+                await update.message.reply_text(f"❌ TP status failed: {tp_result['error']}")
+                return
+            
+            if args and len(args) > 0:
+                # Single position status
+                if tp_result:
+                    status_msg = f"""
+📊 **TP Status - Position {tp_result['ticket']}**
+
+• Symbol: {tp_result['symbol']}
+• Direction: {tp_result['direction'].upper()}
+• Entry: {tp_result['entry_price']}
+• Original Size: {tp_result['original_lot_size']} lots
+• Current Size: {tp_result['current_lot_size']} lots
+• Closed: {tp_result['total_closed_lots']} lots
+• Profit: ${tp_result.get('realized_profit', 0):.2f}
+• Status: {'Closed' if tp_result['position_closed'] else 'Active'}
+
+**TP Levels:**
+"""
+                    for tp_level in tp_result.get('tp_levels', []):
+                        status_icon = "✅" if tp_level['status'] == 'hit' else "⏳"
+                        status_msg += f"{status_icon} TP{tp_level['level']}: {tp_level['price']} ({tp_level['close_percentage']:.0f}%)"
+                        if tp_level['status'] == 'hit':
+                            status_msg += f" - Executed: {tp_level['executed_lots']} lots"
+                        status_msg += "\n"
+                    
+                    await update.message.reply_text(status_msg, parse_mode='Markdown')
+                else:
+                    await update.message.reply_text(f"❌ No TP position found for ticket {args[0]}")
+            else:
+                # All positions overview
+                if tp_result.get('positions'):
+                    status_msg = "📊 **Active TP Positions**\n\n"
+                    for position in tp_result['positions'][:10]:  # Limit to 10 for readability
+                        active_tps = len([tp for tp in position.get('tp_levels', []) if tp['status'] == 'pending'])
+                        hit_tps = len([tp for tp in position.get('tp_levels', []) if tp['status'] == 'hit'])
+                        
+                        status_msg += f"🔹 **{position['ticket']}** ({position['symbol']})\n"
+                        status_msg += f"   Size: {position['current_lot_size']:.2f} lots\n"
+                        status_msg += f"   TPs: {hit_tps} hit, {active_tps} pending\n\n"
+                    
+                    if len(tp_result['positions']) > 10:
+                        status_msg += f"... and {len(tp_result['positions']) - 10} more positions"
+                    
+                    await update.message.reply_text(status_msg, parse_mode='Markdown')
+                else:
+                    await update.message.reply_text("📊 No active TP positions found.")
+                    
+        except ValueError:
+            await update.message.reply_text("❌ Invalid ticket number. Must be a number.")
+        except Exception as e:
+            await update.message.reply_text(f"❌ TP status failed: {str(e)}")
+    
+    async def _handle_tp_stats(self, update: Update):
+        """Handle TP statistics command"""
+        try:
+            stats_result = await self._api_request("/trades/tp-stats", "GET")
+            
+            if "error" in stats_result:
+                await update.message.reply_text(f"❌ TP stats failed: {stats_result['error']}")
+                return
+            
+            stats_msg = f"""
+📈 **TP Performance Statistics**
+
+**Positions:**
+• Total: {stats_result.get('total_positions', 0)}
+• Active: {stats_result.get('active_positions', 0)}
+• Closed: {stats_result.get('closed_positions', 0)}
+
+**Executions:**
+• Total: {stats_result.get('total_executions', 0)}
+• Total Profit: ${stats_result.get('total_profit', 0):.2f}
+• Avg per Execution: ${stats_result.get('average_profit_per_execution', 0):.2f}
+• Volume Closed: {stats_result.get('total_volume_closed', 0):.2f} lots
+
+**TP Level Hits:**
+"""
+            
+            tp_hits = stats_result.get('tp_level_hit_count', {})
+            if tp_hits:
+                for level, count in sorted(tp_hits.items()):
+                    stats_msg += f"• TP{level}: {count} hits\n"
+            else:
+                stats_msg += "• No TP hits recorded yet\n"
+            
+            await update.message.reply_text(stats_msg, parse_mode='Markdown')
+            
+        except Exception as e:
+            await update.message.reply_text(f"❌ TP stats failed: {str(e)}")
+    
+    async def _handle_tp_hit(self, update: Update, args: List[str]):
+        """Handle manual TP hit command"""
+        if len(args) < 2:
+            await update.message.reply_text("❌ Usage: `/tp hit <ticket> <tp_level>`")
+            return
+        
+        try:
+            ticket = int(args[0])
+            tp_level = int(args[1])
+            
+            hit_data = {
+                "ticket": ticket,
+                "tp_level": tp_level,
+                "manual_trigger": True,
+                "source": "telegram_bot",
+                "user_id": update.effective_user.id
+            }
+            
+            hit_result = await self._api_request("/trades/tp-hit", "POST", hit_data)
+            
+            if "error" in hit_result:
+                await update.message.reply_text(f"❌ TP hit failed: {hit_result['error']}")
+            else:
+                success_msg = f"""
+✅ **TP{tp_level} Manually Triggered**
+
+• Position: {ticket}
+• Execution Price: {hit_result.get('execution_price', 'N/A')}
+• Closed Lots: {hit_result.get('closed_lots', 'N/A')}
+• Remaining: {hit_result.get('remaining_lots', 'N/A')} lots
+• Profit: ${hit_result.get('profit_amount', 0):.2f}
+                """
+                await update.message.reply_text(success_msg, parse_mode='Markdown')
+                
+        except ValueError:
+            await update.message.reply_text("❌ Invalid numbers. Ticket and TP level must be numbers.")
+        except Exception as e:
+            await update.message.reply_text(f"❌ TP hit failed: {str(e)}")
+    
+    async def _handle_tp_modify(self, update: Update, args: List[str]):
+        """Handle TP level modification command"""
+        if len(args) < 3:
+            await update.message.reply_text("❌ Usage: `/tp modify <ticket> <tp_level> <new_price>`")
+            return
+        
+        try:
+            ticket = int(args[0])
+            tp_level = int(args[1])
+            new_price = float(args[2])
+            
+            modify_data = {
+                "ticket": ticket,
+                "tp_level": tp_level,
+                "new_price": new_price,
+                "source": "telegram_bot",
+                "user_id": update.effective_user.id
+            }
+            
+            modify_result = await self._api_request("/trades/tp-modify", "POST", modify_data)
+            
+            if "error" in modify_result:
+                await update.message.reply_text(f"❌ TP modify failed: {modify_result['error']}")
+            else:
+                success_msg = f"""
+✅ **TP{tp_level} Modified**
+
+• Position: {ticket}
+• Old Price: {modify_result.get('old_price', 'N/A')}
+• New Price: {new_price}
+• Status: Updated successfully
+                """
+                await update.message.reply_text(success_msg, parse_mode='Markdown')
+                
+        except ValueError:
+            await update.message.reply_text("❌ Invalid numbers. Please check ticket, TP level, and price format.")
+        except Exception as e:
+            await update.message.reply_text(f"❌ TP modify failed: {str(e)}")
+    
+    async def send_tp_hit_notification(self, tp_info: Dict[str, Any]):
+        """Send TP hit notification to authorized users"""
+        try:
+            notification_msg = f"""
+🎯 **TP{tp_info['tp_level']} Hit!**
+
+• Position: {tp_info['ticket']} ({tp_info['symbol']})
+• Execution: {tp_info['execution_price']}
+• Closed: {tp_info['closed_lots']} lots
+• Remaining: {tp_info['remaining_lots']} lots
+• Profit: +{tp_info['profit_pips']:.1f} pips (${tp_info['profit_amount']:.2f})
+• Action: {tp_info['action_taken'].replace('_', ' ').title()}
+            """
+            
+            if tp_info.get('new_sl'):
+                notification_msg += f"• SL Moved: {tp_info['new_sl']}\n"
+            
+            await self.send_alert(notification_msg)
+            
+        except Exception as e:
+            self.logger.error(f"Failed to send TP hit notification: {e}")
     
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle text messages for signal parsing"""

@@ -3,28 +3,28 @@
 ## 📅 Date: 2025-06-23
 
 ## 🧠 Task:
-You must now implement the **TP manager logic** in Phase 2 Advanced Order Management.
+You must now implement the **SL manager logic** in Phase 2 Advanced Order Management.
 
 ## 🔧 File to Create:
-- `/desktop-app/tp_manager.py`
+- `/desktop-app/sl_manager.py`
 
 ## 🧩 Description:
-Implement advanced take profit management:
-- Support for multiple TP levels (TP1, TP2, TP3, TP4, TP5)
-- Partial close automation when TP levels are hit
-- Dynamic TP adjustment based on market conditions
-- Integration with existing partial close and break even engines
-- TP hit detection and automated actions
+Implement advanced stop loss management:
+- Dynamic SL adjustment based on market conditions
+- Trailing SL integration with existing trailing stop engine
+- SL modification on TP hits and breakeven triggers
+- Multiple SL strategies (ATR-based, volatility-based, time-based)
+- Integration with existing risk management engines
 
 ## 🔁 System Impact:
 - Updates strategy runtime logic
-- Integrates with `partial_close.py` and `break_even.py`
-- Will need integration with `mt5_bridge.py` for TP modifications
-- Integration with signal parser for TP commands
+- Integrates with `trailing_stop.py`, `break_even.py`, and `tp_manager.py`
+- Will need integration with `mt5_bridge.py` for SL modifications
+- Integration with signal parser for SL commands
 
 ## 🧪 Add Tests:
-- `/desktop-app/tests/test_tp_manager.py`
-- Cover: multiple TP levels, partial closes, dynamic adjustments, edge cases
+- `/desktop-app/tests/test_sl_manager.py`
+- Cover: dynamic adjustments, integration scenarios, edge cases
 
 ## 📂 Tracking:
 Once complete:
