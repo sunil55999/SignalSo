@@ -1,35 +1,24 @@
 {
-  "retry_delays": {
-    "mt5_disconnected": [30, 60, 120, 300],
-    "high_slippage": [10, 30, 60],
-    "wide_spread": [5, 15, 30],
-    "insufficient_margin": [60, 300],
-    "market_closed": [300, 600, 1800],
-    "invalid_price": [5, 15, 30],
-    "unknown_error": [30, 60, 120]
-  },
-  "max_attempts": {
-    "mt5_disconnected": 4,
-    "high_slippage": 3,
-    "wide_spread": 3,
-    "insufficient_margin": 2,
-    "market_closed": 3,
-    "invalid_price": 3,
-    "unknown_error": 3
-  },
-  "conditions": {
-    "max_slippage_pips": 2.0,
-    "max_spread_pips": 3.0,
-    "min_margin_level": 200.0
-  },
-  "mt5": {
-    "server": "MetaQuotes-Demo",
-    "login": 0,
-    "password": "",
-    "path": "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
-  },
-  "telegram": {
-    "bot_token": "",
-    "chat_id": ""
-  }
+    "rr_converter": {
+        "default_ratio": 2.0,
+        "min_ratio": 0.5,
+        "max_ratio": 10.0,
+        "auto_calculate_sl": true,
+        "auto_calculate_tp": true,
+        "use_atr_multiplier": false,
+        "atr_period": 14,
+        "atr_multiplier": 1.5,
+        "risk_percentage": 2.0,
+        "update_interval": 5,
+        "enable_progressive_rr": true,
+        "progressive_ratios": [
+            1.0,
+            1.5,
+            2.0,
+            3.0
+        ],
+        "volatility_adjustment": true,
+        "min_tp_distance_pips": 10,
+        "min_sl_distance_pips": 5
+    }
 }

@@ -1,0 +1,15 @@
+{
+  "rr_updates": [
+    {
+      "ticket": 12345,
+      "old_ratio": 2.0,
+      "new_ratio": 1.0,
+      "old_sl": 1.098,
+      "new_sl": 1.0995000000000001,
+      "old_tp": 1.104,
+      "new_tp": 1.1005,
+      "reason": "R:R optimization",
+      "timestamp": "2025-06-23T14:38:58.691478"
+    }
+  ]
+}
