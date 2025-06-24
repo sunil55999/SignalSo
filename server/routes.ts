@@ -425,6 +425,180 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Email reporting routes
+  app.post("/api/reports/send-daily", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { recipientEmail } = req.body;
+      
+      if (!recipientEmail) {
+        return res.status(400).json({ message: "Recipient email is required" });
+      }
+      
+      // Get email configuration from environment
+      const emailConfig = {
+        provider: process.env.EMAIL_PROVIDER || 'smtp',
+        smtpHost: process.env.SMTP_HOST,
+        smtpPort: parseInt(process.env.SMTP_PORT || '587'),
+        smtpUser: process.env.SMTP_USER,
+        smtpPassword: process.env.SMTP_PASSWORD,
+        fromEmail: process.env.FROM_EMAIL || 'noreply@signalos.com',
+        fromName: process.env.FROM_NAME || 'SignalOS',
+        apiKey: process.env.EMAIL_API_KEY,
+        apiUrl: process.env.EMAIL_API_URL,
+      };
+      
+      const EmailReporter = (await import('./utils/email_reporter')).default;
+      const reporter = new EmailReporter(emailConfig as any);
+      
+      const success = await reporter.sendDailyReport(recipientEmail, req.user!.id);
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Daily report sent successfully",
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to send daily report" 
+        });
+      }
+    } catch (error) {
+      console.error("Daily report error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Internal server error",
+        error: error.message 
+      });
+    }
+  });
+
+  app.post("/api/reports/send-weekly", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { recipientEmail } = req.body;
+      
+      if (!recipientEmail) {
+        return res.status(400).json({ message: "Recipient email is required" });
+      }
+      
+      const emailConfig = {
+        provider: process.env.EMAIL_PROVIDER || 'smtp',
+        smtpHost: process.env.SMTP_HOST,
+        smtpPort: parseInt(process.env.SMTP_PORT || '587'),
+        smtpUser: process.env.SMTP_USER,
+        smtpPassword: process.env.SMTP_PASSWORD,
+        fromEmail: process.env.FROM_EMAIL || 'noreply@signalos.com',
+        fromName: process.env.FROM_NAME || 'SignalOS',
+        apiKey: process.env.EMAIL_API_KEY,
+        apiUrl: process.env.EMAIL_API_URL,
+      };
+      
+      const EmailReporter = (await import('./utils/email_reporter')).default;
+      const reporter = new EmailReporter(emailConfig as any);
+      
+      const success = await reporter.sendWeeklyReport(recipientEmail, req.user!.id);
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Weekly report sent successfully",
+          timestamp: new Date().toISOString()
+        });
+      } else {
+        res.status(500).json({ 
+          success: false, 
+          message: "Failed to send weekly report" 
+        });
+      }
+    } catch (error) {
+      console.error("Weekly report error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Internal server error",
+        error: error.message 
+      });
+    }
+  });
+
+  app.post("/api/reports/test-connection", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const emailConfig = {
+        provider: process.env.EMAIL_PROVIDER || 'smtp',
+        smtpHost: process.env.SMTP_HOST,
+        smtpPort: parseInt(process.env.SMTP_PORT || '587'),
+        smtpUser: process.env.SMTP_USER,
+        smtpPassword: process.env.SMTP_PASSWORD,
+        fromEmail: process.env.FROM_EMAIL || 'noreply@signalos.com',
+        fromName: process.env.FROM_NAME || 'SignalOS',
+        apiKey: process.env.EMAIL_API_KEY,
+        apiUrl: process.env.EMAIL_API_URL,
+      };
+      
+      const EmailReporter = (await import('./utils/email_reporter')).default;
+      const reporter = new EmailReporter(emailConfig as any);
+      
+      const isConnected = await reporter.testConnection();
+      
+      res.json({ 
+        connected: isConnected,
+        message: isConnected ? "Email connection successful" : "Email connection failed",
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Email connection test error:", error);
+      res.json({ 
+        connected: false,
+        message: "Connection test failed",
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  app.get("/api/reports/logs", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const limit = parseInt(req.query.limit as string) || 50;
+      
+      const emailConfig = {
+        provider: process.env.EMAIL_PROVIDER || 'smtp',
+        smtpHost: process.env.SMTP_HOST,
+        smtpPort: parseInt(process.env.SMTP_PORT || '587'),
+        smtpUser: process.env.SMTP_USER,
+        smtpPassword: process.env.SMTP_PASSWORD,
+        fromEmail: process.env.FROM_EMAIL || 'noreply@signalos.com',
+        fromName: process.env.FROM_NAME || 'SignalOS',
+        apiKey: process.env.EMAIL_API_KEY,
+        apiUrl: process.env.EMAIL_API_URL,
+      };
+      
+      const EmailReporter = (await import('./utils/email_reporter')).default;
+      const reporter = new EmailReporter(emailConfig as any);
+      
+      const logs = await reporter.getReportLogs(limit);
+      
+      res.json({ 
+        logs,
+        count: logs.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Email logs error:", error);
+      res.status(500).json({ 
+        message: "Failed to retrieve email logs",
+        error: error.message 
+      });
+    }
+  });
+
   // Provider stats API endpoint
   app.get("/api/providers/stats", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

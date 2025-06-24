@@ -1,0 +1,212 @@
+Copy signals from
+Link multiple Telegram accounts to the copier software
+
+Any Telegram channel
+
+Private or public channels
+
+Private or public groups
+
+Channels with copying disabled
+
+Private chats
+
+Bots
+
+Order Types
+Open any order type: SELL, SELL LIMIT, SELL STOP, BUY, BUY LIMIT, BUY STOP
+
+Place a pending order at the signal entry
+
+Smart Entry Mode: Optimal Trade Execution (ensures you always get the best possible entry)
+
+Open signals for any pair on your MT4/MT5 - Forex, indices, synthetic indices, crypto, stocks, metals, etc...
+
+Automatically edit the order if the signal message is edited
+
+Execute Provider Commands
+Close a certain trade fully
+
+Close half
+
+Close a % of the current lotsize
+
+Close a pending order
+
+Trigger a pending order
+
+Close by a certain %
+
+Close all open signals
+
+Close all pending orders
+
+Break-even (move SL to entry point)
+
+Move SL to a specific price (example: Move SL to 1.0125)
+
+Move TP to a specific price (example: Move TP to 0.0789)
+
+Move entrypoint to a specific price (example: Move entry to 1.0178) (pending orders only)
+
+Remove SL
+
+Some of these commands work with and without replying to the signal message
+
+Track a trade by a trade/ticket number given by the signal provider
+
+Equity Guardian
+Close all trades at a given profit target
+
+Close all trades at a given loss limit
+
+Set a % profit target daily - when the target is reached, all trades are closed
+
+Set a % loss limit daily - when the target is reached, all trades are closed
+
+Take Profits Management
+Add up to 100 take profit levels
+
+Multiple take profits per signal
+
+Customize your own take profit levels
+
+Add your own take profit levels to the signals
+
+Add spread to TP's
+
+Override the take profit levels from the signal to your own
+
+Change take profit levels to a certain R:R
+
+Add a custom amount of pips to any TP level
+
+Move SL to ENTRYPOINT when TP1 is reached
+
+Move SL to TP1 or ENTRYPOINT when TP2 is reached
+
+Move SL to TP2 or TP1 or ENTRYPOINT when TP3 is reached
+
+Move SL to any of the last TP's when a TP is reached
+
+Ignore spread on the take profit levels
+
+Stop Loss Management
+Customize the SL to any custom amount of pips
+
+Trailing stop with fixed pips intervals
+
+Trailing stop with R:R intervals
+
+Break-even at any amount of pips
+
+Break-even at any given R:R ratio
+
+Add spread to SL
+
+Add a certain amount of pips to SL
+
+Entrypoint Management
+Add a specific amount of pips to the entrypoint
+
+Pick the average entrypoint (from a range)
+
+Pick the best entrypoint (from a range)
+
+Pick the second entrypoint (from a range)
+
+Execute messages with two entrypoints (in a range)
+
+Add spread to Entrypoint
+
+Prop-firm Friendly
+Delay trades and commands randomly
+
+Change SL and TP's
+
+Limit cumulative lotsize per pair
+
+Hide SL/TP from the orders
+
+Remove order comment
+
+Drawdown Management
+Close all trades at a certain % drawdown (of current balance)
+
+Close trade at a certain % drawdown (of current balance)
+
+Close all trades for a specific provider if their drawdown reaches a % level
+
+Close trades with the opposite trade type (close all SELLS for the pair, if a BUY signal comes, and vice-versa)
+
+Choose When to Trade
+News filter - don't trade before/during/after news events
+
+Only trade in a certain time window
+
+Limit amount of signals per pair
+
+Limit amount of signals per channel
+
+Limit amount of signals (accross all channels)
+
+Only take signals for a certain pair
+
+Don't take signals for a certain pair
+
+Only take trades from specific traders (signed messages)
+
+Ignore signals whose entrypoint is far from market price
+
+Ignore signals that do not have SL or TP
+
+Stop taking signals below a specific margin level
+
+Ignore the signal if a specific word appears on the message (such as HIHG RISK)
+
+Stop taking signals if the profit has reached a % profit for the day
+
+Ignore signal if another signal with the same SL and TP already exists
+
+Lotsize Management
+Use fixed lots - 0.01
+
+Risk a fixed cash amount - 10$
+
+Risk a % of your account balance - 0.5%
+
+Calculate lotsize depending on pip value - 1$ pip
+
+Read lotsize from the signal message
+
+Set a different lotsize for each pair
+
+Change lotsize if a certain text appears in the signal message
+
+Limit cumulative lotsize per pair
+
+Interface
+Simple & easy to use interface
+
+Easily track and compare results between signal providers
+
+View maximum profit/peak drawdown of each signal
+
+Configure pair mappings (example: convert GOLD to XAUUSD)
+
+Advanced analytics - get detailed performance reports for each provider
+
+Provider Comparison - compare various statistics from multiple providers
+
+Advanced Features
+Grid strategy (without martingale)
+
+Reverse strategy - turn losing strategies into profitable ones
+
+Remove SL/TP of all signals before the market closes
+
+Execute messages with multiple signals
+
+Close all pending orders at a specific time each day
+
+Define a different strategy for each pair, for the same provider (Signal Strategy Rules)

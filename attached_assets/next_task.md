@@ -3,38 +3,33 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `AnalyticsProviderTable.tsx` from **Phase 11: Analytics + UI**.
+Implement `email_reporter.ts` from **Phase 12: Infrastructure**.
 
 🔧 File to Create:
-`/client/src/components/analytics/AnalyticsProviderTable.tsx`
+`/server/utils/email_reporter.ts`
 
 🧩 Description:
-Build a UI table component that displays performance stats for all signal providers in a sortable and filterable format.
+Build a backend utility to send daily/weekly email reports summarizing:
+
+* Total trades executed
+* Win rate and average RR
+* Top performing providers
+* Errors or blocked signals
 
 Key Features:
 
-* Fetch provider stats from `/server/routes.ts` (API endpoint: `/api/providers/stats`)
-* Columns:
-
-  * Provider Name
-  * Total Signals
-  * Win Rate %
-  * Avg RR
-  * Max Drawdown
-  * Last Signal Date
-* Table features:
-
-  * Column sorting (asc/desc)
-  * Row filtering by win rate or symbol
-  * Export to CSV
-  * Highlight top performers
+* Support SMTP or API-based email sending (SendGrid, Mailgun, etc.)
+* HTML and plain text email format
+* Read data from PostgreSQL or API endpoints
+* Schedule via cron job or manual trigger
+* Configurable per user or admin scope
 
 🧪 Required Tests:
-Use mock data in `/client/src/tests/mocks/provider_stats.json`
+`/server/tests/email_reporter.test.ts`
 
-* Validate column sorting logic
-* Check conditional rendering (e.g. highlight win rate > 75%)
-* Test mobile responsiveness and hover states
+* Test successful email formatting and delivery
+* Handle SMTP/API failures gracefully
+* Ensure template loads dynamic stats properly
 
 📂 Tracking Instructions:
 
@@ -44,6 +39,6 @@ Use mock data in `/client/src/tests/mocks/provider_stats.json`
 
 ❗ Rules:
 
-* Use `shadcn/ui` table components
-* Keep styling consistent with SignalHistory.vue and ProviderCompare.tsx
-* Ensure accessibility and keyboard navigation support
+* Use server-side only, do not expose secrets in frontend
+* Place templates in `/server/templates/` as `.html`
+* Log success/failure of reports in `/logs/email_reports.log`
