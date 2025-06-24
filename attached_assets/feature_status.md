@@ -68,6 +68,8 @@
 * ✅ signal\_success\_tracker.ts
 * ✅ pair\_mapper.ts
 
+* ✅ entrypoint_range_handler.py
+
 ## 🧪 Phase 12: Infrastructure, Sync, Core Modules
 
 * ✅ firebridge.ts

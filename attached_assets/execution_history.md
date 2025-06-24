@@ -225,4 +225,20 @@
   - Configurable email settings supporting multiple authentication methods and delivery options
   - Test coverage: 25+ comprehensive unit tests covering email delivery, template rendering, and error scenarios
 
+### [2025-06-24] Entrypoint Range Handler Implementation
+
+* **entrypoint_range_handler.py** – Advanced multi-entry parsing and selection system for trading signal processing
+  - Multi-entry parsing with support for 2-5 entries from various signal formats (ranges, lists, zones)
+  - Three selection modes: average (mean of all entries), best (closest to current price), second (index 1 entry)
+  - Comprehensive regex pattern matching for entry formats: dash ranges, comma lists, "to" ranges, zone entries
+  - Float precision handling with configurable precision digits (default 5) for accurate price calculations
+  - Intelligent fallback system with logging to /logs/trade_errors.log for troubleshooting failed parses
+  - Confidence scoring system to validate parsing quality with configurable thresholds
+  - Mode detection from signal text keywords (average, best, second) with override capabilities
+  - Entry validation with price tolerance checks and market price proximity verification
+  - Statistics tracking for parsing performance, mode usage distribution, and success rates
+  - Configuration management with JSON-based settings for modes, limits, and behavior parameters
+  - Legacy compatibility function resolve_entry() for integration with existing strategy_runtime.py
+  - Test coverage: 25+ comprehensive unit tests covering all parsing patterns, selection modes, and edge cases
+
 ✅ Logs end here. Update this file after every feature completion.
