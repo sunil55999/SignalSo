@@ -73,7 +73,7 @@ Mark modules as:
 ## PHASE 8: LOTSIZE + ENTRYPOINT
 
 ⛔ lotsize\_engine.py ← Not started
-🚧 entrypoint\_range\_handler.py ← Mostly working, lacks final tests
+✅ entrypoint\_range\_handler.py ← Entry point selection strategies completed
 
 ## PHASE 9: TRADE MODIFIERS
 

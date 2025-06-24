@@ -4,6 +4,39 @@
 
 ---
 
+## [2025-06-24 5:20 PM] - Entry Range Selection Logic Implementation
+
+### Module Enhancement:
+- **Enhanced** `/desktop-app/entry_range.py` - Added entry point selection functionality (80+ lines added)
+- **Extended** `/desktop-app/tests/test_entry_range.py` - Added 13+ comprehensive test cases for selection logic
+
+### Core Features Implemented:
+- **select_entry_price() Method**: 4 selection strategies with comprehensive input validation and logging
+- **Best Selection**: BUY = lowest price (1.1000 from [1.1000, 1.1020, 1.1035]), SELL = highest price (1.1035)
+- **Average Selection**: Midpoint calculation for balanced entry approach ((min + max) / 2)
+- **Second Selection**: Second-best pricing with fallback handling for insufficient data
+- **Fallback Mode**: Single entry handling when range contains only one price point
+- **Edge Case Handling**: Empty ranges, duplicates, unordered inputs, invalid directions/modes
+
+### Test Results - All Required Scenarios Passed:
+- Task scenario 1: BUY range [1.1000, 1.1020, 1.1035] → best = 1.1000 ✓
+- Task scenario 2: SELL range [1.1000, 1.1020, 1.1035] → best = 1.1035 ✓  
+- Task scenario 3: Average logic for both directions → 1.10175 ✓
+- Task scenario 4: Second-best logic BUY/SELL → 1.1020 ✓
+- Task scenario 5: Single-entry fallback → selected single price ✓
+- Performance: All 8 test scenarios completed with proper logging and validation
+
+### Integration Points:
+- Legacy compatibility function get_optimal_entry_price() for existing module integration
+- Method signature matches task requirements: (entry_range: List[float], signal_direction: str, strategy_mode: str) -> float
+- Compatible with parser.py entry range extraction and strategy_runtime.py execution logic
+- Optional integration ready for signal_simulator.py preview functionality
+
+### Status Updates:
+- Updated `feature_status.md`: Entry Range marked as complete with selection strategies
+- Updated `execution_history.md`: Implementation milestone with comprehensive test results logged
+- Task completed per next_task.md requirements with all 4 selection modes operational
+
 ## [2025-06-24 5:15 PM] - Core Signal Parser Implementation
 
 ### Module Creation:

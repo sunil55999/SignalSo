@@ -1,64 +1,48 @@
-📌 NEXT TASK – Replit Agent Build Guide (Phase 1: Core Signal Engine)
+📌 NEXT TASK – Replit Agent Build Guide (Phase 1: Signal Execution Core)
 📅 Date: 2025-06-24
 
 🧠 Task:
-Upgrade the placeholder `parser.py` module into a fully functional NLP-powered signal parser that supports multilingual signals and complex command formats.
+Finalize the logic in `entry_range.py` to handle multiple entry point selection strategies from parsed signal ranges.
 
-🔧 File to Upgrade:
-`/desktop-app/parser.py`
+🔧 File to Complete:
+`/desktop-app/entry_range.py`
 
-🧩 Required Features:
-1. **Signal Intent Recognition:**
-   - Identify BUY/SELL, market/pending order
-   - Extract symbol (e.g., XAUUSD, BTCUSD, NAS100)
+🧩 Description:
+Handle signals with entry ranges (e.g., “Entry: 1.1045–1.1065”) and select the optimal execution point based on strategy config.
 
-2. **Price Extraction:**
-   - Entry price (e.g., “Enter at 1.1045”)
-   - Stop loss and take profits (up to 3 levels)
-   - Support ranges (e.g., “Entry: 1.1045–1.1055”)
+✅ Required Modes:
+- `best`: Select lowest price for BUY, highest for SELL
+- `average`: Midpoint of entry range
+- `second`: Second-best entry if multiple provided
+- `fallback_to_single`: If only one entry is parsed
 
-3. **Advanced Text Processing:**
-   - Handle multiple formats (English, Hindi, Arabic, Russian)
-   - Use spaCy/transformers-based parser (NLP pipeline stub)
-   - Add fallback regex rules
+🎯 Inputs:
+- `entry_range: List[float]` (e.g., [1.1045, 1.1055, 1.1065])
+- `signal_direction: "BUY" | "SELL"`
+- `strategy_mode: "best" | "average" | "second"`
 
-4. **Confidence Scoring:**
-   - Assign confidence 0–1 per extracted field
-   - Drop/flag if score < threshold (e.g., 0.7)
+🎯 Output:
+- `selected_entry_price: float`
 
-5. **Parser Output Format:**
-   - Return unified `ParsedSignal` object:
-     ```python
-     {
-       "symbol": "XAUUSD",
-       "entry": 1.1045,
-       "sl": 1.1000,
-       "tp": [1.1080, 1.1100],
-       "order_type": "BUY_LIMIT",
-       "confidence": 0.86
-     }
-     ```
+🧪 Required Test File:
+`/desktop-app/tests/test_entry_range.py`
 
-🧪 Test File:
-`/desktop-app/tests/test_parser.py`
+Test Cases:
+- BUY range: [1.1000, 1.1020, 1.1035] → best = 1.1000
+- SELL range: [1.1000, 1.1020, 1.1035] → best = 1.1035
+- Average logic for both
+- Second-best logic
+- Single-entry fallback
 
-Test Scenarios:
-- “Buy GOLD at 2355 SL 2349 TP 2362”
-- “بيع EURUSD دخول: 1.0990 وقف: 1.0940 هدف: 1.1060”
-- Hindi/Arabic/Russian text with correct extraction
-- Unclear message → low confidence
+📦 Integration:
+- Used by: `parser.py`, `strategy_runtime.py`
+- Optional hook in `signal_simulator.py` for preview
 
-📦 Integration Requirements:
-- Parser must be used by: `strategy_runtime.py`, `signal_simulator.py`, `copilot_bot.py`
-- Add to parser registry/config if modular
+📂 Track Upon Completion:
+- ✅ `attached_assets/feature_status.md`
+- 🧾 `attached_assets/execution_history.md`
+- 📘 `attached_assets/dev_changelog.md`
 
-📂 Update After Completion:
-- `attached_assets/feature_status.md`
-- `attached_assets/dev_changelog.md`
-- `attached_assets/execution_history.md`
-
-❗ Implementation Guidelines:
-- Use fallback-safe logic (NLP → regex → fail gracefully)
-- Log failed parses for analysis
-- Must support dry-run mode (used in simulation)
-
+❗ Guidelines:
+- Handle edge cases (empty list, duplicates, float rounding)
+- Log selected mode and price

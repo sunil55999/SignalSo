@@ -295,6 +295,22 @@
   - Edge case handling for malformed signals and invalid data
   - Integration testing for parser registry compatibility and modular architecture
 
+### [2025-06-24] Entry Range Selection Logic Implementation
+
+* **entry_range.py** – Entry point selection functionality added to existing comprehensive engine
+  - select_entry_price() method with 4 selection strategies: best, average, second, fallback_to_single
+  - BUY logic: best = lowest price, second = second lowest, SELL logic: best = highest price, second = second highest
+  - Average calculation using range midpoint for balanced entry approach
+  - Duplicate handling with automatic deduplication and proper sorting
+  - Edge case management: empty ranges, invalid directions, insufficient data points
+  - Comprehensive logging for selection process tracking and debugging
+  - Legacy compatibility function get_optimal_entry_price() for integration
+
+* **test_entry_range.py** – Extended test suite with 13+ new test cases for entry selection
+  - All required task scenarios validated: BUY/SELL best, average, second, and fallback modes
+  - Edge case testing: duplicates, unordered inputs, single entries, error conditions
+  - Legacy compatibility verification for parser.py and strategy_runtime.py integration
+
 ### [2025-06-24] Lotsize Engine Task Verification
 
 * **lotsize_engine.py** – Task completion verified and documented

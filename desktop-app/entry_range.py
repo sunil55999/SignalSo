@@ -688,6 +688,92 @@ class EntryRangeEngine:
             'fill_quality': execution.fill_quality
         } for execution in recent_executions]
 
+    def select_entry_price(self, entry_range: List[float], signal_direction: str, strategy_mode: str) -> float:
+        """
+        Select optimal entry price from a range based on strategy mode
+        
+        Args:
+            entry_range: List of entry prices (e.g., [1.1045, 1.1055, 1.1065])
+            signal_direction: "BUY" or "SELL"
+            strategy_mode: "best", "average", "second", or "fallback_to_single"
+            
+        Returns:
+            selected_entry_price: float
+        """
+        if not entry_range or len(entry_range) == 0:
+            raise ValueError("Entry range cannot be empty")
+            
+        # Remove duplicates and sort
+        unique_prices = sorted(list(set(entry_range)))
+        
+        # Log the selection process
+        self.logger.info(f"Selecting entry price from range {unique_prices} for {signal_direction} using {strategy_mode} mode")
+        
+        if strategy_mode == "fallback_to_single" or len(unique_prices) == 1:
+            selected_price = unique_prices[0]
+            self.logger.info(f"Single entry fallback: selected {selected_price}")
+            return selected_price
+        
+        elif strategy_mode == "best":
+            if signal_direction.upper() == "BUY":
+                # For BUY: best price is lowest (cheapest entry)
+                selected_price = min(unique_prices)
+            elif signal_direction.upper() == "SELL":
+                # For SELL: best price is highest (best selling price)
+                selected_price = max(unique_prices)
+            else:
+                raise ValueError(f"Invalid signal direction: {signal_direction}")
+                
+            self.logger.info(f"Best entry for {signal_direction}: selected {selected_price}")
+            return selected_price
+        
+        elif strategy_mode == "average":
+            # Calculate midpoint of the range
+            selected_price = (min(unique_prices) + max(unique_prices)) / 2
+            self.logger.info(f"Average entry: selected {selected_price} (midpoint of {min(unique_prices)}-{max(unique_prices)})")
+            return selected_price
+        
+        elif strategy_mode == "second":
+            if len(unique_prices) < 2:
+                # If less than 2 prices, fallback to single entry
+                selected_price = unique_prices[0]
+                self.logger.info(f"Second entry fallback (insufficient prices): selected {selected_price}")
+                return selected_price
+            
+            if signal_direction.upper() == "BUY":
+                # For BUY: second-best is second lowest price
+                sorted_prices = sorted(unique_prices)
+                selected_price = sorted_prices[1]
+            elif signal_direction.upper() == "SELL":
+                # For SELL: second-best is second highest price
+                sorted_prices = sorted(unique_prices, reverse=True)
+                selected_price = sorted_prices[1]
+            else:
+                raise ValueError(f"Invalid signal direction: {signal_direction}")
+                
+            self.logger.info(f"Second-best entry for {signal_direction}: selected {selected_price}")
+            return selected_price
+        
+        else:
+            raise ValueError(f"Invalid strategy mode: {strategy_mode}. Valid modes: 'best', 'average', 'second', 'fallback_to_single'")
+
+# Legacy compatibility function for integration with parser.py and strategy_runtime.py
+def get_optimal_entry_price(entry_range: List[float], signal_direction: str, strategy_mode: str = "best") -> float:
+    """
+    Legacy compatibility function for entry price selection
+    
+    Args:
+        entry_range: List of entry prices
+        signal_direction: "BUY" or "SELL"  
+        strategy_mode: Selection strategy mode
+        
+    Returns:
+        Optimal entry price based on strategy
+    """
+    # Create temporary engine instance for price selection
+    temp_engine = EntryRangeEngine()
+    return temp_engine.select_entry_price(entry_range, signal_direction, strategy_mode)
+
 
 # Example usage and testing
 async def main():

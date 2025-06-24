@@ -415,6 +415,99 @@ class TestEntryRangeEngine(unittest.TestCase):
         
         self.assertEqual(stats, expected)
     
+    def test_select_entry_price_best_buy(self):
+        """Test best entry price selection for BUY orders"""
+        # BUY range: [1.1000, 1.1020, 1.1035] → best = 1.1000 (lowest)
+        entry_range = [1.1000, 1.1020, 1.1035]
+        result = self.engine.select_entry_price(entry_range, "BUY", "best")
+        self.assertEqual(result, 1.1000)
+    
+    def test_select_entry_price_best_sell(self):
+        """Test best entry price selection for SELL orders"""
+        # SELL range: [1.1000, 1.1020, 1.1035] → best = 1.1035 (highest)
+        entry_range = [1.1000, 1.1020, 1.1035]
+        result = self.engine.select_entry_price(entry_range, "SELL", "best")
+        self.assertEqual(result, 1.1035)
+    
+    def test_select_entry_price_average(self):
+        """Test average entry price selection"""
+        # Average of [1.1000, 1.1020, 1.1035] → (1.1000 + 1.1035) / 2 = 1.10175
+        entry_range = [1.1000, 1.1020, 1.1035]
+        result = self.engine.select_entry_price(entry_range, "BUY", "average")
+        expected_avg = (1.1000 + 1.1035) / 2  # 1.10175
+        self.assertEqual(result, expected_avg)
+    
+    def test_select_entry_price_second_buy(self):
+        """Test second-best entry price selection for BUY orders"""
+        # BUY second-best: [1.1000, 1.1020, 1.1035] → second = 1.1020
+        entry_range = [1.1000, 1.1020, 1.1035]
+        result = self.engine.select_entry_price(entry_range, "BUY", "second")
+        self.assertEqual(result, 1.1020)
+    
+    def test_select_entry_price_second_sell(self):
+        """Test second-best entry price selection for SELL orders"""
+        # SELL second-best: [1.1000, 1.1020, 1.1035] → second = 1.1020
+        entry_range = [1.1000, 1.1020, 1.1035]
+        result = self.engine.select_entry_price(entry_range, "SELL", "second")
+        self.assertEqual(result, 1.1020)
+    
+    def test_select_entry_price_single_fallback(self):
+        """Test single entry fallback mode"""
+        entry_range = [1.1050]
+        result = self.engine.select_entry_price(entry_range, "BUY", "fallback_to_single")
+        self.assertEqual(result, 1.1050)
+    
+    def test_select_entry_price_duplicates(self):
+        """Test entry price selection with duplicate values"""
+        # Test with duplicates: [1.1000, 1.1000, 1.1020, 1.1020, 1.1035]
+        entry_range = [1.1000, 1.1000, 1.1020, 1.1020, 1.1035]
+        result = self.engine.select_entry_price(entry_range, "BUY", "best")
+        self.assertEqual(result, 1.1000)
+        
+        # Test second with duplicates
+        result_second = self.engine.select_entry_price(entry_range, "BUY", "second")
+        self.assertEqual(result_second, 1.1020)
+    
+    def test_select_entry_price_unordered(self):
+        """Test entry price selection with unordered input"""
+        # Test with unordered range: [1.1035, 1.1000, 1.1020]
+        entry_range = [1.1035, 1.1000, 1.1020]
+        result = self.engine.select_entry_price(entry_range, "BUY", "best")
+        self.assertEqual(result, 1.1000)
+        
+        result_avg = self.engine.select_entry_price(entry_range, "BUY", "average")
+        expected_avg = (1.1000 + 1.1035) / 2
+        self.assertEqual(result_avg, expected_avg)
+    
+    def test_select_entry_price_edge_cases(self):
+        """Test edge cases for entry price selection"""
+        # Test empty range
+        with self.assertRaises(ValueError):
+            self.engine.select_entry_price([], "BUY", "best")
+        
+        # Test invalid direction
+        with self.assertRaises(ValueError):
+            self.engine.select_entry_price([1.1000], "INVALID", "best")
+        
+        # Test invalid strategy mode
+        with self.assertRaises(ValueError):
+            self.engine.select_entry_price([1.1000], "BUY", "invalid_mode")
+        
+        # Test second mode with single price (should fallback)
+        result = self.engine.select_entry_price([1.1000], "BUY", "second")
+        self.assertEqual(result, 1.1000)
+    
+    def test_legacy_compatibility_function(self):
+        """Test legacy compatibility function"""
+        from entry_range import get_optimal_entry_price
+        
+        entry_range = [1.1000, 1.1020, 1.1035]
+        result = get_optimal_entry_price(entry_range, "BUY", "best")
+        self.assertEqual(result, 1.1000)
+        
+        result_sell = get_optimal_entry_price(entry_range, "SELL", "best")
+        self.assertEqual(result_sell, 1.1035)
+
     def test_get_entry_range_statistics_with_data(self):
         """Test statistics with entry range data"""
         # Add test position
