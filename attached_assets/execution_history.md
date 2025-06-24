@@ -150,4 +150,17 @@
   - Full database schema extension with providerStats table and API endpoints
   - Test coverage: 15+ unit tests covering component rendering, interactions, and data handling
 
+### [2025-06-24] Pair Mapper Utility Implementation
+
+* **pair_mapper.ts** – Symbol mapping utility for signal provider to MT5 broker pairs
+  - Static configuration with 50+ default mappings for metals, crypto, indices, forex, and commodities
+  - Dynamic user override system with localStorage persistence for custom broker configurations
+  - Case-insensitive matching with configurable sensitivity and fallback behavior
+  - Batch symbol mapping with mapSymbols() for processing multiple signals simultaneously
+  - Reverse mapping lookup to find original symbols from MT5 pair names
+  - Configuration import/export for backup and sharing between environments
+  - Comprehensive error handling for localStorage failures and malformed data
+  - Integration ready for parser, retry engine, and UI components
+  - Test coverage: 25+ unit tests covering all mapping scenarios, edge cases, and configuration management
+
 ✅ Logs end here. Update this file after every feature completion.

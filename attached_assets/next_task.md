@@ -3,32 +3,30 @@
 📅 Date: 2025-06-24
 
 🧠 Task:
-Implement the `EmailReporter.ts` module from **Phase 11: Analytics + UI**.
+Implement `signal_success_tracker.ts` from **Phase 11: Analytics + UI**.
 
 🔧 File to Create:
-`/server/EmailReporter.ts`
+`/client/src/utils/signal_success_tracker.ts`
 
 🧩 Description:
-Build an email reporting system that generates and sends automated performance reports, trade summaries, and analytics to users on a scheduled basis.
+Develop a utility module to track and analyze signal parsing success rates and execution performance. This creates a feedback loop for parser improvement and provides analytics on signal quality.
 
 Key Features:
 
-* Generate daily, weekly, and monthly performance reports with key metrics
-* Send trade execution summaries with profit/loss breakdowns
-* Provider performance comparison reports via email
-* Customizable email templates with HTML formatting
-* Scheduled email delivery using cron jobs or similar scheduling
-* User preferences for email frequency and report types
-* Integration with existing provider stats and trade data
-* Email queue management with retry logic for failed deliveries
+* Track TP/SL hit rates by signal format and provider
+* Monitor parsing confidence vs actual trade outcomes
+* Store success metrics with time-based aggregation (daily, weekly, monthly)
+* Generate performance reports for parser optimization
+* Integration with existing analytics dashboard
+* Export functionality for external analysis
 
 🧪 Required Tests:
-`/server/tests/EmailReporter.test.ts`
+`/client/src/tests/signal_success_tracker.test.ts`
 
-* Test email template generation with different report types
-* Test scheduling functionality and delivery queue management
-* Test user preference handling and customization options
-* Test error handling and retry logic for failed email deliveries
+* Test success rate calculations for different time periods
+* Validate signal format pattern recognition
+* Test data aggregation and reporting functions
+* Verify integration with analytics components
 
 📂 Tracking Instructions:
 
@@ -38,6 +36,7 @@ Key Features:
 
 ❗ Rules:
 
-* Use a reliable email service (SendGrid, SES, or similar)
-* Implement proper error handling and logging
-* Ensure email templates are responsive and professional
+* Must integrate with existing parser confidence scoring
+* Store data efficiently for large datasets
+* Provide real-time and historical analytics
+* Support filtering by provider, symbol, and time range
