@@ -1,29 +1,48 @@
-📅 Date: 2025-01-25
+📌 NEXT TASK – Replit Agent Build Guide (Phase 8: Lotsize + Entry)
+📅 Date: 2025-06-24
 
-✅ Task: COMPLETED
-Implemented the missing `mt5_bridge.py` module to enable trade dispatching from the desktop app to MetaTrader 5.
+🧠 Task:
+Implement `lotsize_engine.py` to support advanced position sizing logic based on signal content or user configuration.
 
-✅ Files Created:
-- `/desktop-app/mt5_bridge.py` (950+ lines)
-- `/desktop-app/tests/test_mt5_bridge.py` (400+ lines)
+🔧 File to Create:
+`/desktop-app/lotsize_engine.py`
 
-✅ Features Implemented:
-- Initialize and authenticate MT5 terminal connection
-- Order functions: `send_market_order`, `send_pending_order`
-- Management functions: `close_position`, `delete_pending_order`, `modify_position`
-- Symbol mapping and lot size validation
-- Comprehensive error handling with retry logic hooks
-- Detailed logging in `logs/mt5_bridge.log`
-- Simulation mode for development without MT5 terminal
+🧩 Description:
+This module will calculate trade lotsize from:
+- Signal message (e.g., “Risk 2%” or “Use 0.5 lots”)
+- Strategy rules (e.g., per pair, pip-value-based sizing)
+- Global config fallback (e.g., fixed risk %, default lot)
 
-✅ Integration Points:
-- Connected to `strategy_runtime.py` and `retry_engine.py`
-- Symbol mapping system for broker compatibility
-- Async/await support for non-blocking operations
+Must Support:
+- `fixed_lot`
+- `risk_percent` (e.g., 1% of balance)
+- `fixed_cash` (e.g., $10 per trade)
+- `pip_value` sizing (e.g., $1 per pip)
+- Text override (e.g., HIGH RISK = 2x default)
 
-✅ Documentation Updated:
-- `attached_assets/feature_status.md` - MT5 Bridge marked complete
-- `attached_assets/dev_changelog.md` - Implementation milestone logged
-- `attached_assets/execution_history.md` - Technical details documented
+✅ Inputs:
+- Signal content
+- Risk config (per user or global)
+- MT5 account balance
 
-🎯 Next Priority: Review next_task.md for upcoming module implementation
+✅ Outputs:
+- Normalized float lot size (e.g., `0.2`)
+
+🧪 Test File:
+`/desktop-app/tests/test_lotsize_engine.py`
+
+Test Scenarios:
+- “0.1 lots” in signal message
+- “Risk 2%” + $1,000 account
+- HIGH RISK → adjusted multiplier
+- Fallback to config default
+
+📂 Update After Completion:
+- `attached_assets/feature_status.md`
+- `attached_assets/dev_changelog.md`
+- `attached_assets/execution_history.md`
+
+❗ Rules:
+- Use safe bounds (0.01 to 5.0 lots)
+- Ensure test passes all risk mode combinations
+- Do not hardcode account values

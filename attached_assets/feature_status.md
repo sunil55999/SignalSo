@@ -96,7 +96,7 @@ Mark modules as:
 ## PHASE 12: CORE MISSING MODULES
 
 ✅ mt5\_bridge.py
-⛔ signal\_simulator.py ← Dry-run system missing
+✅ signal\_simulator.py
 ⛔ symbol\_mapper.py ← Not found
 
 ---
