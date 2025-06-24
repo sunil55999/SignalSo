@@ -387,6 +387,49 @@ class RandomizedLotInserter:
             "enabled": self.config.enabled,
             "recent_symbols": list(self.recent_lots.keys())
         }
+
+    def maybe_randomize_lot(self, lot_size: float, symbol: str = "EURUSD", 
+                           signal_id: Optional[str] = None) -> float:
+        """
+        Simple integration function for strategy_runtime.py
+        Returns randomized lot size if enabled, original lot size if disabled
+        """
+        if not self.config.enabled:
+            return lot_size
+        
+        try:
+            signal_data = {
+                'symbol': symbol,
+                'lot_size': lot_size,
+                'signal_id': signal_id or f"auto_{datetime.now().isoformat()}"
+            }
+            
+            result = self.randomize_lot_size(signal_data)
+            return result.randomized_lot
+            
+        except Exception as e:
+            self.logger.error(f"Lot randomization failed, using original: {e}")
+            return lot_size
+
+
+# Global instance for easy integration
+_randomizer_instance = None
+
+def get_randomizer_instance():
+    """Get global randomizer instance"""
+    global _randomizer_instance
+    if _randomizer_instance is None:
+        _randomizer_instance = RandomizedLotInserter()
+    return _randomizer_instance
+
+def maybe_randomize_lot(lot_size: float, symbol: str = "EURUSD", 
+                       signal_id: Optional[str] = None) -> float:
+    """
+    Standalone function for strategy_runtime integration
+    Randomizes lot size if enabled in config
+    """
+    randomizer = get_randomizer_instance()
+    return randomizer.maybe_randomize_lot(lot_size, symbol, signal_id)
     
     def get_recent_randomizations(self, limit: int = 20) -> List[Dict[str, Any]]:
         """Get recent randomization results"""

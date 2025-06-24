@@ -10,6 +10,8 @@ from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass, asdict
 from enum import Enum
 from spread_checker import spread_checker, SpreadCheckResult
+from randomized_lot_inserter import maybe_randomize_lot
+from lotsize_engine import extract_lotsize
 
 class ConditionType(Enum):
     CONFIDENCE_THRESHOLD = "confidence_threshold"
