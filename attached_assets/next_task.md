@@ -1,48 +1,44 @@
-📌 NEXT TASK – Replit Agent Build Guide (Phase 1: Signal Execution Core)
+📌 NEXT TASK – Replit Agent Build Guide (Phase 4: Strategy Builder Blocks)
 📅 Date: 2025-06-24
 
 🧠 Task:
-Finalize the logic in `entry_range.py` to handle multiple entry point selection strategies from parsed signal ranges.
+Complete the `KeywordBlacklistBlock.tsx` by adding the missing logic to preview how blacklisted keywords affect live signals before execution.
 
 🔧 File to Complete:
-`/desktop-app/entry_range.py`
+`/client/src/blocks/KeywordBlacklistBlock.tsx`
 
 🧩 Description:
-Handle signals with entry ranges (e.g., “Entry: 1.1045–1.1065”) and select the optimal execution point based on strategy config.
+This UI block is already scaffolded visually. You now need to implement:
+- A form to input blacklisted keywords (comma-separated or tag-style)
+- A live preview panel showing: ✅ allowed or ❌ blocked signals
+- Connection to runtime config so it updates `strategy_runtime.ts` rules dynamically
 
-✅ Required Modes:
-- `best`: Select lowest price for BUY, highest for SELL
-- `average`: Midpoint of entry range
-- `second`: Second-best entry if multiple provided
-- `fallback_to_single`: If only one entry is parsed
-
-🎯 Inputs:
-- `entry_range: List[float]` (e.g., [1.1045, 1.1055, 1.1065])
-- `signal_direction: "BUY" | "SELL"`
-- `strategy_mode: "best" | "average" | "second"`
-
-🎯 Output:
-- `selected_entry_price: float`
+🎯 Features to Implement:
+- Real-time filtering preview based on test messages
+- Keyword matching in lowercase
+- Exact match and fuzzy mode toggle
+- “Apply to all pairs” checkbox
+- Store block config in local strategy state
 
 🧪 Required Test File:
-`/desktop-app/tests/test_entry_range.py`
+`/client/src/tests/blocks/keyword_blacklist_block.test.tsx`
 
-Test Cases:
-- BUY range: [1.1000, 1.1020, 1.1035] → best = 1.1000
-- SELL range: [1.1000, 1.1020, 1.1035] → best = 1.1035
-- Average logic for both
-- Second-best logic
-- Single-entry fallback
+Test Scenarios:
+- Signal: “HIGH RISK - GOLD” → blocked with “high risk” keyword
+- Signal: “Buy BTC with leverage” → blocked if “leverage” is set
+- Signal preview reflects changes immediately
+- Fuzzy vs strict match modes
 
 📦 Integration:
-- Used by: `parser.py`, `strategy_runtime.py`
-- Optional hook in `signal_simulator.py` for preview
+- Syncs with: `strategy_runtime.ts`, `strategy_config.json`
+- Hooks into existing signal simulator if present
 
 📂 Track Upon Completion:
-- ✅ `attached_assets/feature_status.md`
-- 🧾 `attached_assets/execution_history.md`
-- 📘 `attached_assets/dev_changelog.md`
+- `attached_assets/feature_status.md`
+- `attached_assets/dev_changelog.md`
+- `attached_assets/execution_history.md`
 
 ❗ Guidelines:
-- Handle edge cases (empty list, duplicates, float rounding)
-- Log selected mode and price
+- Match logic must use `.includes()` or regex depending on mode
+- Should not affect system performance on large datasets
+- Make sure this integrates cleanly into strategy export JSON

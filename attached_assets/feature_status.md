@@ -43,7 +43,7 @@ Mark modules as:
 ✅ time\_window block
 ✅ rr\_condition block
 ✅ margin\_filter block
-🚧 keyword\_blacklist block  ← UI implemented, preview logic missing
+✅ keyword\_blacklist block  ← Real-time signal validation completed
 
 ## PHASE 5: PROP FIRM STEALTH
 
