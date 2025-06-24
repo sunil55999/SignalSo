@@ -436,13 +436,17 @@ class SignalSimulator:
         # Calculate P&L for closed trades
         closed_profit = sum([t.profit_usd or 0 for t in trades if t.status == 'closed'])
         
+        # Calculate gross profit and loss separately
+        gross_profit = sum([t.profit_usd for t in trades if t.status == 'closed' and t.profit_usd and t.profit_usd > 0])
+        gross_loss = sum([t.profit_usd for t in trades if t.status == 'closed' and t.profit_usd and t.profit_usd < 0])
+        
         # Update simulation statistics
         simulation['statistics'] = {
             'total_trades': total_trades,
             'open_trades': open_trades,
             'closed_trades': closed_trades,
-            'gross_profit': max(0, closed_profit),
-            'gross_loss': min(0, closed_profit),
+            'gross_profit': gross_profit,
+            'gross_loss': gross_loss,
             'net_profit': closed_profit,
             'balance': simulation['current_balance'] + closed_profit,
             'equity': simulation['equity'],
