@@ -9,10 +9,10 @@ neonConfig.webSocketConstructor = ws;
 const DATABASE_URL = process.env.DATABASE_URL || 'postgresql://localhost:5432/signalos_dev';
 
 if (!DATABASE_URL) {
-  throw new Error(
-    "DATABASE_URL must be set. Did you forget to provision a database?",
+  console.warn(
+    "DATABASE_URL not set. Database operations will be limited until database is provisioned.",
   );
 }
 
-export const pool = new Pool({ connectionString: DATABASE_URL });
-export const db = drizzle({ client: pool, schema });
+export const pool = DATABASE_URL ? new Pool({ connectionString: DATABASE_URL }) : null;
+export const db = pool ? drizzle({ client: pool, schema }) : null;
