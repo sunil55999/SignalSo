@@ -257,6 +257,51 @@
   - Performance testing with 1000+ pip value lookups
   - Global utility function testing and error handling
 
+### [2025-01-25] Signal Simulator and Symbol Mapper Implementation
+
+* **signal_simulator.py** – Dry-run signal execution engine for preview without real trades (650+ lines)
+  - Comprehensive simulation of entry selection, lot calculation, and SL/TP adjustment logic
+  - Integration with lotsize_engine.py for accurate position sizing calculations
+  - Symbol normalization through symbol_mapper.py for broker compatibility
+  - Shadow mode support (SL hidden) and TP override from strategy configuration
+  - Spread adjustment functionality with configurable buffer for realistic pricing
+  - Price relationship validation ensuring logical SL/TP placement
+  - Batch simulation support for multiple signals with performance tracking
+  - Statistics collection: total/valid/invalid simulations, mode usage, symbol frequency
+  - File logging to logs/simulation.log with structured JSON format
+  - Module injection system for enhanced integration with trading engine components
+
+* **symbol_mapper.py** – Broker symbol normalizer with dynamic mapping (400+ lines)
+  - Comprehensive symbol database covering forex, metals, commodities, indices, and crypto
+  - Case-insensitive mapping with partial matching for complex symbols (.cash, .CFD suffixes)
+  - User override system with priority over default mappings and persistence support
+  - Bulk normalization and mapping management for efficient symbol processing
+  - Configuration file management with automatic default creation
+  - Statistics tracking: success rates, unknown symbols, lookup performance
+  - Global utility functions: normalize_symbol(), add_symbol_override(), get_symbol_stats()
+  - Fallback behavior for missing configurations with built-in default mappings
+
+* **test_signal_simulator.py** – Comprehensive test suite with 15+ test scenarios (400+ lines)
+  - Valid BUY signal simulation with correct entry, SL, TP, and lot calculation
+  - TP override from strategy configuration testing
+  - Shadow mode functionality (SL hidden) validation
+  - Fallback behavior testing with missing configuration data
+  - Multiple entry price selection logic (BUY=min, SELL=max)
+  - Lot size calculation integration with different risk modes
+  - Price validation testing for logical SL/TP relationships
+  - Symbol normalization integration testing
+  - Spread adjustment and TP level extension functionality
+  - Batch simulation, statistics tracking, and error handling
+
+* **test_symbol_mapper.py** – Comprehensive test suite with 20+ test scenarios (300+ lines)
+  - Core mapping tests: GOLD→XAUUSD, unknown symbols return input unchanged
+  - User override functionality with priority and persistence testing
+  - Case-insensitive mapping and partial matching for complex symbols
+  - Bulk normalization and mapping management validation
+  - Statistics tracking and performance testing
+  - Global utility functions and fallback behavior verification
+  - Default mappings coverage for all major asset classes
+
 ### [2025-06-24] Analytics Provider Table Implementation
 
 * **AnalyticsProviderTable.tsx** – Comprehensive UI table component for provider performance statistics

@@ -1,92 +1,85 @@
-📌 NEXT TASK – Replit Agent Build Guide (Phase 8: Lotsize + Entry)
-🧠 Task:
-Create the `lotsize_engine.py` module to support multiple lot size calculation strategies used by different user configurations and signals.
+📌 NEXT TASK – Replit Agent Build Guide (Phase 10: Simulation + Symbol Mapping)
 
-🔧 File to Create:
-`/desktop-app/lotsize_engine.py`
+🧠 Dual Module Task:
+You must now implement two essential modules to complete SignalOS’s dry-run sandbox and broker symbol compatibility layer.
 
-🧩 Description:
-This engine should compute the correct lot size for each trade based on strategy settings, signal context, and user risk profile.
+---
 
-✅ Required Modes:
-1. Fixed Lot (e.g., always 0.05)
-2. Risk Percent (e.g., 1% of account balance)
-3. Fixed Cash Amount (e.g., $10 per trade)
-4. Pip Value-Based Lot (e.g., $1 per pip on GOLD, US30)
-5. Signal-Driven Multiplier (e.g., if “HIGH RISK” → apply 2x multiplier)
+### ✅ 1. `/desktop-app/signal_simulator.py` – Signal Dry-Run Execution
 
-🧠 Required Input:
+🎯 Purpose:
+Allow users to preview signal execution logic (entry, SL/TP, lotsize) without sending real trades.
+
+🧩 Features:
+- Accept input: parsed signal + strategy config
+- Simulate:
+  - Entry selection
+  - Lotsize calculation (invoke `lotsize_engine.py`)
+  - SL/TP adjustment logic
+- Return dry-run summary:
 ```python
-calculate_lot(
-  strategy_config: dict,
-  signal_data: dict,
-  account_balance: float,
-  sl_pips: float,
-  symbol: str
-) → float
-🎯 Output:
+{
+  "entry": 1.1055,
+  "sl": 1.1020,
+  "tp": [1.1100, 1.1125],
+  "lot": 0.12,
+  "mode": "shadow",
+  "valid": True
+}
+🧪 Test File:
+/desktop-app/tests/test_signal_simulator.py
 
-Returns float representing the final computed lot size (e.g., 0.12)
+✅ Test:
 
-📚 Strategy Config Inputs:
+Valid BUY signal → correct simulation
 
-mode: "fixed" | "risk_percent" | "cash_per_trade" | "pip_value" | "text_override"
+TP override from strategy
 
-base_risk: float
+Shadow mode test (no SL shown)
 
-override_keywords: [“HIGH RISK”, “LOW RISK”, etc.]
+Fallback if config missing
 
-🧱 Additional Module to Scaffold:
-Create /desktop-app/pip_value_calculator.py to:
+✅ 2. /desktop-app/symbol_mapper.py – Broker Symbol Normalizer
+🎯 Purpose:
+Map general signal symbols (e.g., “GOLD”, “GER30”) to broker-specific equivalents (e.g., “XAUUSD”, “DE40.cash”).
 
-Provide pip values per symbol (e.g., GOLD = $10/pip, US30 = $1/pip)
+🧩 Features:
 
-Return pip value dynamically based on symbol input
+Load symbol map config (e.g., from /config/symbol_map.json)
 
-Can later support broker-specific values
-
-Example usage:
+Function:
 
 python
 Copy
 Edit
-get_pip_value("XAUUSD") → 10.0
-get_pip_value("US30") → 1.0
-🧪 Required Test File:
-/desktop-app/tests/test_lotsize_engine.py
+normalize_symbol(input_symbol: str) → str
+Support dynamic overrides (per user/account)
 
-Test Scenarios:
+Case-insensitive mapping (e.g., “gold” → “XAUUSD”)
 
-1% risk of $1000 account, SL 50 pips
+🧪 Test File:
+/desktop-app/tests/test_symbol_mapper.py
 
-Fixed $10 trade with pip value $1
+✅ Test:
 
-Text contains “HIGH RISK” → double lot
+“GOLD” → “XAUUSD”
 
-Missing SL: fallback behavior
+Unknown symbol returns input
 
-Symbol-specific pip valuation
+User override map test
 
-📦 Integrations:
-
-Used in: strategy_runtime.py, retry_engine.py, parser.py
-
-May receive pip values from pip_value_calculator.py
-
-Final lots sent to mt5_bridge.py
-
-📂 After Completion:
+📂 After Completion (Both Modules):
 
 ✅ Mark complete in /attached_assets/feature_status.md
 
-🧾 Log in /attached_assets/execution_history.md
+🧾 Append to /attached_assets/execution_history.md
 
-📘 Update /attached_assets/dev_changelog.md
+📘 Log both changes in /attached_assets/dev_changelog.md
 
-❗ Implementation Guidelines:
+❗ Guidelines:
 
-Safe output bounds: 0.01 ≤ lot ≤ 5.00
+Do not call MT5 or send live trades in simulation
 
-Must log warnings if pip value or SL is missing
+Store all dry-run previews in /logs/simulation.log (optional)
 
-Allow fallback to config-defined fixed lot if error occurs
+Make sure symbol_mapper.py is accessible from parser.py, retry_engine.py, and lotsize_engine.py

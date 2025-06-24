@@ -1,110 +1,87 @@
 """
 Signal Simulator for SignalOS
-Dry-run system for testing signal processing without executing real trades
+Provides dry-run execution preview of signal processing logic without sending real trades
+Simulates entry selection, lot size calculation, and SL/TP adjustment logic
 """
 
 import json
 import logging
-import time
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any, Tuple
+from datetime import datetime
+from typing import Dict, Any, Optional, List, Union
 from dataclasses import dataclass, asdict
-from enum import Enum
 from pathlib import Path
-import asyncio
 
-class SimulationMode(Enum):
-    DRY_RUN = "dry_run"
-    BACKTEST = "backtest"
-    FORWARD_TEST = "forward_test"
-    VALIDATION = "validation"
-
-class SimulationStatus(Enum):
-    PENDING = "pending"
-    PROCESSING = "processing"
-    COMPLETED = "completed"
-    FAILED = "failed"
-    CANCELLED = "cancelled"
-
-@dataclass
-class SimulationConfig:
-    mode: SimulationMode = SimulationMode.DRY_RUN
-    starting_balance: float = 10000.0
-    leverage: float = 100.0
-    spread_simulation: bool = True
-    slippage_simulation: bool = True
-    latency_simulation: bool = True
-    commission_per_lot: float = 7.0
-    max_simulated_trades: int = 1000
-    enable_logging: bool = True
-    log_file: str = "logs/signal_simulator.log"
-    output_format: str = "json"  # json, csv, html
-
-@dataclass
-class SimulatedTrade:
-    signal_id: str
-    symbol: str
-    action: str  # BUY, SELL
-    volume: float
-    entry_price: float
-    exit_price: Optional[float] = None
-    stop_loss: Optional[float] = None
-    take_profit: Optional[float] = None
-    entry_time: datetime = None
-    exit_time: Optional[datetime] = None
-    pips: Optional[float] = None
-    profit_usd: Optional[float] = None
-    commission: float = 0.0
-    swap: float = 0.0
-    status: str = "open"
-    comment: str = ""
-    
-    def __post_init__(self):
-        if self.entry_time is None:
-            self.entry_time = datetime.now()
+try:
+    from lotsize_engine import LotsizeEngine, calculate_lot
+    from entry_range import EntryRangeHandler
+    from symbol_mapper import normalize_symbol
+except ImportError:
+    # Handle import errors gracefully
+    pass
 
 @dataclass
 class SimulationResult:
-    simulation_id: str
-    config: SimulationConfig
-    trades: List[SimulatedTrade]
-    starting_balance: float
-    ending_balance: float
-    total_trades: int
-    winning_trades: int
-    losing_trades: int
-    win_rate: float
-    total_pips: float
-    max_drawdown: float
-    profit_factor: float
-    sharpe_ratio: float
-    execution_time: float
-    start_time: datetime
-    end_time: datetime
-    status: SimulationStatus
+    """Result of signal simulation"""
+    entry: float
+    sl: Optional[float]
+    tp: List[float]
+    lot: float
+    mode: str
+    valid: bool
+    symbol: str
+    direction: str
+    reasoning: str
+    warnings: List[str]
+    timestamp: datetime
+    
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary format"""
+        result = asdict(self)
+        result['timestamp'] = self.timestamp.isoformat()
+        return result
+
+@dataclass
+class SimulationConfig:
+    """Configuration for signal simulation"""
+    enable_logging: bool = True
+    log_file: str = "logs/simulation.log"
+    shadow_mode: bool = False  # Hide SL in shadow mode
+    default_tp_count: int = 2
+    default_lot_size: float = 0.1
+    min_lot_size: float = 0.01
+    max_lot_size: float = 10.0
+    validate_prices: bool = True
+    apply_spread_adjustment: bool = False
+    spread_buffer_pips: float = 0.5
 
 class SignalSimulator:
-    def __init__(self, config_file: str = "config.json", log_file: str = "logs/signal_simulator.log"):
+    """Dry-run signal execution simulator"""
+    
+    def __init__(self, config_file: str = "config.json"):
         self.config_file = config_file
         self.config = self._load_config()
-        self.simulations = {}
-        self.active_trades = {}
-        self.simulation_history = []
+        self._setup_logging()
         
-        # Setup logging
-        self._setup_logging(log_file)
+        # Injected modules (for real trading engine integration)
+        self.lotsize_engine = None
+        self.entry_handler = None
+        self.market_data = None
+        self.spread_checker = None
         
-        # Injected modules for integration
-        self.strategy_runtime = None
-        self.mt5_bridge = None
-        self.parser = None
+        # Initialize components
+        self._initialize_components()
         
-        # Market data simulation
-        self.price_feeds = {}
-        self.spread_data = {}
-        
+        # Statistics
+        self.simulation_stats = {
+            'total_simulations': 0,
+            'valid_simulations': 0,
+            'invalid_simulations': 0,
+            'mode_usage': {'normal': 0, 'shadow': 0},
+            'symbol_frequency': {}
+        }
+    
     def _load_config(self) -> SimulationConfig:
-        """Load simulation configuration from file"""
+        """Load simulation configuration"""
         try:
             if Path(self.config_file).exists():
                 with open(self.config_file, 'r') as f:
@@ -114,9 +91,9 @@ class SignalSimulator:
             else:
                 return self._create_default_config()
         except Exception as e:
-            logging.error(f"Failed to load config: {e}")
+            self.logger.warning(f"Failed to load config, using defaults: {e}")
             return SimulationConfig()
-
+    
     def _create_default_config(self) -> SimulationConfig:
         """Create default configuration and save to file"""
         default_config = SimulationConfig()
@@ -133,619 +110,460 @@ class SignalSimulator:
                 json.dump(config_data, f, indent=4)
                 
         except Exception as e:
-            logging.error(f"Failed to save default config: {e}")
+            self.logger.error(f"Failed to save default config: {e}")
         
         return default_config
-
-    def _setup_logging(self, log_file: str):
+    
+    def _setup_logging(self):
         """Setup logging for simulation operations"""
-        log_path = Path(log_file)
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        
         self.logger = logging.getLogger('SignalSimulator')
         self.logger.setLevel(logging.INFO)
         
         if not self.logger.handlers:
-            # File handler
-            file_handler = logging.FileHandler(log_file)
-            file_formatter = logging.Formatter(
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(
                 '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
+        
+        # Setup file logging if enabled
+        if self.config.enable_logging:
+            self._setup_file_logging()
+    
+    def _setup_file_logging(self):
+        """Setup file logging for simulation results"""
+        try:
+            log_path = Path(self.config.log_file)
+            log_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            file_handler = logging.FileHandler(self.config.log_file)
+            file_formatter = logging.Formatter(
+                '%(asctime)s - %(levelname)s - %(message)s'
             )
             file_handler.setFormatter(file_formatter)
             self.logger.addHandler(file_handler)
             
-            # Console handler  
-            console_handler = logging.StreamHandler()
-            console_formatter = logging.Formatter(
-                '%(asctime)s - %(levelname)s - %(message)s'
-            )
-            console_handler.setFormatter(console_formatter)
-            self.logger.addHandler(console_handler)
-
-    def inject_modules(self, strategy_runtime=None, mt5_bridge=None, parser=None):
-        """Inject module references for integration testing"""
-        self.strategy_runtime = strategy_runtime
-        self.mt5_bridge = mt5_bridge
-        self.parser = parser
-
-    def create_simulation(self, name: str, config: Optional[SimulationConfig] = None) -> str:
-        """Create a new simulation session"""
-        simulation_id = f"sim_{int(time.time())}_{len(self.simulations)}"
-        
-        if config is None:
-            config = self.config
-        
-        simulation = {
-            'id': simulation_id,
-            'name': name,
-            'config': config,
-            'trades': [],
-            'current_balance': config.starting_balance,
-            'equity': config.starting_balance,
-            'margin_used': 0.0,
-            'free_margin': config.starting_balance,
-            'start_time': datetime.now(),
-            'end_time': None,
-            'status': SimulationStatus.PENDING,
-            'statistics': {}
-        }
-        
-        self.simulations[simulation_id] = simulation
-        self.logger.info(f"Created simulation: {simulation_id} - {name}")
-        
-        return simulation_id
-
-    def simulate_signal_processing(self, simulation_id: str, signal_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate signal processing through the strategy pipeline"""
-        if simulation_id not in self.simulations:
-            raise ValueError(f"Simulation {simulation_id} not found")
-        
-        simulation = self.simulations[simulation_id]
-        simulation['status'] = SimulationStatus.PROCESSING
-        
-        try:
-            # Step 1: Parse signal (if parser is available)
-            parsed_signal = signal_data
-            if self.parser:
-                try:
-                    parsed_signal = self.parser.parse_signal(signal_data.get('content', ''))
-                    self.logger.info(f"Signal parsed: {parsed_signal}")
-                except Exception as e:
-                    self.logger.warning(f"Parser failed, using raw signal: {e}")
-            
-            # Step 2: Apply strategy runtime logic (if available)
-            strategy_result = {
-                "action": "execute_normal",
-                "signal": parsed_signal,
-                "parameters": {},
-                "applied_rules": []
-            }
-            
-            if self.strategy_runtime:
-                try:
-                    # Create signal context for strategy evaluation
-                    from strategy_runtime import SignalContext
-                    context = SignalContext(
-                        signal_data=parsed_signal,
-                        market_data=self._get_simulated_market_data(parsed_signal.get('symbol', 'EURUSD')),
-                        account_info={
-                            'balance': simulation['current_balance'],
-                            'equity': simulation['equity'],
-                            'margin': simulation['margin_used']
-                        }
-                    )
-                    
-                    strategy_result = self.strategy_runtime.evaluate_signal(parsed_signal, context)
-                    self.logger.info(f"Strategy evaluation: {strategy_result['action']}")
-                    
-                except Exception as e:
-                    self.logger.warning(f"Strategy runtime failed: {e}")
-            
-            # Step 3: Simulate trade execution
-            execution_result = self._simulate_trade_execution(simulation_id, strategy_result)
-            
-            # Step 4: Update simulation statistics
-            self._update_simulation_statistics(simulation_id)
-            
-            return {
-                'simulation_id': simulation_id,
-                'signal_processed': True,
-                'strategy_action': strategy_result['action'],
-                'trade_executed': execution_result.get('executed', False),
-                'trade_details': execution_result,
-                'current_balance': simulation['current_balance'],
-                'current_equity': simulation['equity']
-            }
-            
         except Exception as e:
-            self.logger.error(f"Signal simulation failed: {e}")
-            simulation['status'] = SimulationStatus.FAILED
-            return {
-                'simulation_id': simulation_id,
-                'signal_processed': False,
-                'error': str(e)
-            }
-
-    def _simulate_trade_execution(self, simulation_id: str, strategy_result: Dict[str, Any]) -> Dict[str, Any]:
-        """Simulate trade execution based on strategy result"""
-        simulation = self.simulations[simulation_id]
-        signal = strategy_result['signal']
-        
-        # Check if trade should be executed
-        if strategy_result['action'] == 'skip_trade':
-            return {
-                'executed': False,
-                'reason': 'Trade skipped by strategy',
-                'action': strategy_result['action']
-            }
-        
-        # Extract trade parameters
-        symbol = signal.get('symbol', 'EURUSD')
-        action = signal.get('action', 'BUY').upper()
-        volume = float(signal.get('lot_size', 0.01))
-        
-        # Get current market price with simulation of spread/slippage
-        market_data = self._get_simulated_market_data(symbol)
-        entry_price = self._apply_execution_simulation(
-            symbol, action, market_data, simulation['config']
-        )
-        
-        # Check margin requirements
-        required_margin = self._calculate_required_margin(symbol, volume, entry_price)
-        if required_margin > simulation['free_margin']:
-            return {
-                'executed': False,
-                'reason': 'Insufficient margin',
-                'required_margin': required_margin,
-                'available_margin': simulation['free_margin']
-            }
-        
-        # Create simulated trade
-        trade = SimulatedTrade(
-            signal_id=signal.get('id', f"sig_{int(time.time())}"),
-            symbol=symbol,
-            action=action,
-            volume=volume,
-            entry_price=entry_price,
-            stop_loss=signal.get('stop_loss'),
-            take_profit=signal.get('take_profit'),
-            commission=volume * simulation['config'].commission_per_lot,
-            comment=f"Simulated trade from signal"
-        )
-        
-        # Update simulation state
-        simulation['trades'].append(trade)
-        simulation['margin_used'] += required_margin
-        simulation['free_margin'] -= required_margin
-        
-        self.logger.info(f"Simulated trade: {action} {volume} {symbol} @ {entry_price}")
-        
-        return {
-            'executed': True,
-            'trade': asdict(trade),
-            'margin_used': required_margin,
-            'new_balance': simulation['current_balance'],
-            'new_equity': simulation['equity']
-        }
-
-    def _get_simulated_market_data(self, symbol: str) -> Dict[str, Any]:
-        """Get simulated market data for symbol"""
-        # Generate realistic price data
-        base_prices = {
-            'EURUSD': 1.1000,
-            'GBPUSD': 1.2500,
-            'USDJPY': 110.00,
-            'USDCHF': 0.9200,
-            'AUDUSD': 0.7500,
-            'USDCAD': 1.2500,
-            'NZDUSD': 0.7000,
-            'XAUUSD': 2000.00
-        }
-        
-        base_price = base_prices.get(symbol, 1.0000)
-        
-        # Add small random variation (±0.1%)
-        import random
-        variation = random.uniform(-0.001, 0.001)
-        current_price = base_price * (1 + variation)
-        
-        # Calculate spread (in pips)
-        spread_pips = {
-            'EURUSD': 1.5,
-            'GBPUSD': 2.0,
-            'USDJPY': 1.8,
-            'USDCHF': 2.2,
-            'AUDUSD': 1.9,
-            'USDCAD': 2.1,
-            'NZDUSD': 2.5,
-            'XAUUSD': 0.5
-        }.get(symbol, 2.0)
-        
-        pip_size = 0.0001 if 'JPY' not in symbol else 0.01
-        spread = spread_pips * pip_size
-        
-        return {
-            'symbol': symbol,
-            'bid': current_price - spread/2,
-            'ask': current_price + spread/2,
-            'spread_pips': spread_pips,
-            'time': datetime.now().isoformat()
-        }
-
-    def _apply_execution_simulation(self, symbol: str, action: str, market_data: Dict[str, Any], config: SimulationConfig) -> float:
-        """Apply execution simulation including spread and slippage"""
-        bid = market_data['bid']
-        ask = market_data['ask']
-        
-        # Determine execution price based on action
-        if action == 'BUY':
-            execution_price = ask
-        else:  # SELL
-            execution_price = bid
-        
-        # Apply slippage simulation if enabled
-        if config.slippage_simulation:
-            import random
-            # Random slippage between 0-1 pip
-            pip_size = 0.0001 if 'JPY' not in symbol else 0.01
-            slippage_pips = random.uniform(0, 1)
-            slippage = slippage_pips * pip_size
-            
-            if action == 'BUY':
-                execution_price += slippage  # Worse for buyer
-            else:
-                execution_price -= slippage  # Worse for seller
-        
-        return execution_price
-
-    def _calculate_required_margin(self, symbol: str, volume: float, price: float) -> float:
-        """Calculate required margin for trade"""
-        # Standard contract sizes
-        contract_sizes = {
-            'EURUSD': 100000,
-            'GBPUSD': 100000,
-            'USDJPY': 100000,
-            'USDCHF': 100000,
-            'AUDUSD': 100000,
-            'USDCAD': 100000,
-            'NZDUSD': 100000,
-            'XAUUSD': 100
-        }
-        
-        contract_size = contract_sizes.get(symbol, 100000)
-        notional_value = volume * contract_size * price
-        
-        # Calculate margin requirement (assuming 1:100 leverage)
-        margin_requirement = notional_value / self.config.leverage
-        
-        return margin_requirement
-
-    def _update_simulation_statistics(self, simulation_id: str):
-        """Update simulation statistics"""
-        simulation = self.simulations[simulation_id]
-        trades = simulation['trades']
-        
-        if not trades:
-            return
-        
-        # Calculate basic statistics
-        total_trades = len(trades)
-        open_trades = len([t for t in trades if t.status == 'open'])
-        closed_trades = len([t for t in trades if t.status == 'closed'])
-        
-        # Calculate P&L for closed trades
-        closed_profit = sum([t.profit_usd or 0 for t in trades if t.status == 'closed'])
-        
-        # Calculate gross profit and loss separately
-        gross_profit = sum([t.profit_usd for t in trades if t.status == 'closed' and t.profit_usd and t.profit_usd > 0])
-        gross_loss = sum([t.profit_usd for t in trades if t.status == 'closed' and t.profit_usd and t.profit_usd < 0])
-        
-        # Update simulation statistics
-        simulation['statistics'] = {
-            'total_trades': total_trades,
-            'open_trades': open_trades,
-            'closed_trades': closed_trades,
-            'gross_profit': gross_profit,
-            'gross_loss': gross_loss,
-            'net_profit': closed_profit,
-            'balance': simulation['current_balance'] + closed_profit,
-            'equity': simulation['equity'],
-            'margin_level': (simulation['equity'] / simulation['margin_used']) * 100 if simulation['margin_used'] > 0 else 0
-        }
-
-    def close_simulated_trade(self, simulation_id: str, trade_signal_id: str, reason: str = "Manual close") -> Dict[str, Any]:
-        """Close a simulated trade"""
-        if simulation_id not in self.simulations:
-            raise ValueError(f"Simulation {simulation_id} not found")
-        
-        simulation = self.simulations[simulation_id]
-        
-        # Find the trade
-        trade = None
-        for t in simulation['trades']:
-            if t.signal_id == trade_signal_id and t.status == 'open':
-                trade = t
-                break
-        
-        if not trade:
-            return {'closed': False, 'reason': 'Trade not found or already closed'}
-        
-        # Get current market price
-        market_data = self._get_simulated_market_data(trade.symbol)
-        
-        # Determine exit price
-        if trade.action == 'BUY':
-            exit_price = market_data['bid']  # Sell at bid
-        else:
-            exit_price = market_data['ask']   # Buy back at ask
-        
-        # Calculate profit/loss
-        if trade.action == 'BUY':
-            price_diff = exit_price - trade.entry_price
-        else:
-            price_diff = trade.entry_price - exit_price
-        
-        # Calculate pip value and profit
-        pip_size = 0.0001 if 'JPY' not in trade.symbol else 0.01
-        pips = price_diff / pip_size
-        
-        # Standard lot value calculation
-        contract_size = 100000 if 'XAU' not in trade.symbol else 100
-        profit_usd = price_diff * trade.volume * contract_size
-        
-        # Apply commission
-        total_commission = trade.commission * 2  # Entry + exit
-        net_profit = profit_usd - total_commission
-        
-        # Update trade
-        trade.exit_price = exit_price
-        trade.exit_time = datetime.now()
-        trade.pips = pips
-        trade.profit_usd = net_profit
-        trade.status = 'closed'
-        trade.comment += f" | Closed: {reason}"
-        
-        # Update simulation balance
-        simulation['current_balance'] += net_profit
-        simulation['equity'] += net_profit
-        
-        # Free up margin
-        required_margin = self._calculate_required_margin(trade.symbol, trade.volume, trade.entry_price)
-        simulation['margin_used'] -= required_margin
-        simulation['free_margin'] += required_margin
-        
-        self.logger.info(f"Closed trade {trade_signal_id}: {pips:.1f} pips, ${net_profit:.2f}")
-        
-        return {
-            'closed': True,
-            'trade': asdict(trade),
-            'profit_usd': net_profit,
-            'pips': pips,
-            'new_balance': simulation['current_balance']
-        }
-
-    def run_batch_simulation(self, simulation_id: str, signals: List[Dict[str, Any]]) -> SimulationResult:
-        """Run batch simulation with multiple signals"""
-        if simulation_id not in self.simulations:
-            raise ValueError(f"Simulation {simulation_id} not found")
-        
-        simulation = self.simulations[simulation_id]
-        simulation['status'] = SimulationStatus.PROCESSING
-        start_time = datetime.now()
-        
-        self.logger.info(f"Starting batch simulation with {len(signals)} signals")
-        
-        processed_signals = 0
-        successful_trades = 0
+            self.logger.warning(f"Failed to setup file logging: {e}")
+    
+    def _initialize_components(self):
+        """Initialize internal components"""
+        try:
+            self.lotsize_engine = LotsizeEngine()
+        except Exception:
+            self.logger.warning("LotsizeEngine not available for simulation")
         
         try:
-            for signal in signals:
-                result = self.simulate_signal_processing(simulation_id, signal)
-                processed_signals += 1
-                
-                if result.get('trade_executed', False):
-                    successful_trades += 1
-                
-                # Add small delay to simulate real-time processing
-                time.sleep(0.1)
+            self.entry_handler = EntryRangeHandler()
+        except Exception:
+            self.logger.warning("EntryRangeHandler not available for simulation")
+    
+    def inject_modules(self, lotsize_engine=None, entry_handler=None, 
+                      market_data=None, spread_checker=None):
+        """Inject external modules for enhanced simulation"""
+        if lotsize_engine:
+            self.lotsize_engine = lotsize_engine
+        if entry_handler:
+            self.entry_handler = entry_handler
+        if market_data:
+            self.market_data = market_data
+        if spread_checker:
+            self.spread_checker = spread_checker
+    
+    def simulate_signal(self, parsed_signal: Dict[str, Any], 
+                       strategy_config: Dict[str, Any]) -> SimulationResult:
+        """
+        Simulate signal execution with strategy configuration
+        
+        Args:
+            parsed_signal: Dictionary containing parsed signal data
+            strategy_config: Strategy configuration for execution
             
-            # Close all remaining open trades
-            for trade in simulation['trades']:
-                if trade.status == 'open':
-                    self.close_simulated_trade(simulation_id, trade.signal_id, "Simulation end")
+        Returns:
+            SimulationResult with dry-run execution details
+        """
+        self.simulation_stats['total_simulations'] += 1
+        warnings = []
+        
+        try:
+            # Extract signal components
+            symbol = self._normalize_symbol(parsed_signal.get('symbol', 'UNKNOWN'))
+            direction = parsed_signal.get('direction', 'BUY').upper()
+            entry_prices = parsed_signal.get('entry', [])
+            stop_loss = parsed_signal.get('stop_loss')
+            take_profits = parsed_signal.get('take_profit', [])
             
-            simulation['status'] = SimulationStatus.COMPLETED
-            simulation['end_time'] = datetime.now()
+            # Update symbol frequency stats
+            self.simulation_stats['symbol_frequency'][symbol] = \
+                self.simulation_stats['symbol_frequency'].get(symbol, 0) + 1
             
-            # Generate final result
-            result = self._generate_simulation_result(simulation_id, start_time)
+            # Determine simulation mode
+            mode = strategy_config.get('simulation_mode', 'normal')
+            if self.config.shadow_mode:
+                mode = 'shadow'
             
-            self.logger.info(f"Batch simulation completed: {processed_signals} signals, {successful_trades} trades")
+            self.simulation_stats['mode_usage'][mode] = \
+                self.simulation_stats['mode_usage'].get(mode, 0) + 1
             
+            # Simulate entry selection
+            entry = self._simulate_entry_selection(entry_prices, direction, symbol, warnings)
+            
+            # Simulate lot size calculation
+            lot_size = self._simulate_lot_calculation(
+                parsed_signal, strategy_config, symbol, stop_loss, entry, warnings
+            )
+            
+            # Simulate SL/TP adjustment
+            adjusted_sl, adjusted_tp = self._simulate_sl_tp_adjustment(
+                stop_loss, take_profits, strategy_config, symbol, entry, direction, warnings
+            )
+            
+            # Apply shadow mode if enabled
+            if mode == 'shadow':
+                adjusted_sl = None
+                warnings.append("SL hidden in shadow mode")
+            
+            # Validate simulation result
+            is_valid = self._validate_simulation_result(
+                entry, adjusted_sl, adjusted_tp, lot_size, symbol, direction, warnings
+            )
+            
+            if is_valid:
+                self.simulation_stats['valid_simulations'] += 1
+            else:
+                self.simulation_stats['invalid_simulations'] += 1
+            
+            # Create simulation result
+            result = SimulationResult(
+                entry=entry,
+                sl=adjusted_sl,
+                tp=adjusted_tp,
+                lot=lot_size,
+                mode=mode,
+                valid=is_valid,
+                symbol=symbol,
+                direction=direction,
+                reasoning=f"Simulated {direction} {symbol} at {entry} with {lot_size} lots",
+                warnings=warnings,
+                timestamp=datetime.now()
+            )
+            
+            # Log simulation result
+            if self.config.enable_logging:
+                self._log_simulation_result(result)
+            
+            self.logger.info(f"Simulated {symbol} {direction}: entry={entry}, lot={lot_size}, valid={is_valid}")
             return result
             
         except Exception as e:
-            simulation['status'] = SimulationStatus.FAILED
-            self.logger.error(f"Batch simulation failed: {e}")
-            raise
-
-    def _generate_simulation_result(self, simulation_id: str, start_time: datetime) -> SimulationResult:
-        """Generate comprehensive simulation result"""
-        simulation = self.simulations[simulation_id]
-        trades = simulation['trades']
+            self.simulation_stats['invalid_simulations'] += 1
+            error_msg = f"Simulation failed: {str(e)}"
+            self.logger.error(error_msg)
+            
+            return SimulationResult(
+                entry=0.0,
+                sl=None,
+                tp=[],
+                lot=self.config.default_lot_size,
+                mode='error',
+                valid=False,
+                symbol=symbol if 'symbol' in locals() else 'UNKNOWN',
+                direction=direction if 'direction' in locals() else 'BUY',
+                reasoning=error_msg,
+                warnings=[error_msg],
+                timestamp=datetime.now()
+            )
+    
+    def _normalize_symbol(self, symbol: str) -> str:
+        """Normalize symbol using symbol mapper if available"""
+        try:
+            return normalize_symbol(symbol)
+        except:
+            # Fallback normalization
+            symbol_map = {
+                'GOLD': 'XAUUSD',
+                'SILVER': 'XAGUSD',
+                'OIL': 'USOIL',
+                'GER30': 'GER30',
+                'UK100': 'UK100',
+                'US30': 'US30',
+                'NAS100': 'NAS100',
+                'SPX500': 'SPX500'
+            }
+            return symbol_map.get(symbol.upper(), symbol.upper())
+    
+    def _simulate_entry_selection(self, entry_prices: List[float], direction: str, 
+                                 symbol: str, warnings: List[str]) -> float:
+        """Simulate entry price selection logic"""
+        if not entry_prices:
+            warnings.append("No entry prices provided, using default")
+            return 1.0000  # Default fallback
         
-        # Basic statistics
-        total_trades = len(trades)
-        winning_trades = len([t for t in trades if t.profit_usd and t.profit_usd > 0])
-        losing_trades = len([t for t in trades if t.profit_usd and t.profit_usd < 0])
+        if len(entry_prices) == 1:
+            return entry_prices[0]
         
-        win_rate = (winning_trades / total_trades) * 100 if total_trades > 0 else 0
+        # Use entry handler if available
+        if self.entry_handler:
+            try:
+                return self.entry_handler.select_entry_price(entry_prices, direction)
+            except Exception as e:
+                warnings.append(f"Entry handler failed: {e}")
         
-        # Financial metrics
-        starting_balance = simulation['config'].starting_balance
-        ending_balance = simulation['current_balance']
-        total_pips = sum([t.pips or 0 for t in trades])
+        # Fallback selection logic
+        if direction.upper() == 'BUY':
+            return min(entry_prices)  # Best entry for BUY is lowest price
+        else:
+            return max(entry_prices)  # Best entry for SELL is highest price
+    
+    def _simulate_lot_calculation(self, parsed_signal: Dict[str, Any], 
+                                 strategy_config: Dict[str, Any], symbol: str,
+                                 stop_loss: Optional[float], entry: float,
+                                 warnings: List[str]) -> float:
+        """Simulate lot size calculation"""
+        try:
+            # Calculate SL distance in pips
+            sl_pips = None
+            if stop_loss and entry:
+                pip_size = self._get_pip_size(symbol)
+                sl_pips = abs(entry - stop_loss) / pip_size
+            
+            # Use calculate_lot function if available
+            if 'calculate_lot' in globals():
+                account_balance = strategy_config.get('account_balance', 10000.0)
+                lot_size = calculate_lot(
+                    strategy_config=strategy_config,
+                    signal_data=parsed_signal,
+                    account_balance=account_balance,
+                    sl_pips=sl_pips or 50.0,  # Default 50 pips
+                    symbol=symbol
+                )
+                return self._constrain_lot_size(lot_size)
+            
+            # Fallback lot calculation
+            explicit_lot = parsed_signal.get('lot_size')
+            if explicit_lot:
+                return self._constrain_lot_size(explicit_lot)
+            
+            warnings.append("Using default lot size")
+            return self.config.default_lot_size
+            
+        except Exception as e:
+            warnings.append(f"Lot calculation failed: {e}")
+            return self.config.default_lot_size
+    
+    def _simulate_sl_tp_adjustment(self, stop_loss: Optional[float], 
+                                  take_profits: List[float], strategy_config: Dict[str, Any],
+                                  symbol: str, entry: float, direction: str,
+                                  warnings: List[str]) -> tuple:
+        """Simulate SL/TP adjustment logic"""
+        adjusted_sl = stop_loss
+        adjusted_tp = take_profits.copy() if take_profits else []
         
-        # Calculate drawdown
-        balance_history = [starting_balance]
-        running_balance = starting_balance
-        for trade in trades:
-            if trade.profit_usd:
-                running_balance += trade.profit_usd
-                balance_history.append(running_balance)
-        
-        peak_balance = starting_balance
-        max_drawdown = 0
-        for balance in balance_history:
-            if balance > peak_balance:
-                peak_balance = balance
+        # Apply spread adjustment if enabled
+        if self.config.apply_spread_adjustment:
+            spread_pips = self._get_spread_adjustment(symbol)
+            pip_size = self._get_pip_size(symbol)
+            spread_adjustment = spread_pips * pip_size
+            
+            if direction.upper() == 'BUY':
+                if adjusted_sl:
+                    adjusted_sl -= spread_adjustment
+                adjusted_tp = [tp + spread_adjustment for tp in adjusted_tp]
             else:
-                drawdown = ((peak_balance - balance) / peak_balance) * 100
-                max_drawdown = max(max_drawdown, drawdown)
+                if adjusted_sl:
+                    adjusted_sl += spread_adjustment
+                adjusted_tp = [tp - spread_adjustment for tp in adjusted_tp]
+            
+            warnings.append(f"Applied {spread_pips} pip spread adjustment")
         
-        # Profit factor
-        gross_profit = sum([t.profit_usd for t in trades if t.profit_usd and t.profit_usd > 0])
-        gross_loss = abs(sum([t.profit_usd for t in trades if t.profit_usd and t.profit_usd < 0]))
-        profit_factor = gross_profit / gross_loss if gross_loss > 0 else float('inf')
+        # Handle TP override from strategy
+        strategy_tp_override = strategy_config.get('tp_override')
+        if strategy_tp_override:
+            if isinstance(strategy_tp_override, list):
+                adjusted_tp = strategy_tp_override
+            else:
+                adjusted_tp = [strategy_tp_override]
+            warnings.append("Applied TP override from strategy")
         
-        # Sharpe ratio (simplified)
-        if total_trades > 1:
-            returns = [t.profit_usd / starting_balance for t in trades if t.profit_usd]
-            avg_return = sum(returns) / len(returns) if returns else 0
-            return_std = (sum([(r - avg_return) ** 2 for r in returns]) / len(returns)) ** 0.5 if returns else 0
-            sharpe_ratio = avg_return / return_std if return_std > 0 else 0
-        else:
-            sharpe_ratio = 0
+        # Ensure minimum TP count if required
+        if len(adjusted_tp) < self.config.default_tp_count and adjusted_tp:
+            base_tp = adjusted_tp[0]
+            pip_size = self._get_pip_size(symbol)
+            
+            while len(adjusted_tp) < self.config.default_tp_count:
+                if direction.upper() == 'BUY':
+                    next_tp = adjusted_tp[-1] + (20 * pip_size)  # Add 20 pips
+                else:
+                    next_tp = adjusted_tp[-1] - (20 * pip_size)  # Subtract 20 pips
+                adjusted_tp.append(next_tp)
+            
+            warnings.append(f"Extended TP levels to {self.config.default_tp_count}")
         
-        return SimulationResult(
-            simulation_id=simulation_id,
-            config=simulation['config'],
-            trades=trades,
-            starting_balance=starting_balance,
-            ending_balance=ending_balance,
-            total_trades=total_trades,
-            winning_trades=winning_trades,
-            losing_trades=losing_trades,
-            win_rate=win_rate,
-            total_pips=total_pips,
-            max_drawdown=max_drawdown,
-            profit_factor=profit_factor,
-            sharpe_ratio=sharpe_ratio,
-            execution_time=(datetime.now() - start_time).total_seconds(),
-            start_time=start_time,
-            end_time=datetime.now(),
-            status=simulation['status']
-        )
-
-    def get_simulation_status(self, simulation_id: str) -> Dict[str, Any]:
-        """Get current simulation status"""
-        if simulation_id not in self.simulations:
-            return {'error': 'Simulation not found'}
-        
-        simulation = self.simulations[simulation_id]
-        
-        return {
-            'simulation_id': simulation_id,
-            'name': simulation['name'],
-            'status': simulation['status'].value,
-            'current_balance': simulation['current_balance'],
-            'equity': simulation['equity'],
-            'margin_used': simulation['margin_used'],
-            'free_margin': simulation['free_margin'],
-            'total_trades': len(simulation['trades']),
-            'open_trades': len([t for t in simulation['trades'] if t.status == 'open']),
-            'statistics': simulation.get('statistics', {})
+        return adjusted_sl, adjusted_tp
+    
+    def _get_pip_size(self, symbol: str) -> float:
+        """Get pip size for symbol"""
+        # Standard pip sizes
+        pip_sizes = {
+            'EURUSD': 0.0001, 'GBPUSD': 0.0001, 'AUDUSD': 0.0001, 'NZDUSD': 0.0001,
+            'USDCAD': 0.0001, 'USDCHF': 0.0001, 'USDJPY': 0.01,
+            'XAUUSD': 0.01, 'XAGUSD': 0.001,  # Metals
+            'US30': 1.0, 'NAS100': 1.0, 'SPX500': 1.0,  # Indices
+            'USOIL': 0.01, 'UKOIL': 0.01  # Commodities
         }
-
-    def export_simulation_results(self, simulation_id: str, format: str = "json") -> str:
-        """Export simulation results in specified format"""
-        if simulation_id not in self.simulations:
-            raise ValueError(f"Simulation {simulation_id} not found")
+        return pip_sizes.get(symbol, 0.0001)  # Default to 0.0001
+    
+    def _get_spread_adjustment(self, symbol: str) -> float:
+        """Get spread adjustment in pips for symbol"""
+        if self.spread_checker:
+            try:
+                return self.spread_checker.get_average_spread(symbol)
+            except:
+                pass
         
-        simulation = self.simulations[simulation_id]
+        # Default spread adjustments (conservative estimates)
+        spreads = {
+            'EURUSD': 0.5, 'GBPUSD': 0.8, 'USDJPY': 0.5, 'USDCHF': 0.8,
+            'AUDUSD': 0.7, 'NZDUSD': 1.0, 'USDCAD': 0.7,
+            'XAUUSD': 1.5, 'XAGUSD': 2.0,
+            'US30': 2.0, 'NAS100': 1.5, 'SPX500': 0.5
+        }
+        return spreads.get(symbol, self.config.spread_buffer_pips)
+    
+    def _constrain_lot_size(self, lot_size: float) -> float:
+        """Apply lot size constraints"""
+        return max(self.config.min_lot_size, 
+                  min(self.config.max_lot_size, lot_size))
+    
+    def _validate_simulation_result(self, entry: float, sl: Optional[float], 
+                                   tp: List[float], lot: float, symbol: str,
+                                   direction: str, warnings: List[str]) -> bool:
+        """Validate simulation result for logical consistency"""
+        if not self.config.validate_prices:
+            return True
         
-        if format.lower() == "json":
-            export_data = {
-                'simulation_id': simulation_id,
-                'name': simulation['name'],
-                'config': asdict(simulation['config']),
-                'trades': [asdict(trade) for trade in simulation['trades']],
-                'statistics': simulation.get('statistics', {}),
-                'export_time': datetime.now().isoformat()
+        try:
+            # Basic validations
+            if entry <= 0:
+                warnings.append("Invalid entry price")
+                return False
+            
+            if lot <= 0:
+                warnings.append("Invalid lot size")
+                return False
+            
+            # Price relationship validations
+            if sl and direction.upper() == 'BUY' and sl >= entry:
+                warnings.append("BUY signal: SL should be below entry")
+                return False
+            
+            if sl and direction.upper() == 'SELL' and sl <= entry:
+                warnings.append("SELL signal: SL should be above entry")
+                return False
+            
+            # TP validations
+            for i, tp_level in enumerate(tp):
+                if direction.upper() == 'BUY' and tp_level <= entry:
+                    warnings.append(f"BUY signal: TP{i+1} should be above entry")
+                    return False
+                
+                if direction.upper() == 'SELL' and tp_level >= entry:
+                    warnings.append(f"SELL signal: TP{i+1} should be below entry")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            warnings.append(f"Validation error: {e}")
+            return False
+    
+    def _log_simulation_result(self, result: SimulationResult):
+        """Log simulation result to file"""
+        try:
+            log_entry = {
+                'timestamp': result.timestamp.isoformat(),
+                'symbol': result.symbol,
+                'direction': result.direction,
+                'entry': result.entry,
+                'sl': result.sl,
+                'tp': result.tp,
+                'lot': result.lot,
+                'mode': result.mode,
+                'valid': result.valid,
+                'warnings': result.warnings
             }
             
-            filename = f"simulation_{simulation_id}_{int(time.time())}.json"
-            filepath = Path("logs") / filename
-            filepath.parent.mkdir(parents=True, exist_ok=True)
-            
-            with open(filepath, 'w') as f:
-                json.dump(export_data, f, indent=4, default=str)
-            
-            return str(filepath)
-        
-        else:
-            raise ValueError(f"Unsupported export format: {format}")
-
-    def get_statistics(self) -> Dict[str, Any]:
-        """Get overall simulator statistics"""
-        total_simulations = len(self.simulations)
-        active_simulations = len([s for s in self.simulations.values() if s['status'] == SimulationStatus.PROCESSING])
-        completed_simulations = len([s for s in self.simulations.values() if s['status'] == SimulationStatus.COMPLETED])
-        
+            log_path = Path(self.config.log_file)
+            with open(log_path, 'a') as f:
+                f.write(json.dumps(log_entry) + '\n')
+                
+        except Exception as e:
+            self.logger.warning(f"Failed to log simulation result: {e}")
+    
+    def get_simulation_statistics(self) -> Dict[str, Any]:
+        """Get simulation statistics"""
         return {
-            'total_simulations': total_simulations,
-            'active_simulations': active_simulations,
-            'completed_simulations': completed_simulations,
-            'available_symbols': list(self._get_simulated_market_data('EURUSD').keys()),
-            'simulation_modes': [mode.value for mode in SimulationMode],
-            'config': asdict(self.config)
-        }
-
-
-# Example usage
-if __name__ == "__main__":
-    import asyncio
-    
-    async def test_signal_simulator():
-        """Test signal simulator functionality"""
-        simulator = SignalSimulator()
-        
-        # Create simulation
-        sim_id = simulator.create_simulation("Test Simulation")
-        
-        # Test signals
-        test_signals = [
-            {
-                'id': 'signal_1',
-                'content': 'BUY EURUSD Entry: 1.1000 SL: 1.0950 TP: 1.1050',
-                'symbol': 'EURUSD',
-                'action': 'BUY',
-                'lot_size': 0.1,
-                'stop_loss': 1.0950,
-                'take_profit': 1.1050
-            },
-            {
-                'id': 'signal_2', 
-                'content': 'SELL GBPUSD Entry: 1.2500 SL: 1.2550 TP: 1.2450',
-                'symbol': 'GBPUSD',
-                'action': 'SELL',
-                'lot_size': 0.05,
-                'stop_loss': 1.2550,
-                'take_profit': 1.2450
+            'stats': self.simulation_stats.copy(),
+            'config': asdict(self.config),
+            'components_available': {
+                'lotsize_engine': self.lotsize_engine is not None,
+                'entry_handler': self.entry_handler is not None,
+                'market_data': self.market_data is not None,
+                'spread_checker': self.spread_checker is not None
             }
-        ]
-        
-        # Run batch simulation
-        result = simulator.run_batch_simulation(sim_id, test_signals)
-        
-        print(f"Simulation completed: {result.total_trades} trades")
-        print(f"Win rate: {result.win_rate:.1f}%")
-        print(f"Total pips: {result.total_pips:.1f}")
-        print(f"Final balance: ${result.ending_balance:.2f}")
-        
-        # Export results
-        export_file = simulator.export_simulation_results(sim_id)
-        print(f"Results exported to: {export_file}")
+        }
     
-    # Run test
-    asyncio.run(test_signal_simulator())
+    def batch_simulate(self, signals_and_configs: List[tuple]) -> List[SimulationResult]:
+        """Simulate multiple signals in batch"""
+        results = []
+        
+        for parsed_signal, strategy_config in signals_and_configs:
+            result = self.simulate_signal(parsed_signal, strategy_config)
+            results.append(result)
+        
+        self.logger.info(f"Completed batch simulation of {len(results)} signals")
+        return results
+    
+    def clear_statistics(self):
+        """Clear simulation statistics"""
+        self.simulation_stats = {
+            'total_simulations': 0,
+            'valid_simulations': 0,
+            'invalid_simulations': 0,
+            'mode_usage': {'normal': 0, 'shadow': 0},
+            'symbol_frequency': {}
+        }
+        self.logger.info("Simulation statistics cleared")
+
+
+# Global instance for easy access
+_signal_simulator = None
+
+def simulate_signal(parsed_signal: Dict[str, Any], 
+                   strategy_config: Dict[str, Any]) -> SimulationResult:
+    """
+    Global function to simulate signal execution
+    
+    Args:
+        parsed_signal: Parsed signal data
+        strategy_config: Strategy configuration
+        
+    Returns:
+        SimulationResult with dry-run execution details
+    """
+    global _signal_simulator
+    
+    if _signal_simulator is None:
+        _signal_simulator = SignalSimulator()
+    
+    return _signal_simulator.simulate_signal(parsed_signal, strategy_config)
+
+def get_simulation_stats() -> Dict[str, Any]:
+    """Get global simulation statistics"""
+    global _signal_simulator
+    
+    if _signal_simulator is None:
+        _signal_simulator = SignalSimulator()
+    
+    return _signal_simulator.get_simulation_statistics()
