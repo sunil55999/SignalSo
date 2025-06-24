@@ -68,7 +68,7 @@ Mark modules as:
 ✅ StrategyBuilder.tsx
 ✅ AnalyticsProviderTable.tsx
 ✅ signal\_success\_tracker.ts
-⛔ ProviderTrustScore.ts
+✅ ProviderTrustScore.ts
 
 ## PHASE 8: LOTSIZE + ENTRYPOINT
 

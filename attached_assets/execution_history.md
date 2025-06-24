@@ -193,6 +193,28 @@
   - Edge case handling for zero trades, extreme drawdowns, pending signals, and missing data
   - Test coverage: 25+ comprehensive test cases covering all calculation methods and edge scenarios
 
+### [2025-01-25] Provider Trust Score Engine Implementation
+
+* **ProviderTrustScore.ts** – Advanced trust scoring engine for signal provider evaluation (400+ lines)
+  - Weighted scoring algorithm with 6 key metrics: TP rate (25%), SL rate (15%), drawdown (15%), cancel rate (10%), confidence (15%), latency (10%), execution rate (10%)
+  - Trust score calculation (0-100 scale) with letter grades (A+ to F) and reliability tiers (EXCELLENT, GOOD, AVERAGE, POOR, INSUFFICIENT_DATA)
+  - Configurable weights for different scoring priorities and custom evaluation criteria
+  - Real-time recalculation support for live performance tracking and score updates
+  - Comparative analysis between providers with recommendations for portfolio optimization
+  - Edge case handling: insufficient data (<10 signals), all cancelled signals, pending signals, extreme performance metrics
+  - Integration ready for AnalyticsProviderTable.tsx and ProviderCompare.tsx components
+  - Utility functions for easy integration: calculateProviderTrustScore(), calculateMultipleProviderTrustScores(), getProviderComparison()
+
+* **ProviderTrustScore.test.ts** – Comprehensive test suite with 15+ test scenarios (350+ lines)
+  - Core requirement validation: TP > 60% & low SL = high score, high cancel ratio → trust < 50
+  - Score normalization testing across multiple providers with different performance profiles
+  - Edge case testing: insufficient data fallback, empty signals, all pending signals
+  - Metrics calculation accuracy with precise TP/SL rates, cancel rates, and execution rates
+  - Grade assignment validation for all score ranges (A+ through F)
+  - Configuration testing with custom weights and minimum sample sizes
+  - Real-time update functionality and utility function validation
+  - Performance testing with large datasets and multiple provider comparisons
+
 ### [2025-06-24] Analytics Provider Table Implementation
 
 * **AnalyticsProviderTable.tsx** – Comprehensive UI table component for provider performance statistics

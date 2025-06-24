@@ -1,44 +1,69 @@
-📌 NEXT TASK – Replit Agent Build Guide (Phase 4: Strategy Builder Blocks)
-📅 Date: 2025-06-24
+📌 NEXT TASK – Replit Agent Build Guide (Phase 7: UI + Analytics)
 
 🧠 Task:
-Complete the `KeywordBlacklistBlock.tsx` by adding the missing logic to preview how blacklisted keywords affect live signals before execution.
+Create a trust scoring engine to evaluate signal providers based on historical performance and signal quality.
 
-🔧 File to Complete:
-`/client/src/blocks/KeywordBlacklistBlock.tsx`
+🔧 File to Create:
+`/client/src/utils/ProviderTrustScore.ts`
 
 🧩 Description:
-This UI block is already scaffolded visually. You now need to implement:
-- A form to input blacklisted keywords (comma-separated or tag-style)
-- A live preview panel showing: ✅ allowed or ❌ blocked signals
-- Connection to runtime config so it updates `strategy_runtime.ts` rules dynamically
+Build a scoring system that outputs a numeric trust score (0–100) for each signal provider, based on:
 
-🎯 Features to Implement:
-- Real-time filtering preview based on test messages
-- Keyword matching in lowercase
-- Exact match and fuzzy mode toggle
-- “Apply to all pairs” checkbox
-- Store block config in local strategy state
+📊 Metrics to Factor:
+- ✅ Total signals vs total trades
+- ✅ TP hit rate vs SL hit rate
+- ✅ Average drawdown
+- ✅ Cancelled signal ratio
+- ✅ Parsing confidence average
+- ✅ Execution delay average (from MT5 logs)
 
-🧪 Required Test File:
-`/client/src/tests/blocks/keyword_blacklist_block.test.tsx`
+🎯 Example Output:
+```ts
+{
+  provider_id: "@gold_signals",
+  trust_score: 87.5,
+  grade: "A",
+  metrics: {
+    tp_rate: 0.75,
+    avg_drawdown: 3.2,
+    cancel_rate: 0.08,
+    confidence: 0.92,
+    latency: 1.4
+  }
+}
+🧪 Test File:
+/client/src/tests/ProviderTrustScore.test.ts
 
 Test Scenarios:
-- Signal: “HIGH RISK - GOLD” → blocked with “high risk” keyword
-- Signal: “Buy BTC with leverage” → blocked if “leverage” is set
-- Signal preview reflects changes immediately
-- Fuzzy vs strict match modes
 
-📦 Integration:
-- Syncs with: `strategy_runtime.ts`, `strategy_config.json`
-- Hooks into existing signal simulator if present
+TP > 60%, low SL = high score
 
-📂 Track Upon Completion:
-- `attached_assets/feature_status.md`
-- `attached_assets/dev_changelog.md`
-- `attached_assets/execution_history.md`
+High cancel ratio → trust < 50
 
-❗ Guidelines:
-- Match logic must use `.includes()` or regex depending on mode
-- Should not affect system performance on large datasets
-- Make sure this integrates cleanly into strategy export JSON
+Score normalizes correctly across providers
+
+Edge case: < 10 signals → neutral score fallback
+
+📦 Integration Targets:
+
+Used by: ProviderCompare.tsx, AnalyticsProviderTable.tsx
+
+Optional: show badge/score on Dashboard provider card
+
+📂 Once Done:
+
+✅ Update /attached_assets/feature_status.md
+
+🧾 Log to /attached_assets/execution_history.md
+
+📘 Log to /attached_assets/dev_changelog.md
+
+❗ Rules:
+
+Normalize metrics (0–1 range), then weight and scale to 0–100
+
+Use shared utility functions (import from shared/metrics.ts if needed)
+
+Must support real-time recalculation
+
+
