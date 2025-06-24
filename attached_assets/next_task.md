@@ -1,6 +1,6 @@
 # 📌 NEXT TASK – Replit Agent Build Guide (Auto Updated per Phase)
 
-📅 Date: 2025-06-24
+📅 Date: 2025-06-23
 
 🧠 Task:
 Implement `signal_success_tracker.ts` from **Phase 11: Analytics + UI**.
@@ -9,24 +9,22 @@ Implement `signal_success_tracker.ts` from **Phase 11: Analytics + UI**.
 `/client/src/utils/signal_success_tracker.ts`
 
 🧩 Description:
-Develop a utility module to track and analyze signal parsing success rates and execution performance. This creates a feedback loop for parser improvement and provides analytics on signal quality.
+Build a tracking utility that analyzes the success rate of signals from providers based on execution results, RR targets hit, and SL trigger history.
 
 Key Features:
 
-* Track TP/SL hit rates by signal format and provider
-* Monitor parsing confidence vs actual trade outcomes
-* Store success metrics with time-based aggregation (daily, weekly, monthly)
-* Generate performance reports for parser optimization
-* Integration with existing analytics dashboard
-* Export functionality for external analysis
+* Accept signal execution logs (via API or client data cache)
+* Aggregate stats by provider: win rate %, average RR, max drawdown, signal count
+* Cache results in local storage or query live from backend
+* Provide easy method: `getSuccessStats(providerId: string)`
+* UI-ready format output for rendering in dashboards
 
 🧪 Required Tests:
 `/client/src/tests/signal_success_tracker.test.ts`
 
-* Test success rate calculations for different time periods
-* Validate signal format pattern recognition
-* Test data aggregation and reporting functions
-* Verify integration with analytics components
+* Validate correct win rate calculation
+* Confirm proper RR average aggregation
+* Simulate edge cases: 0 trades, mixed win/losses, extreme drawdowns
 
 📂 Tracking Instructions:
 
@@ -36,7 +34,6 @@ Key Features:
 
 ❗ Rules:
 
-* Must integrate with existing parser confidence scoring
-* Store data efficiently for large datasets
-* Provide real-time and historical analytics
-* Support filtering by provider, symbol, and time range
+* Should not require full re-fetch for each view
+* Use memoized selectors or localStorage where applicable
+* Ensure API fallback if local data is missing
