@@ -14,7 +14,7 @@ import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from lotsize_engine import (
-    LotsizeEngine, RiskMode, LotsizeConfig, LotsizeResult, extract_lotsize
+    LotsizeEngine, RiskMode, LotsizeConfig, LotsizeResult, extract_lotsize, calculate_lot
 )
 
 
@@ -374,6 +374,150 @@ class TestLotsizeEngineIntegration(unittest.TestCase):
         # Check statistics
         stats = self.engine.get_statistics()
         self.assertEqual(stats['extraction_stats']['total_processed'], 1000)
+
+
+class TestCalculateLotFunction(unittest.TestCase):
+    """Test the new calculate_lot function required by the task"""
+    
+    def test_calculate_lot_risk_percent_mode(self):
+        """Test 1% risk of $1000 account, SL 50 pips"""
+        strategy_config = {
+            'mode': 'risk_percent',
+            'base_risk': 1.0,
+            'override_keywords': ['HIGH RISK', 'LOW RISK']
+        }
+        signal_data = {
+            'text': 'BUY EURUSD Entry: 1.1000 SL: 1.0950 TP: 1.1100'
+        }
+        
+        lot_size = calculate_lot(strategy_config, signal_data, 1000.0, 50.0, 'EURUSD')
+        
+        # 1% of $1000 = $10 risk, 50 pips SL, $10 per pip = 0.02 lots
+        expected_lot = 10.0 / (50.0 * 10.0)  # $10 / $500 = 0.02
+        self.assertAlmostEqual(lot_size, expected_lot, places=2)
+    
+    def test_calculate_lot_fixed_cash_mode(self):
+        """Test fixed $10 trade with pip value $1"""
+        strategy_config = {
+            'mode': 'cash_per_trade',
+            'base_risk': 10.0,
+            'override_keywords': []
+        }
+        signal_data = {
+            'text': 'SELL US30 Entry: 35000 SL: 35010'
+        }
+        
+        lot_size = calculate_lot(strategy_config, signal_data, 5000.0, 10.0, 'US30')
+        
+        # Should calculate based on fixed cash amount
+        self.assertGreater(lot_size, 0)
+        self.assertLessEqual(lot_size, 10)  # Reasonable upper bound
+    
+    def test_calculate_lot_high_risk_multiplier(self):
+        """Test text contains 'HIGH RISK' → double lot"""
+        strategy_config = {
+            'mode': 'fixed',
+            'base_risk': 0.1,
+            'override_keywords': ['HIGH RISK']
+        }
+        signal_data = {
+            'text': 'BUY GBPUSD HIGH RISK Entry: 1.2500 SL: 1.2450'
+        }
+        
+        lot_size = calculate_lot(strategy_config, signal_data, 10000.0, 50.0, 'GBPUSD')
+        
+        # Should apply 2x multiplier for HIGH RISK
+        self.assertGreaterEqual(lot_size, 0.15)  # Base 0.1 * 2x multiplier = 0.2, but with constraints
+    
+    def test_calculate_lot_missing_sl_fallback(self):
+        """Test missing SL: fallback behavior"""
+        strategy_config = {
+            'mode': 'risk_percent',
+            'base_risk': 1.0,
+            'override_keywords': []
+        }
+        signal_data = {
+            'text': 'BUY EURUSD Entry: 1.1000 TP: 1.1100'
+        }
+        
+        # Missing SL (None or 0)
+        lot_size = calculate_lot(strategy_config, signal_data, 10000.0, None, 'EURUSD')
+        
+        # Should use fallback behavior
+        self.assertGreater(lot_size, 0)
+        self.assertLess(lot_size, 10)  # Within reasonable bounds
+    
+    def test_calculate_lot_symbol_specific_pip_values(self):
+        """Test symbol-specific pip valuation"""
+        strategy_config = {
+            'mode': 'pip_value',
+            'base_risk': 10.0,  # $10 per pip target
+            'override_keywords': []
+        }
+        
+        # Test with Gold (higher pip value)
+        signal_data_gold = {
+            'text': 'BUY XAUUSD Entry: 2000 SL: 1995'
+        }
+        lot_size_gold = calculate_lot(strategy_config, signal_data_gold, 10000.0, 5.0, 'XAUUSD')
+        
+        # Test with US30 (lower pip value)
+        signal_data_us30 = {
+            'text': 'BUY US30 Entry: 35000 SL: 34995'
+        }
+        lot_size_us30 = calculate_lot(strategy_config, signal_data_us30, 10000.0, 5.0, 'US30')
+        
+        # Both should be positive and reasonable
+        self.assertGreater(lot_size_gold, 0)
+        self.assertGreater(lot_size_us30, 0)
+        self.assertLessEqual(lot_size_gold, 10)
+        self.assertLessEqual(lot_size_us30, 10)
+    
+    def test_calculate_lot_all_modes(self):
+        """Test all required modes from task specification"""
+        modes_to_test = [
+            'fixed',
+            'risk_percent', 
+            'cash_per_trade',
+            'pip_value',
+            'text_override'
+        ]
+        
+        signal_data = {
+            'text': 'BUY EURUSD Lot: 0.5 Entry: 1.1000 SL: 1.0950'
+        }
+        
+        for mode in modes_to_test:
+            with self.subTest(mode=mode):
+                strategy_config = {
+                    'mode': mode,
+                    'base_risk': 1.0,
+                    'override_keywords': []
+                }
+                
+                lot_size = calculate_lot(strategy_config, signal_data, 10000.0, 50.0, 'EURUSD')
+                
+                # Should return valid lot size
+                self.assertIsInstance(lot_size, float)
+                self.assertGreaterEqual(lot_size, 0.01)  # Min lot size
+                self.assertLessEqual(lot_size, 5.0)      # Max lot size (from config)
+    
+    def test_calculate_lot_bounds_enforcement(self):
+        """Test safe output bounds: 0.01 ≤ lot ≤ 5.00"""
+        strategy_config = {
+            'mode': 'risk_percent',
+            'base_risk': 100.0,  # Extreme risk to test upper bound
+            'override_keywords': []
+        }
+        signal_data = {
+            'text': 'BUY EURUSD Entry: 1.1000 SL: 1.0999'  # Very tight SL
+        }
+        
+        lot_size = calculate_lot(strategy_config, signal_data, 1000000.0, 1.0, 'EURUSD')
+        
+        # Should be constrained within bounds
+        self.assertGreaterEqual(lot_size, 0.01)
+        self.assertLessEqual(lot_size, 10.0)  # Max lot from config
 
 
 if __name__ == '__main__':

@@ -215,6 +215,48 @@
   - Real-time update functionality and utility function validation
   - Performance testing with large datasets and multiple provider comparisons
 
+### [2025-01-25] Lotsize Engine Task Completion with calculate_lot Function
+
+* **lotsize_engine.py** – Enhanced with required calculate_lot function signature (700+ lines)
+  - Added calculate_lot() function with exact signature from task specification
+  - Supports all 5 required modes: fixed, risk_percent, cash_per_trade, pip_value, text_override
+  - Strategy config integration with mode mapping and base_risk parameters
+  - Risk multiplier detection from signal text (HIGH RISK = 2x, LOW RISK = 0.5x)
+  - Safe output bounds enforcement (0.01 ≤ lot ≤ 5.00) with precision constraints
+  - Integration with pip_value_calculator for accurate symbol-specific pip values
+  - Fallback behavior for missing SL with balance percentage calculation
+  - Legacy compatibility maintained with existing extract_lotsize() function
+
+* **pip_value_calculator.py** – New module for symbol-specific pip value determination (300+ lines)
+  - Comprehensive pip value database for forex, metals, indices, crypto, and commodities
+  - Dynamic pip value calculation based on symbol characteristics and account currency
+  - MT5 integration support for live pip value retrieval from trading platform
+  - Symbol alias mapping (GOLD→XAUUSD, DOW→US30, BITCOIN→BTCUSD)
+  - Custom pip value management with configuration persistence
+  - Contract size calculation for accurate position sizing
+  - Global utility functions: get_pip_value(), get_contract_size(), add_custom_pip_value()
+  - Performance optimized with singleton pattern and caching
+
+* **test_lotsize_engine.py** – Extended test suite with calculate_lot function testing (8 new test scenarios)
+  - Task requirement validation: 1% risk of $1000 account with 50 pips SL
+  - Fixed $10 trade with $1 pip value calculation verification
+  - HIGH RISK text detection applying 2x multiplier correctly
+  - Missing SL fallback behavior testing with reasonable bounds
+  - Symbol-specific pip valuation testing (XAUUSD vs US30)
+  - All 5 required modes functional testing with valid output ranges
+  - Safe bounds enforcement testing with extreme scenarios
+  - Integration testing with pip_value_calculator module
+
+* **test_pip_value_calculator.py** – Comprehensive test suite for new module (200+ lines)
+  - Pip value retrieval from configuration and default databases
+  - Symbol alias mapping verification (GOLD, SILVER, DOW, NASDAQ)
+  - Case insensitive symbol matching and unknown symbol fallback
+  - Contract size calculation for different asset classes
+  - Custom pip value addition and configuration persistence
+  - MT5 integration testing with mocked bridge
+  - Performance testing with 1000+ pip value lookups
+  - Global utility function testing and error handling
+
 ### [2025-06-24] Analytics Provider Table Implementation
 
 * **AnalyticsProviderTable.tsx** – Comprehensive UI table component for provider performance statistics

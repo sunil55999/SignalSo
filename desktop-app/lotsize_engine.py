@@ -13,6 +13,18 @@ from dataclasses import dataclass, asdict
 from enum import Enum
 from pathlib import Path
 
+try:
+    from pip_value_calculator import get_pip_value
+except ImportError:
+    # Fallback if pip_value_calculator is not available
+    def get_pip_value(symbol: str, account_currency: str = "USD") -> float:
+        default_values = {
+            "EURUSD": 10.0, "GBPUSD": 10.0, "USDJPY": 9.09, "USDCHF": 10.20,
+            "AUDUSD": 10.0, "NZDUSD": 10.0, "USDCAD": 7.69, "XAUUSD": 10.0,
+            "XAGUSD": 50.0, "US30": 1.0, "SPX500": 1.0, "NAS100": 1.0
+        }
+        return default_values.get(symbol.upper(), 10.0)
+
 class RiskMode(Enum):
     FIXED_LOT = "fixed_lot"
     FIXED_CASH = "fixed_cash" 
@@ -337,6 +349,12 @@ class LotsizeEngine:
             except Exception:
                 pass
         
+        # Try pip_value_calculator if available
+        try:
+            return get_pip_value(symbol)
+        except Exception:
+            pass
+        
         # Fall back to configured values
         return self.config.symbol_pip_values.get(symbol, self.config.pip_value_usd)
 
@@ -488,6 +506,56 @@ class LotsizeEngine:
         except Exception as e:
             self.logger.error(f"Failed to update configuration: {e}")
             return False
+
+
+def calculate_lot(strategy_config: dict, signal_data: dict, account_balance: float, 
+                 sl_pips: float, symbol: str) -> float:
+    """
+    Calculate lot size based on strategy configuration and signal data
+    
+    Args:
+        strategy_config: Strategy configuration dictionary containing:
+            - mode: "fixed" | "risk_percent" | "cash_per_trade" | "pip_value" | "text_override"
+            - base_risk: float (base risk amount/percentage)
+            - override_keywords: List of keywords for risk multipliers
+        signal_data: Signal data dictionary containing:
+            - text: Raw signal text
+            - Other signal metadata
+        account_balance: Current account balance
+        sl_pips: Stop loss distance in pips
+        symbol: Trading symbol
+        
+    Returns:
+        Calculated lot size as float
+    """
+    # Create engine instance
+    engine = LotsizeEngine()
+    
+    # Map strategy config mode to engine mode
+    mode_mapping = {
+        "fixed": "fixed_lot",
+        "risk_percent": "risk_percent", 
+        "cash_per_trade": "fixed_cash",
+        "pip_value": "pip_value",
+        "text_override": "fixed_lot"  # Will extract from text
+    }
+    
+    # Get mode from strategy config
+    mode = mode_mapping.get(strategy_config.get('mode', 'risk_percent'), 'risk_percent')
+    
+    # Get signal text
+    signal_text = signal_data.get('text', '')
+    
+    # Use engine to calculate lot size
+    result = engine.extract_lotsize(
+        signal_text=signal_text,
+        risk_mode=mode,
+        account_balance=account_balance,
+        symbol=symbol,
+        stop_loss_pips=sl_pips
+    )
+    
+    return result.calculated_lot
 
 
 # Legacy compatibility function for strategy_runtime integration

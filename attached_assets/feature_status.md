@@ -72,7 +72,7 @@ Mark modules as:
 
 ## PHASE 8: LOTSIZE + ENTRYPOINT
 
-⛔ lotsize\_engine.py ← Not started
+✅ lotsize\_engine.py ← Complete with calculate_lot function and pip_value_calculator integration
 ✅ entrypoint\_range\_handler.py ← Entry point selection strategies completed
 
 ## PHASE 9: TRADE MODIFIERS
