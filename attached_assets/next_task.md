@@ -3,32 +3,32 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement the `copilot_command_interpreter.py` module from **Phase 10: Copilot & Command**.
+Implement the `copilot_alert_manager.py` module from **Phase 10: Copilot & Command**.
 
 🔧 File to Create:
-`/desktop-app/copilot_command_interpreter.py`
+`/desktop-app/copilot_alert_manager.py`
 
 🧩 Description:
-Build a natural language command interpreter that converts Telegram bot commands into signal operations and strategy management actions.
+Build an alert management system that sends notifications via Telegram copilot bot for critical trading events and system status changes.
 
 Key Features:
 
-* Parse natural language commands from Telegram copilot bot
-* Convert text to structured commands (pause, resume, adjust, replay)
-* Support signal management: "Pause GBP signals", "Resume GOLD trades"  
-* Strategy adjustments: "Set EURUSD lot to 0.05", "Enable reverse mode"
-* Signal replay: "Replay last Gold signal", "Re-execute GBPUSD from 10am"
-* Integration with existing strategy modules and signal processing
-* Command validation and confirmation before execution
-* Comprehensive logging and audit trail
+* Send alerts for drawdown limit breaches and margin warnings
+* Notify about failed trades and MT5 connection issues
+* Alert on prop firm risk triggers and emergency stops
+* Configurable alert levels: info, warning, critical, emergency
+* Rate limiting and alert throttling to prevent spam
+* Alert templates with customizable formatting
+* Integration with existing copilot bot and notification systems
+* Alert history tracking and acknowledgment system
 
 🧪 Required Tests:
-`/desktop-app/tests/test_copilot_command_interpreter.py`
+`/desktop-app/tests/test_copilot_alert_manager.py`
 
-* Test command parsing for different natural language inputs
-* Test strategy adjustment commands and validation
-* Test signal management operations (pause/resume)
-* Test integration with strategy modules and error handling
+* Test alert generation for different event types and severity levels
+* Test rate limiting and throttling mechanisms
+* Test integration with copilot bot notification system
+* Test alert formatting and template rendering
 
 📂 Tracking Instructions:
 
@@ -38,6 +38,6 @@ Key Features:
 
 ❗ Rules:
 
-* Commands must be validated before execution
-* Provide clear feedback on command interpretation
-* Integrate with existing copilot_bot.py for seamless operation
+* Integrate with existing copilot_bot.py for message delivery
+* Implement proper rate limiting to avoid Telegram API limits
+* Provide clear alert categories and escalation levels

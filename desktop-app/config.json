@@ -505,5 +505,26 @@
         "min_free_margin": 1000.0,
         "warning_threshold": 300.0,
         "per_strategy_overrides": {}
+    },
+    "copilot_command_interpreter": {
+        "enabled": true,
+        "require_authorization": true,
+        "default_user_role": "user",
+        "admin_users": [],
+        "command_timeout": 30,
+        "max_concurrent_commands": 5,
+        "allowed_symbols": [
+            "EURUSD",
+            "GBPUSD",
+            "AUDUSD",
+            "NZDUSD",
+            "USDCAD",
+            "USDCHF",
+            "USDJPY",
+            "XAUUSD",
+            "BTCUSD"
+        ],
+        "stealth_commands_enabled": true,
+        "replay_commands_enabled": true
     }
 }
