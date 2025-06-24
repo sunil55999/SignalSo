@@ -89,4 +89,14 @@
 * AnalyticsProviderTable.vue
 * ProviderCompare.vue
 
+### [2025-06-23] Strategy Condition Router Diagnostic
+
+* **strategy_condition_router.py** diagnostic completed
+  - File exists with comprehensive 935-line implementation
+  - Fixed dataclass syntax error enabling proper imports  
+  - Core routing logic implemented with 8 route actions
+  - Market state evaluation and performance monitoring active
+  - Integration gaps identified: missing strategy_runtime connection, limited R:R filtering
+  - Test coverage: 600+ lines of comprehensive test suite
+
 ✅ Logs end here. Update this file after every feature completion.

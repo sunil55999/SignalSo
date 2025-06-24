@@ -64,8 +64,8 @@ class RoutingRule:
     rule_id: str
     name: str
     conditions: List[ConditionRule]
-    condition_logic: str = "AND"  # "AND", "OR", "CUSTOM"
     target_action: RouteAction
+    condition_logic: str = "AND"  # "AND", "OR", "CUSTOM" 
     target_params: Dict[str, Any] = None
     enabled: bool = True
     priority: int = 1
