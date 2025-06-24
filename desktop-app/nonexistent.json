@@ -1,0 +1,14 @@
+{
+    "mt5": {
+        "terminal_path": "",
+        "login": 0,
+        "password": "",
+        "server": "",
+        "timeout": 60000,
+        "portable": false,
+        "enable_logging": true,
+        "log_file": "logs/mt5_bridge.log",
+        "max_retries": 3,
+        "retry_delay": 1.0
+    }
+}
