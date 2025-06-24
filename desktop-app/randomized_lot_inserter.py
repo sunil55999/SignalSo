@@ -355,6 +355,43 @@ class RandomizedLotInserter:
         except Exception as e:
             self.logger.error(f"Failed to send copilot notification: {e}")
     
+    def get_randomized_lot(self, base_lot: float, signal_data: Dict[str, Any]) -> float:
+        """
+        Main integration function for strategy_runtime.py
+        Replaces direct lotsize with randomized version
+        
+        Args:
+            base_lot: Original lot size from strategy
+            signal_data: Signal information for context
+            
+        Returns:
+            Randomized lot size respecting min/max rules
+        """
+        # Add base lot to signal data for randomization
+        signal_data_with_lot = signal_data.copy()
+        signal_data_with_lot['lot_size'] = base_lot
+        
+        # Get randomized result
+        result = self.randomize_lot_size(signal_data_with_lot)
+        
+        # Apply fallback if randomization failed
+        if result.randomized_lot == result.original_lot and not self.config.enabled:
+            self.logger.debug(f"Randomization disabled, returning original lot: {base_lot}")
+            return base_lot
+        
+        # Final validation and fallback
+        final_lot = result.randomized_lot
+        
+        # Ensure within broker limits
+        if final_lot < self.config.min_lot_size:
+            self.logger.warning(f"Randomized lot {final_lot} below minimum, using {self.config.min_lot_size}")
+            final_lot = self.config.min_lot_size
+        elif final_lot > self.config.max_lot_size:
+            self.logger.warning(f"Randomized lot {final_lot} above maximum, using {self.config.max_lot_size}")
+            final_lot = self.config.max_lot_size
+        
+        return final_lot
+
     def get_randomization_statistics(self) -> Dict[str, Any]:
         """Get statistics about lot randomization operations"""
         if not self.randomization_history:

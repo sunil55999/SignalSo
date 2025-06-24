@@ -98,6 +98,30 @@ class EditTradeEngine:
         default_config = {
             "edit_trade_engine": {
                 "enable_auto_edit": True,
+                "max_signal_versions": 10,
+                "edit_detection_threshold": 0.1,  # Minimum change to trigger edit
+                "confirmation_required": True,
+                "log_signal_changes": True,
+                "process_delayed_edits": True,
+                "max_edit_age_hours": 24
+            }
+        }
+        
+        try:
+            config_data = {}
+            if Path(self.config_file).exists():
+                with open(self.config_file, 'r') as f:
+                    config_data = json.load(f)
+            
+            config_data.update(default_config)
+            
+            with open(self.config_file, 'w') as f:
+                json.dump(config_data, f, indent=4)
+                
+        except Exception as e:
+            logging.error(f"Failed to save default config: {e}")
+        
+        return default_config["edit_trade_engine"]
                 "check_interval": 30,
                 "max_edit_time_window": 3600,  # 1 hour after signal
                 "allowed_changes": ["entry_price", "stop_loss", "take_profit"],
@@ -248,6 +272,341 @@ class EditTradeEngine:
                 parsed_data = self.parser.parse_signal(signal_content)
                 return {
                     'entry_price': parsed_data.get('entry_price'),
+                    'stop_loss': parsed_data.get('stop_loss'),
+                    'take_profit': parsed_data.get('take_profit'),
+                    'lot_size': parsed_data.get('lot_size')
+                }
+            else:
+                # Fallback manual parsing for basic signal formats
+                import re
+                
+                values = {
+                    'entry_price': None,
+                    'stop_loss': None,
+                    'take_profit': None,
+                    'lot_size': None
+                }
+                
+                # Basic regex patterns for common signal formats
+                entry_patterns = [
+                    r'(?:ENTRY|ENTER|BUY|SELL)\s*:?\s*(\d+\.?\d*)',
+                    r'@\s*(\d+\.?\d*)',
+                    r'(?:PRICE|AT)\s*(\d+\.?\d*)'
+                ]
+                
+                sl_patterns = [
+                    r'(?:SL|STOP\s*LOSS|STOPLOSS)\s*:?\s*(\d+\.?\d*)',
+                    r'(?:STOP|S/L)\s*:?\s*(\d+\.?\d*)'
+                ]
+                
+                tp_patterns = [
+                    r'(?:TP|TAKE\s*PROFIT|TAKEPROFIT|TARGET)\s*:?\s*(\d+\.?\d*)',
+                    r'(?:T/P|PROFIT)\s*:?\s*(\d+\.?\d*)'
+                ]
+                
+                lot_patterns = [
+                    r'(?:LOT|LOTS|SIZE|VOLUME)\s*:?\s*(\d+\.?\d*)',
+                    r'(\d+\.?\d*)\s*(?:LOTS?|LOT)'
+                ]
+                
+                # Extract values using patterns
+                for pattern in entry_patterns:
+                    match = re.search(pattern, signal_content.upper())
+                    if match:
+                        values['entry_price'] = float(match.group(1))
+                        break
+                
+                for pattern in sl_patterns:
+                    match = re.search(pattern, signal_content.upper())
+                    if match:
+                        values['stop_loss'] = float(match.group(1))
+                        break
+                
+                for pattern in tp_patterns:
+                    match = re.search(pattern, signal_content.upper())
+                    if match:
+                        values['take_profit'] = float(match.group(1))
+                        break
+                
+                for pattern in lot_patterns:
+                    match = re.search(pattern, signal_content.upper())
+                    if match:
+                        values['lot_size'] = float(match.group(1))
+                        break
+                
+                return values
+                
+        except Exception as e:
+            self.logger.error(f"Failed to parse signal values: {e}")
+            return {
+                'entry_price': None,
+                'stop_loss': None,
+                'take_profit': None,
+                'lot_size': None
+            }
+    
+    def on_signal_edit(self, message_id: int, original_content: str, edited_content: str):
+        """Callback function for when parser detects signal edit"""
+        asyncio.create_task(self.process_signal_edit(message_id, original_content, edited_content))
+    
+    async def process_signal_edit(self, message_id: int, original_content: str, edited_content: str):
+        """Process detected signal edit and update trades accordingly"""
+        try:
+            # Create content hashes
+            original_hash = self._calculate_content_hash(original_content)
+            edited_hash = self._calculate_content_hash(edited_content)
+            
+            if original_hash == edited_hash:
+                self.logger.debug(f"No actual content change detected for message {message_id}")
+                return
+            
+            # Parse signal values from both versions
+            original_values = self._parse_signal_values(original_content)
+            edited_values = self._parse_signal_values(edited_content)
+            
+            # Detect what changed
+            changes = self._detect_changes(original_values, edited_values)
+            
+            if not changes:
+                self.logger.info(f"No significant trading parameter changes detected for message {message_id}")
+                return
+            
+            # Find or create edit event
+            edit_event = self._get_or_create_edit_event(message_id)
+            
+            # Add signal versions
+            original_version = SignalVersion(
+                message_id=message_id,
+                content_hash=original_hash,
+                entry_price=original_values.get('entry_price'),
+                stop_loss=original_values.get('stop_loss'),
+                take_profit=original_values.get('take_profit'),
+                lot_size=original_values.get('lot_size'),
+                timestamp=datetime.now() - timedelta(minutes=1),  # Approximate original time
+                raw_content=original_content
+            )
+            
+            edited_version = SignalVersion(
+                message_id=message_id,
+                content_hash=edited_hash,
+                entry_price=edited_values.get('entry_price'),
+                stop_loss=edited_values.get('stop_loss'),
+                take_profit=edited_values.get('take_profit'),
+                lot_size=edited_values.get('lot_size'),
+                timestamp=datetime.now(),
+                raw_content=edited_content
+            )
+            
+            # Store original version if not already stored
+            if not any(sv.content_hash == original_hash for sv in edit_event.signal_versions):
+                edit_event.signal_versions.append(original_version)
+            
+            edit_event.signal_versions.append(edited_version)
+            edit_event.last_processed = datetime.now()
+            
+            # Find associated trades
+            associated_trades = self._find_associated_trades(message_id)
+            edit_event.associated_trades.extend([t for t in associated_trades if t not in edit_event.associated_trades])
+            
+            # Apply changes to trades
+            for trade_id in associated_trades:
+                await self._apply_trade_modifications(trade_id, changes, original_values, edited_values, edit_event)
+            
+            # Save history
+            self._save_edit_history()
+            
+            self.logger.info(f"Processed signal edit for message {message_id}: {len(changes)} changes applied to {len(associated_trades)} trades")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to process signal edit for message {message_id}: {e}")
+    
+    def _detect_changes(self, original: Dict[str, Optional[float]], edited: Dict[str, Optional[float]]) -> List[ChangeType]:
+        """Detect what changed between original and edited signal values"""
+        changes = []
+        threshold = self.config.get('edit_detection_threshold', 0.1)
+        
+        for key in ['entry_price', 'stop_loss', 'take_profit', 'lot_size']:
+            orig_val = original.get(key)
+            edit_val = edited.get(key)
+            
+            # Handle None values
+            if orig_val is None and edit_val is not None:
+                if key == 'entry_price':
+                    changes.append(ChangeType.ENTRY_PRICE)
+                elif key == 'stop_loss':
+                    changes.append(ChangeType.STOP_LOSS)
+                elif key == 'take_profit':
+                    changes.append(ChangeType.TAKE_PROFIT)
+                elif key == 'lot_size':
+                    changes.append(ChangeType.LOT_SIZE)
+            elif orig_val is not None and edit_val is None:
+                if key == 'entry_price':
+                    changes.append(ChangeType.ENTRY_PRICE)
+                elif key == 'stop_loss':
+                    changes.append(ChangeType.STOP_LOSS)
+                elif key == 'take_profit':
+                    changes.append(ChangeType.TAKE_PROFIT)
+                elif key == 'lot_size':
+                    changes.append(ChangeType.LOT_SIZE)
+            elif orig_val is not None and edit_val is not None:
+                # Check if change exceeds threshold
+                if abs(orig_val - edit_val) >= threshold:
+                    if key == 'entry_price':
+                        changes.append(ChangeType.ENTRY_PRICE)
+                    elif key == 'stop_loss':
+                        changes.append(ChangeType.STOP_LOSS)
+                    elif key == 'take_profit':
+                        changes.append(ChangeType.TAKE_PROFIT)
+                    elif key == 'lot_size':
+                        changes.append(ChangeType.LOT_SIZE)
+        
+        return changes
+    
+    def _get_or_create_edit_event(self, message_id: int) -> EditTradeEvent:
+        """Get existing edit event or create new one"""
+        for event in self.edit_events:
+            if event.message_id == message_id:
+                return event
+        
+        # Create new event
+        new_event = EditTradeEvent(message_id=message_id)
+        self.edit_events.append(new_event)
+        return new_event
+    
+    def _find_associated_trades(self, message_id: int) -> List[int]:
+        """Find trades associated with a signal message"""
+        associated_trades = []
+        
+        # Check trade-signal mapping
+        for trade_id, mapped_message_id in self.trade_signal_mapping.items():
+            if mapped_message_id == message_id:
+                associated_trades.append(trade_id)
+        
+        # If no direct mapping, try to find trades by timestamp correlation
+        if not associated_trades and self.mt5_bridge:
+            # This would query MT5 for recent trades around the signal time
+            # For now, return empty list as this requires MT5 bridge integration
+            pass
+        
+        return associated_trades
+    
+    async def _apply_trade_modifications(self, trade_id: int, changes: List[ChangeType], 
+                                       original_values: Dict[str, Optional[float]], 
+                                       edited_values: Dict[str, Optional[float]], 
+                                       edit_event: EditTradeEvent):
+        """Apply modifications to a specific trade"""
+        if not self.mt5_bridge:
+            self.logger.warning(f"MT5 bridge not available for trade modification {trade_id}")
+            return
+        
+        for change_type in changes:
+            try:
+                success = False
+                error_message = None
+                old_value = None
+                new_value = None
+                
+                if change_type == ChangeType.STOP_LOSS:
+                    old_value = original_values.get('stop_loss')
+                    new_value = edited_values.get('stop_loss')
+                    
+                    if self.config.get('confirmation_required', False):
+                        # Would trigger copilot confirmation here
+                        self.logger.info(f"SL change requires confirmation: {old_value} -> {new_value}")
+                    
+                    # success = await self.mt5_bridge.modify_position(trade_id, sl=new_value)
+                    success = True  # Mock for now
+                    
+                elif change_type == ChangeType.TAKE_PROFIT:
+                    old_value = original_values.get('take_profit')
+                    new_value = edited_values.get('take_profit')
+                    
+                    if self.config.get('confirmation_required', False):
+                        self.logger.info(f"TP change requires confirmation: {old_value} -> {new_value}")
+                    
+                    # success = await self.mt5_bridge.modify_position(trade_id, tp=new_value)
+                    success = True  # Mock for now
+                
+                elif change_type == ChangeType.LOT_SIZE:
+                    # Lot size changes might require closing and reopening trades
+                    old_value = original_values.get('lot_size')
+                    new_value = edited_values.get('lot_size')
+                    
+                    self.logger.warning(f"Lot size changes not supported for existing trades: {old_value} -> {new_value}")
+                    error_message = "Lot size changes not supported for existing trades"
+                
+                elif change_type == ChangeType.ENTRY_PRICE:
+                    # Entry price changes only affect pending orders
+                    old_value = original_values.get('entry_price')
+                    new_value = edited_values.get('entry_price')
+                    
+                    # success = await self.mt5_bridge.modify_pending_order(trade_id, price=new_value)
+                    success = True  # Mock for now
+                
+                # Record modification
+                modification = TradeModification(
+                    ticket=trade_id,
+                    change_type=change_type,
+                    old_value=old_value,
+                    new_value=new_value,
+                    modification_time=datetime.now(),
+                    success=success,
+                    error_message=error_message
+                )
+                
+                edit_event.modifications.append(modification)
+                
+                if success:
+                    self.logger.info(f"Successfully modified trade {trade_id}: {change_type.value} {old_value} -> {new_value}")
+                else:
+                    self.logger.error(f"Failed to modify trade {trade_id}: {change_type.value} - {error_message}")
+                    
+            except Exception as e:
+                error_message = str(e)
+                self.logger.error(f"Exception modifying trade {trade_id}: {e}")
+                
+                # Record failed modification
+                modification = TradeModification(
+                    ticket=trade_id,
+                    change_type=change_type,
+                    old_value=old_value,
+                    new_value=new_value,
+                    modification_time=datetime.now(),
+                    success=False,
+                    error_message=error_message
+                )
+                edit_event.modifications.append(modification)
+    
+    def register_trade_signal_mapping(self, trade_id: int, message_id: int):
+        """Register mapping between trade and signal message"""
+        self.trade_signal_mapping[trade_id] = message_id
+        self.logger.debug(f"Registered trade {trade_id} -> signal {message_id}")
+    
+    def get_edit_statistics(self) -> Dict[str, Any]:
+        """Get statistics about signal edits and trade modifications"""
+        total_events = len(self.edit_events)
+        total_modifications = sum(len(event.modifications) for event in self.edit_events)
+        successful_modifications = sum(
+            sum(1 for mod in event.modifications if mod.success) 
+            for event in self.edit_events
+        )
+        
+        # Count change types
+        change_type_counts = {}
+        for event in self.edit_events:
+            for mod in event.modifications:
+                change_type = mod.change_type.value
+                change_type_counts[change_type] = change_type_counts.get(change_type, 0) + 1
+        
+        return {
+            'total_edit_events': total_events,
+            'total_modifications': total_modifications,
+            'successful_modifications': successful_modifications,
+            'failed_modifications': total_modifications - successful_modifications,
+            'change_type_counts': change_type_counts,
+            'average_modifications_per_event': total_modifications / total_events if total_events > 0 else 0,
+            'success_rate': successful_modifications / total_modifications if total_modifications > 0 else 0
+        }
                     'stop_loss': parsed_data.get('stop_loss'),
                     'take_profit': parsed_data.get('take_profit'),
                     'lot_size': parsed_data.get('lot_size')

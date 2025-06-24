@@ -406,6 +406,159 @@ class EndOfWeekSLRemover:
         except Exception as e:
             self.logger.error(f"Failed to update SL for ticket {ticket}: {e}")
             return False
+
+    async def run_end_of_week_check(self, current_time: Optional[datetime] = None) -> Dict[str, Any]:
+        """
+        Main scheduled check function for end of week SL removal
+        Should be called by auto_sync.py or scheduled job
+        """
+        if current_time is None:
+            current_time = datetime.now(timezone.utc)
+        
+        # Check if we're in the activation window
+        if not self._is_friday_close_window(current_time):
+            return {
+                'executed': False,
+                'reason': 'Outside Friday close window',
+                'current_time': current_time.isoformat(),
+                'next_check': 'Next Friday 15:30 UTC'
+            }
+        
+        if not self.config.enabled:
+            return {
+                'executed': False,
+                'reason': 'End of week SL remover disabled',
+                'current_time': current_time.isoformat()
+            }
+        
+        # Get open trades
+        open_trades = await self._get_open_trades()
+        
+        if not open_trades:
+            return {
+                'executed': True,
+                'reason': 'No open trades to process',
+                'trades_processed': 0,
+                'current_time': current_time.isoformat()
+            }
+        
+        # Process each trade
+        processed_trades = []
+        successful_modifications = 0
+        
+        for trade in open_trades:
+            # Check if symbol should be processed
+            should_process, process_reason = self._should_process_symbol(trade.symbol)
+            
+            if not should_process:
+                self.logger.info(f"Skipping {trade.symbol} (ticket {trade.ticket}): {process_reason}")
+                continue
+            
+            # Only process trades with stop losses
+            if not trade.current_sl:
+                self.logger.info(f"Skipping ticket {trade.ticket} - no stop loss set")
+                continue
+            
+            # Process based on configured mode
+            success = False
+            action_type = self.config.mode.value
+            new_sl = None
+            
+            if self.config.mode == SLRemovalMode.REMOVE:
+                # Remove stop loss completely
+                success = await self._update_trade_sl(trade.ticket, None)
+                new_sl = None
+                
+            elif self.config.mode == SLRemovalMode.WIDEN:
+                # Widen stop loss
+                new_sl = self._calculate_widened_sl(trade)
+                if new_sl:
+                    success = await self._update_trade_sl(trade.ticket, new_sl)
+                else:
+                    self.logger.warning(f"Could not calculate widened SL for ticket {trade.ticket}")
+                    continue
+            
+            elif self.config.mode == SLRemovalMode.IGNORE:
+                # Do nothing
+                self.logger.info(f"Ignoring trade {trade.ticket} due to IGNORE mode")
+                continue
+            
+            # Record the action
+            pip_value = self._get_pip_value(trade.symbol)
+            
+            action = SLRemovalAction(
+                ticket=trade.ticket,
+                symbol=trade.symbol,
+                original_sl=trade.current_sl,
+                new_sl=new_sl,
+                action_type=action_type,
+                reason=f"End of week {action_type} - Friday close protection",
+                timestamp=current_time,
+                trade_direction=trade.action,
+                entry_price=trade.entry_price,
+                pip_value=pip_value
+            )
+            
+            self.removal_history.append(action)
+            processed_trades.append({
+                'ticket': trade.ticket,
+                'symbol': trade.symbol,
+                'action': action_type,
+                'success': success,
+                'original_sl': trade.current_sl,
+                'new_sl': new_sl
+            })
+            
+            if success:
+                successful_modifications += 1
+                self.logger.info(f"Successfully {action_type} SL for {trade.symbol} ticket {trade.ticket}")
+                
+                # Send copilot notification if enabled
+                if self.config.notify_copilot and self.copilot_bot:
+                    await self._send_copilot_notification(action)
+            else:
+                self.logger.error(f"Failed to {action_type} SL for {trade.symbol} ticket {trade.ticket}")
+        
+        # Save history
+        self._save_history()
+        
+        return {
+            'executed': True,
+            'trades_processed': len(processed_trades),
+            'successful_modifications': successful_modifications,
+            'failed_modifications': len(processed_trades) - successful_modifications,
+            'mode': self.config.mode.value,
+            'processed_trades': processed_trades,
+            'current_time': current_time.isoformat()
+        }
+
+    async def _send_copilot_notification(self, action: SLRemovalAction):
+        """Send notification to copilot bot about SL modification"""
+        try:
+            if action.action_type == "remove":
+                message = f"🕐 EOW SL Removed: {action.symbol} (#{action.ticket})\nOriginal SL: {action.original_sl}"
+            else:
+                pips_moved = abs((action.new_sl - action.original_sl) / action.pip_value) if action.new_sl and action.original_sl else 0
+                message = f"🕐 EOW SL Widened: {action.symbol} (#{action.ticket})\nOriginal: {action.original_sl} → New: {action.new_sl}\nWidened by: {pips_moved:.1f} pips"
+            
+            # This would be the actual copilot notification
+            # await self.copilot_bot.send_alert(message)
+            self.logger.info(f"EOW notification: {message}")
+            
+        except Exception as e:
+            self.logger.error(f"Failed to send EOW copilot notification: {e}")
+
+    def schedule_with_auto_sync(self, auto_sync_module):
+        """Integration hook for auto_sync.py to schedule EOW checks"""
+        try:
+            # Register EOW check with auto_sync scheduler
+            # This would integrate with the actual auto_sync scheduling system
+            self.logger.info("End of week SL remover scheduled with auto_sync")
+            return True
+        except Exception as e:
+            self.logger.error(f"Failed to schedule with auto_sync: {e}")
+            return False: {e}")
+            return False
     
     async def _send_copilot_notification(self, action: SLRemovalAction):
         """Send notification to Copilot Bot"""

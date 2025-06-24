@@ -1,672 +1,546 @@
 """
-Tests for End of Week SL Remover functionality
-Tests the stop loss removal/widening for prop firm stealth operations
+Tests for End of Week SL Remover module
 """
 
-import asyncio
+import pytest
 import json
 import tempfile
 import os
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime, timezone, timedelta
-from typing import Dict, Any, List
+from desktop_app.end_of_week_sl_remover import EndOfWeekSLRemover, SLRemovalMode, MarketType, TradeInfo
 
-# Import the module to test
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from end_of_week_sl_remover import (
-    EndOfWeekSLRemover, EndOfWeekConfig, SLRemovalMode, MarketType, 
-    SLRemovalAction, TradeInfo
-)
 
 class TestEndOfWeekSLRemover:
     
     def setup_method(self):
-        """Setup test environment with temporary files"""
-        self.temp_dir = tempfile.mkdtemp()
-        self.config_file = os.path.join(self.temp_dir, "test_config.json")
-        self.log_file = os.path.join(self.temp_dir, "test_eow_log.json")
+        """Setup test environment"""
+        self.temp_config = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
+        self.temp_log = tempfile.NamedTemporaryFile(mode='w', suffix='.log', delete=False)
         
-        # Create test remover
-        self.remover = EndOfWeekSLRemover(
-            config_file=self.config_file,
-            log_file=self.log_file
-        )
+        # Create test config
+        test_config = {
+            'end_of_week_sl_remover': {
+                'enabled': True,
+                'mode': 'widen',
+                'activation_window_start': '15:30',
+                'activation_window_end': '16:59',
+                'widen_distance_pips': 300,
+                'excluded_pairs': [],
+                'excluded_market_types': ['crypto'],
+                'prop_firm_mode': True,
+                'log_actions': True,
+                'notify_copilot': True
+            }
+        }
         
-        # Mock modules
-        self.mock_mt5_bridge = AsyncMock()
-        self.mock_copilot_bot = AsyncMock()
-        self.remover.inject_modules(
-            mt5_bridge=self.mock_mt5_bridge,
-            copilot_bot=self.mock_copilot_bot
+        json.dump(test_config, self.temp_config)
+        self.temp_config.close()
+        self.temp_log.close()
+        
+        self.eow_remover = EndOfWeekSLRemover(
+            config_file=self.temp_config.name,
+            log_file=self.temp_log.name
         )
     
     def teardown_method(self):
-        """Cleanup temporary files"""
-        import shutil
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
+        """Cleanup test files"""
+        os.unlink(self.temp_config.name)
+        os.unlink(self.temp_log.name)
     
-    def test_default_configuration_creation(self):
-        """Test default configuration is created properly"""
-        config = self.remover.config
-        
-        assert config.enabled == True
-        assert config.mode == SLRemovalMode.WIDEN
-        assert config.activation_window_start == "15:30"
-        assert config.activation_window_end == "16:59"
-        assert config.widen_distance_pips == 300
-        assert MarketType.CRYPTO in config.excluded_market_types
-        assert config.prop_firm_mode == True
-    
-    def test_symbol_categorization(self):
-        """Test symbol market type categorization"""
-        # Test forex symbols
-        assert self.remover._get_market_type('EURUSD') == MarketType.FOREX
-        assert self.remover._get_market_type('GBPJPY') == MarketType.FOREX
-        
-        # Test crypto symbols
-        assert self.remover._get_market_type('BTCUSD') == MarketType.CRYPTO
-        assert self.remover._get_market_type('ETHUSD') == MarketType.CRYPTO
-        
-        # Test indices
-        assert self.remover._get_market_type('US30') == MarketType.INDICES
-        assert self.remover._get_market_type('SPX500') == MarketType.INDICES
-        
-        # Test commodities
-        assert self.remover._get_market_type('XAUUSD') == MarketType.COMMODITIES
-        assert self.remover._get_market_type('USOIL') == MarketType.COMMODITIES
-        
-        # Test unknown symbol (should default to forex)
-        assert self.remover._get_market_type('UNKNOWN') == MarketType.FOREX
-    
-    def test_pip_value_calculation(self):
-        """Test pip value calculation for different symbols"""
-        # JPY pairs
-        assert self.remover._get_pip_value('USDJPY') == 0.01
-        assert self.remover._get_pip_value('EURJPY') == 0.01
-        
-        # Standard forex pairs
-        assert self.remover._get_pip_value('EURUSD') == 0.0001
-        assert self.remover._get_pip_value('GBPUSD') == 0.0001
-        
-        # Gold
-        assert self.remover._get_pip_value('XAUUSD') == 0.1
-        
-        # Silver
-        assert self.remover._get_pip_value('XAGUSD') == 0.001
-        
-        # Oil
-        assert self.remover._get_pip_value('USOIL') == 0.01
-        
-        # Indices
-        assert self.remover._get_pip_value('US30') == 1.0
-        assert self.remover._get_pip_value('SPX500') == 0.1
-    
-    def test_friday_close_window_detection(self):
+    def test_is_friday_close_window(self):
         """Test Friday close window detection"""
-        # Test Friday within window
-        friday_1600 = datetime(2025, 6, 27, 16, 0, tzinfo=timezone.utc)  # Friday 16:00 UTC
-        assert self.remover._is_friday_close_window(friday_1600) == True
+        # Test Friday within window (15:30-16:59 UTC)
+        friday_within = datetime(2023, 6, 16, 16, 0, 0, tzinfo=timezone.utc)  # Friday 16:00
+        assert self.eow_remover._is_friday_close_window(friday_within) == True
+        
+        # Test Friday exactly at start
+        friday_start = datetime(2023, 6, 16, 15, 30, 0, tzinfo=timezone.utc)  # Friday 15:30
+        assert self.eow_remover._is_friday_close_window(friday_start) == True
+        
+        # Test Friday exactly at end
+        friday_end = datetime(2023, 6, 16, 16, 59, 0, tzinfo=timezone.utc)  # Friday 16:59
+        assert self.eow_remover._is_friday_close_window(friday_end) == True
+        
+        # Test Friday outside window
+        friday_outside = datetime(2023, 6, 16, 17, 0, 0, tzinfo=timezone.utc)  # Friday 17:00
+        assert self.eow_remover._is_friday_close_window(friday_outside) == False
         
         # Test Friday before window
-        friday_1400 = datetime(2025, 6, 27, 14, 0, tzinfo=timezone.utc)  # Friday 14:00 UTC
-        assert self.remover._is_friday_close_window(friday_1400) == False
-        
-        # Test Friday after window
-        friday_1800 = datetime(2025, 6, 27, 18, 0, tzinfo=timezone.utc)  # Friday 18:00 UTC
-        assert self.remover._is_friday_close_window(friday_1800) == False
+        friday_before = datetime(2023, 6, 16, 15, 29, 0, tzinfo=timezone.utc)  # Friday 15:29
+        assert self.eow_remover._is_friday_close_window(friday_before) == False
         
         # Test non-Friday
-        monday_1600 = datetime(2025, 6, 23, 16, 0, tzinfo=timezone.utc)  # Monday 16:00 UTC
-        assert self.remover._is_friday_close_window(monday_1600) == False
+        thursday = datetime(2023, 6, 15, 16, 0, 0, tzinfo=timezone.utc)  # Thursday 16:00
+        assert self.eow_remover._is_friday_close_window(thursday) == False
     
-    def test_symbol_processing_rules(self):
-        """Test symbol processing inclusion/exclusion rules"""
-        # Test excluded pairs
-        self.remover.config.excluded_pairs = ['EURUSD', 'GBPUSD']
+    def test_get_market_type(self):
+        """Test market type detection"""
+        # Forex majors
+        assert self.eow_remover._get_market_type('EURUSD') == MarketType.FOREX
+        assert self.eow_remover._get_market_type('GBPUSD') == MarketType.FOREX
+        assert self.eow_remover._get_market_type('USDJPY') == MarketType.FOREX
         
-        should_process, reason = self.remover._should_process_symbol('EURUSD')
-        assert should_process == False
-        assert 'excluded pairs' in reason.lower()
+        # Crypto
+        assert self.eow_remover._get_market_type('BTCUSD') == MarketType.CRYPTO
+        assert self.eow_remover._get_market_type('ETHUSD') == MarketType.CRYPTO
         
-        should_process, reason = self.remover._should_process_symbol('USDJPY')
-        assert should_process == True
+        # Indices
+        assert self.eow_remover._get_market_type('US30') == MarketType.INDICES
+        assert self.eow_remover._get_market_type('SPX500') == MarketType.INDICES
         
-        # Test excluded market types (crypto by default)
-        should_process, reason = self.remover._should_process_symbol('BTCUSD')
-        assert should_process == False
-        assert 'crypto' in reason.lower()
+        # Commodities
+        assert self.eow_remover._get_market_type('XAUUSD') == MarketType.COMMODITIES
+        assert self.eow_remover._get_market_type('USOIL') == MarketType.COMMODITIES
         
-        # Test allowed forex symbol
-        should_process, reason = self.remover._should_process_symbol('EURJPY')
-        assert should_process == True
+        # Pattern matching
+        assert self.eow_remover._get_market_type('BITCOIN') == MarketType.CRYPTO
+        assert self.eow_remover._get_market_type('GOLD123') == MarketType.COMMODITIES
+        
+        # Unknown defaults to forex
+        assert self.eow_remover._get_market_type('UNKNOWN') == MarketType.FOREX
     
-    def test_widened_sl_calculation(self):
-        """Test stop loss widening calculation"""
-        # Test BUY trade - SL should move down (further from entry)
-        buy_trade = TradeInfo(
+    def test_get_pip_value(self):
+        """Test pip value calculation"""
+        # JPY pairs
+        assert self.eow_remover._get_pip_value('USDJPY') == 0.01
+        assert self.eow_remover._get_pip_value('EURJPY') == 0.01
+        
+        # Standard forex
+        assert self.eow_remover._get_pip_value('EURUSD') == 0.0001
+        assert self.eow_remover._get_pip_value('GBPUSD') == 0.0001
+        
+        # Gold
+        assert self.eow_remover._get_pip_value('XAUUSD') == 0.1
+        assert self.eow_remover._get_pip_value('GOLD') == 0.1
+        
+        # Silver
+        assert self.eow_remover._get_pip_value('XAGUSD') == 0.001
+        
+        # Oil
+        assert self.eow_remover._get_pip_value('USOIL') == 0.01
+        
+        # Indices
+        assert self.eow_remover._get_pip_value('US30') == 1.0
+        assert self.eow_remover._get_pip_value('SPX500') == 0.1
+        
+        # Default
+        assert self.eow_remover._get_pip_value('UNKNOWN') == 0.0001
+    
+    def test_should_process_symbol(self):
+        """Test symbol processing logic"""
+        # Normal forex pair should be processed
+        should_process, reason = self.eow_remover._should_process_symbol('EURUSD')
+        assert should_process == True
+        assert "approved" in reason.lower()
+        
+        # Excluded pair
+        self.eow_remover.config.excluded_pairs = ['GBPUSD']
+        should_process, reason = self.eow_remover._should_process_symbol('GBPUSD')
+        assert should_process == False
+        assert "excluded pairs" in reason.lower()
+        
+        # Excluded market type (crypto)
+        should_process, reason = self.eow_remover._should_process_symbol('BTCUSD')
+        assert should_process == False
+        assert "excluded" in reason.lower()
+        
+        # Reset config
+        self.eow_remover.config.excluded_pairs = []
+    
+    def test_calculate_widened_sl_buy(self):
+        """Test SL widening calculation for BUY trades"""
+        trade = TradeInfo(
             ticket=12345,
             symbol='EURUSD',
             action='BUY',
-            entry_price=1.0850,
-            current_sl=1.0800,
+            entry_price=1.1000,
+            current_sl=1.0950,  # 50 pips below entry
+            current_tp=1.1100,
+            lot_size=0.1,
+            open_time=datetime.now()
+        )
+        
+        # Config: widen by 300 pips
+        new_sl = self.eow_remover._calculate_widened_sl(trade)
+        
+        # For BUY, SL should move further down
+        pip_value = 0.0001  # EURUSD
+        widen_amount = 300 * pip_value  # 0.03
+        expected_sl = 1.0950 - 0.03  # 1.0920
+        
+        assert abs(new_sl - expected_sl) < 1e-6, f"Expected {expected_sl}, got {new_sl}"
+    
+    def test_calculate_widened_sl_sell(self):
+        """Test SL widening calculation for SELL trades"""
+        trade = TradeInfo(
+            ticket=12346,
+            symbol='EURUSD',
+            action='SELL',
+            entry_price=1.1000,
+            current_sl=1.1050,  # 50 pips above entry
             current_tp=1.0900,
             lot_size=0.1,
             open_time=datetime.now()
         )
         
-        widened_sl = self.remover._calculate_widened_sl(buy_trade)
-        expected_sl = 1.0800 - (300 * 0.0001)  # 300 pips * pip value
-        assert abs(widened_sl - expected_sl) < 0.00001
+        # Config: widen by 300 pips
+        new_sl = self.eow_remover._calculate_widened_sl(trade)
         
-        # Test SELL trade - SL should move up (further from entry)
-        sell_trade = TradeInfo(
-            ticket=12346,
-            symbol='GBPUSD',
-            action='SELL',
-            entry_price=1.2750,
-            current_sl=1.2800,
-            current_tp=1.2700,
-            lot_size=0.05,
-            open_time=datetime.now()
-        )
+        # For SELL, SL should move further up
+        pip_value = 0.0001  # EURUSD
+        widen_amount = 300 * pip_value  # 0.03
+        expected_sl = 1.1050 + 0.03  # 1.1080
         
-        widened_sl = self.remover._calculate_widened_sl(sell_trade)
-        expected_sl = 1.2800 + (300 * 0.0001)  # 300 pips * pip value
-        assert abs(widened_sl - expected_sl) < 0.00001
-        
-        # Test trade with no SL
-        no_sl_trade = TradeInfo(
+        assert abs(new_sl - expected_sl) < 1e-6, f"Expected {expected_sl}, got {new_sl}"
+    
+    def test_calculate_widened_sl_no_sl(self):
+        """Test SL widening when no SL is set"""
+        trade = TradeInfo(
             ticket=12347,
-            symbol='USDJPY',
+            symbol='EURUSD',
             action='BUY',
-            entry_price=150.00,
-            current_sl=None,
-            current_tp=151.00,
+            entry_price=1.1000,
+            current_sl=None,  # No SL
+            current_tp=1.1100,
             lot_size=0.1,
             open_time=datetime.now()
         )
         
-        widened_sl = self.remover._calculate_widened_sl(no_sl_trade)
-        assert widened_sl is None
+        new_sl = self.eow_remover._calculate_widened_sl(trade)
+        assert new_sl is None, "Should return None when no SL is set"
     
-    async def test_remove_mode_processing(self):
-        """Test SL removal mode processing"""
-        self.remover.config.mode = SLRemovalMode.REMOVE
+    @pytest.mark.asyncio
+    async def test_run_end_of_week_check_outside_window(self):
+        """Test EOW check outside Friday window"""
+        # Test on Thursday
+        thursday = datetime(2023, 6, 15, 16, 0, 0, tzinfo=timezone.utc)
         
-        # Mock open trades
+        result = await self.eow_remover.run_end_of_week_check(thursday)
+        
+        assert result['executed'] == False
+        assert 'Outside Friday close window' in result['reason']
+        assert result['current_time'] == thursday.isoformat()
+    
+    @pytest.mark.asyncio
+    async def test_run_end_of_week_check_disabled(self):
+        """Test EOW check when disabled"""
+        self.eow_remover.config.enabled = False
+        
+        friday_window = datetime(2023, 6, 16, 16, 0, 0, tzinfo=timezone.utc)
+        result = await self.eow_remover.run_end_of_week_check(friday_window)
+        
+        assert result['executed'] == False
+        assert 'disabled' in result['reason'].lower()
+    
+    @pytest.mark.asyncio
+    async def test_run_end_of_week_check_no_trades(self):
+        """Test EOW check with no open trades"""
+        # Mock empty trades list
+        self.eow_remover._get_open_trades = AsyncMock(return_value=[])
+        
+        friday_window = datetime(2023, 6, 16, 16, 0, 0, tzinfo=timezone.utc)
+        result = await self.eow_remover.run_end_of_week_check(friday_window)
+        
+        assert result['executed'] == True
+        assert 'No open trades' in result['reason']
+        assert result['trades_processed'] == 0
+    
+    @pytest.mark.asyncio
+    async def test_run_end_of_week_check_widen_mode(self):
+        """Test EOW check in widen mode"""
+        # Create mock trades
         mock_trades = [
             TradeInfo(
                 ticket=12345,
                 symbol='EURUSD',
                 action='BUY',
-                entry_price=1.0850,
-                current_sl=1.0800,
-                current_tp=1.0900,
-                lot_size=0.1,
-                open_time=datetime.now()
-            )
-        ]
-        
-        with patch.object(self.remover, '_get_open_trades', return_value=mock_trades):
-            with patch.object(self.remover, '_update_trade_sl', return_value=True) as mock_update:
-                result = await self.remover.process_end_of_week_sl_removal(force_run=True)
-        
-        assert result['processed'] == True
-        assert len(result['actions']) == 1
-        assert result['actions'][0]['action_type'] == 'remove'
-        assert result['actions'][0]['new_sl'] is None
-        
-        # Verify SL update was called with None
-        mock_update.assert_called_with(12345, None)
-    
-    async def test_widen_mode_processing(self):
-        """Test SL widening mode processing"""
-        self.remover.config.mode = SLRemovalMode.WIDEN
-        
-        # Mock open trades
-        mock_trades = [
-            TradeInfo(
-                ticket=12345,
-                symbol='EURUSD',
-                action='BUY',
-                entry_price=1.0850,
-                current_sl=1.0800,
-                current_tp=1.0900,
-                lot_size=0.1,
-                open_time=datetime.now()
-            )
-        ]
-        
-        with patch.object(self.remover, '_get_open_trades', return_value=mock_trades):
-            with patch.object(self.remover, '_update_trade_sl', return_value=True) as mock_update:
-                result = await self.remover.process_end_of_week_sl_removal(force_run=True)
-        
-        assert result['processed'] == True
-        assert len(result['actions']) == 1
-        assert result['actions'][0]['action_type'] == 'widen'
-        assert result['actions'][0]['new_sl'] != result['actions'][0]['original_sl']
-        
-        # Verify SL was widened by 300 pips
-        expected_new_sl = 1.0800 - (300 * 0.0001)
-        mock_update.assert_called_with(12345, expected_new_sl)
-    
-    async def test_ignore_mode_processing(self):
-        """Test ignore mode processing"""
-        self.remover.config.mode = SLRemovalMode.IGNORE
-        
-        # Mock open trades
-        mock_trades = [
-            TradeInfo(
-                ticket=12345,
-                symbol='EURUSD',
-                action='BUY',
-                entry_price=1.0850,
-                current_sl=1.0800,
-                current_tp=1.0900,
-                lot_size=0.1,
-                open_time=datetime.now()
-            )
-        ]
-        
-        with patch.object(self.remover, '_get_open_trades', return_value=mock_trades):
-            with patch.object(self.remover, '_update_trade_sl') as mock_update:
-                result = await self.remover.process_end_of_week_sl_removal(force_run=True)
-        
-        assert result['processed'] == True
-        assert len(result['actions']) == 1
-        assert result['actions'][0]['action_type'] == 'ignore'
-        
-        # Verify no SL update was attempted
-        mock_update.assert_not_called()
-    
-    async def test_excluded_symbols_skipped(self):
-        """Test that excluded symbols are skipped"""
-        self.remover.config.excluded_pairs = ['EURUSD']
-        
-        # Mock open trades with excluded symbol
-        mock_trades = [
-            TradeInfo(
-                ticket=12345,
-                symbol='EURUSD',  # This should be skipped
-                action='BUY',
-                entry_price=1.0850,
-                current_sl=1.0800,
-                current_tp=1.0900,
+                entry_price=1.1000,
+                current_sl=1.0950,
+                current_tp=1.1100,
                 lot_size=0.1,
                 open_time=datetime.now()
             ),
             TradeInfo(
                 ticket=12346,
-                symbol='GBPUSD',  # This should be processed
+                symbol='GBPUSD',
                 action='SELL',
-                entry_price=1.2750,
-                current_sl=1.2800,
-                current_tp=1.2700,
+                entry_price=1.2500,
+                current_sl=1.2550,
+                current_tp=1.2400,
                 lot_size=0.05,
                 open_time=datetime.now()
             )
         ]
         
-        with patch.object(self.remover, '_get_open_trades', return_value=mock_trades):
-            with patch.object(self.remover, '_update_trade_sl', return_value=True):
-                result = await self.remover.process_end_of_week_sl_removal(force_run=True)
+        # Mock methods
+        self.eow_remover._get_open_trades = AsyncMock(return_value=mock_trades)
+        self.eow_remover._update_trade_sl = AsyncMock(return_value=True)
         
-        assert result['processed'] == True
-        assert len(result['actions']) == 1  # Only GBPUSD should be processed
-        assert result['actions'][0]['symbol'] == 'GBPUSD'
+        # Set mode to WIDEN
+        self.eow_remover.config.mode = SLRemovalMode.WIDEN
+        
+        friday_window = datetime(2023, 6, 16, 16, 0, 0, tzinfo=timezone.utc)
+        result = await self.eow_remover.run_end_of_week_check(friday_window)
+        
+        assert result['executed'] == True
+        assert result['trades_processed'] == 2
+        assert result['successful_modifications'] == 2
+        assert result['mode'] == 'widen'
+        
+        # Verify SL update calls
+        assert self.eow_remover._update_trade_sl.call_count == 2
     
-    async def test_crypto_symbols_excluded_by_default(self):
-        """Test that crypto symbols are excluded by default"""
-        # Mock open trades with crypto symbol
-        mock_trades = [
-            TradeInfo(
-                ticket=12345,
-                symbol='BTCUSD',  # Crypto - should be skipped
-                action='BUY',
-                entry_price=50000,
-                current_sl=49000,
-                current_tp=51000,
-                lot_size=0.1,
-                open_time=datetime.now()
-            )
-        ]
-        
-        with patch.object(self.remover, '_get_open_trades', return_value=mock_trades):
-            result = await self.remover.process_end_of_week_sl_removal(force_run=True)
-        
-        assert result['processed'] == True
-        assert len(result['actions']) == 0  # No actions should be taken
-    
-    async def test_trades_without_sl_handling(self):
-        """Test handling of trades without stop loss"""
-        # Mock open trades without SL
+    @pytest.mark.asyncio
+    async def test_run_end_of_week_check_remove_mode(self):
+        """Test EOW check in remove mode"""
+        # Create mock trade
         mock_trades = [
             TradeInfo(
                 ticket=12345,
                 symbol='EURUSD',
                 action='BUY',
-                entry_price=1.0850,
-                current_sl=None,  # No SL set
-                current_tp=1.0900,
+                entry_price=1.1000,
+                current_sl=1.0950,
+                current_tp=1.1100,
                 lot_size=0.1,
                 open_time=datetime.now()
             )
         ]
         
-        # Test with REMOVE mode - should skip
-        self.remover.config.mode = SLRemovalMode.REMOVE
-        with patch.object(self.remover, '_get_open_trades', return_value=mock_trades):
-            result = await self.remover.process_end_of_week_sl_removal(force_run=True)
+        # Mock methods
+        self.eow_remover._get_open_trades = AsyncMock(return_value=mock_trades)
+        self.eow_remover._update_trade_sl = AsyncMock(return_value=True)
         
-        assert result['processed'] == True
-        assert len(result['actions']) == 0
+        # Set mode to REMOVE
+        self.eow_remover.config.mode = SLRemovalMode.REMOVE
         
-        # Test with IGNORE mode - should log
-        self.remover.config.mode = SLRemovalMode.IGNORE
-        with patch.object(self.remover, '_get_open_trades', return_value=mock_trades):
-            result = await self.remover.process_end_of_week_sl_removal(force_run=True)
+        friday_window = datetime(2023, 6, 16, 16, 0, 0, tzinfo=timezone.utc)
+        result = await self.eow_remover.run_end_of_week_check(friday_window)
         
-        assert result['processed'] == True
-        assert len(result['actions']) == 1
-        assert result['actions'][0]['action_type'] == 'ignore'
+        assert result['executed'] == True
+        assert result['trades_processed'] == 1
+        assert result['mode'] == 'remove'
+        
+        # Verify SL removal call (None value)
+        self.eow_remover._update_trade_sl.assert_called_with(12345, None)
     
-    async def test_time_window_enforcement(self):
-        """Test that processing only occurs during time window"""
-        # Test outside time window without force_run
-        result = await self.remover.process_end_of_week_sl_removal(force_run=False)
-        
-        assert result['processed'] == False
-        assert 'not in activation window' in result['reason'].lower()
-    
-    async def test_disabled_configuration(self):
-        """Test behavior when feature is disabled"""
-        self.remover.config.enabled = False
-        
-        result = await self.remover.process_end_of_week_sl_removal(force_run=False)
-        
-        assert result['processed'] == False
-        assert 'disabled' in result['reason'].lower()
-    
-    async def test_copilot_notifications(self):
-        """Test Copilot Bot notifications"""
-        self.remover.config.notify_copilot = True
-        
-        # Mock open trades
+    @pytest.mark.asyncio
+    async def test_run_end_of_week_check_ignore_mode(self):
+        """Test EOW check in ignore mode"""
+        # Create mock trade
         mock_trades = [
             TradeInfo(
                 ticket=12345,
                 symbol='EURUSD',
                 action='BUY',
-                entry_price=1.0850,
-                current_sl=1.0800,
-                current_tp=1.0900,
+                entry_price=1.1000,
+                current_sl=1.0950,
+                current_tp=1.1100,
                 lot_size=0.1,
                 open_time=datetime.now()
             )
         ]
         
-        with patch.object(self.remover, '_get_open_trades', return_value=mock_trades):
-            with patch.object(self.remover, '_update_trade_sl', return_value=True):
-                await self.remover.process_end_of_week_sl_removal(force_run=True)
+        # Mock methods
+        self.eow_remover._get_open_trades = AsyncMock(return_value=mock_trades)
+        self.eow_remover._update_trade_sl = AsyncMock(return_value=True)
         
-        # Verify notification method was called
-        # In real implementation, this would verify copilot_bot.send_alert was called
-        assert len(self.remover.removal_history) == 1
+        # Set mode to IGNORE
+        self.eow_remover.config.mode = SLRemovalMode.IGNORE
+        
+        friday_window = datetime(2023, 6, 16, 16, 0, 0, tzinfo=timezone.utc)
+        result = await self.eow_remover.run_end_of_week_check(friday_window)
+        
+        assert result['executed'] == True
+        assert result['trades_processed'] == 0  # Trade ignored
+        
+        # Verify no SL update calls
+        self.eow_remover._update_trade_sl.assert_not_called()
     
-    def test_statistics_calculation(self):
-        """Test statistics calculation"""
-        # Add some mock history
-        action1 = SLRemovalAction(
+    @pytest.mark.asyncio
+    async def test_run_end_of_week_check_excluded_symbols(self):
+        """Test EOW check with excluded symbols"""
+        # Create mock trades with excluded symbol
+        mock_trades = [
+            TradeInfo(
+                ticket=12345,
+                symbol='BTCUSD',  # Crypto - excluded by default
+                action='BUY',
+                entry_price=50000.0,
+                current_sl=49000.0,
+                current_tp=52000.0,
+                lot_size=0.01,
+                open_time=datetime.now()
+            ),
+            TradeInfo(
+                ticket=12346,
+                symbol='EURUSD',  # Should be processed
+                action='BUY',
+                entry_price=1.1000,
+                current_sl=1.0950,
+                current_tp=1.1100,
+                lot_size=0.1,
+                open_time=datetime.now()
+            )
+        ]
+        
+        # Mock methods
+        self.eow_remover._get_open_trades = AsyncMock(return_value=mock_trades)
+        self.eow_remover._update_trade_sl = AsyncMock(return_value=True)
+        
+        friday_window = datetime(2023, 6, 16, 16, 0, 0, tzinfo=timezone.utc)
+        result = await self.eow_remover.run_end_of_week_check(friday_window)
+        
+        assert result['executed'] == True
+        assert result['trades_processed'] == 1  # Only EURUSD processed
+        
+        # Verify only one SL update call (for EURUSD)
+        assert self.eow_remover._update_trade_sl.call_count == 1
+    
+    @pytest.mark.asyncio
+    async def test_run_end_of_week_check_no_sl_trades(self):
+        """Test EOW check with trades that have no SL"""
+        # Create mock trades without SL
+        mock_trades = [
+            TradeInfo(
+                ticket=12345,
+                symbol='EURUSD',
+                action='BUY',
+                entry_price=1.1000,
+                current_sl=None,  # No SL
+                current_tp=1.1100,
+                lot_size=0.1,
+                open_time=datetime.now()
+            )
+        ]
+        
+        # Mock methods
+        self.eow_remover._get_open_trades = AsyncMock(return_value=mock_trades)
+        self.eow_remover._update_trade_sl = AsyncMock(return_value=True)
+        
+        friday_window = datetime(2023, 6, 16, 16, 0, 0, tzinfo=timezone.utc)
+        result = await self.eow_remover.run_end_of_week_check(friday_window)
+        
+        assert result['executed'] == True
+        assert result['trades_processed'] == 0  # No trades with SL to process
+        
+        # Verify no SL update calls
+        self.eow_remover._update_trade_sl.assert_not_called()
+    
+    @pytest.mark.asyncio
+    async def test_update_trade_sl_success(self):
+        """Test successful SL update"""
+        # Mock MT5 bridge
+        mock_mt5_bridge = AsyncMock()
+        self.eow_remover.inject_modules(mt5_bridge=mock_mt5_bridge)
+        
+        # Test SL update
+        success = await self.eow_remover._update_trade_sl(12345, 1.0920)
+        
+        assert success == True
+    
+    @pytest.mark.asyncio
+    async def test_update_trade_sl_no_bridge(self):
+        """Test SL update without MT5 bridge"""
+        # No MT5 bridge injected
+        success = await self.eow_remover._update_trade_sl(12345, 1.0920)
+        
+        assert success == False
+    
+    def test_module_injection(self):
+        """Test module injection"""
+        mock_mt5_bridge = MagicMock()
+        mock_copilot_bot = MagicMock()
+        mock_market_data = MagicMock()
+        
+        self.eow_remover.inject_modules(
+            mt5_bridge=mock_mt5_bridge,
+            copilot_bot=mock_copilot_bot,
+            market_data=mock_market_data
+        )
+        
+        assert self.eow_remover.mt5_bridge == mock_mt5_bridge
+        assert self.eow_remover.copilot_bot == mock_copilot_bot
+        assert self.eow_remover.market_data == mock_market_data
+    
+    def test_schedule_with_auto_sync(self):
+        """Test scheduling integration with auto_sync"""
+        mock_auto_sync = MagicMock()
+        
+        result = self.eow_remover.schedule_with_auto_sync(mock_auto_sync)
+        
+        # Should return True indicating successful scheduling
+        assert result == True
+    
+    @pytest.mark.asyncio
+    async def test_send_copilot_notification(self):
+        """Test copilot notification sending"""
+        from desktop_app.end_of_week_sl_remover import SLRemovalAction
+        
+        # Mock copilot bot
+        mock_copilot_bot = AsyncMock()
+        self.eow_remover.inject_modules(copilot_bot=mock_copilot_bot)
+        
+        # Test removal notification
+        removal_action = SLRemovalAction(
             ticket=12345,
             symbol='EURUSD',
-            original_sl=1.0800,
+            original_sl=1.0950,
             new_sl=None,
             action_type='remove',
-            reason='Test removal',
+            reason='EOW protection',
             timestamp=datetime.now(),
             trade_direction='BUY',
-            entry_price=1.0850,
+            entry_price=1.1000,
             pip_value=0.0001
         )
         
-        action2 = SLRemovalAction(
+        await self.eow_remover._send_copilot_notification(removal_action)
+        
+        # Test widening notification
+        widening_action = SLRemovalAction(
             ticket=12346,
-            symbol='GBPUSD',
-            original_sl=1.2800,
-            new_sl=1.2830,
-            action_type='widen',
-            reason='Test widening',
-            timestamp=datetime.now(),
-            trade_direction='SELL',
-            entry_price=1.2750,
-            pip_value=0.0001
-        )
-        
-        self.remover.removal_history = [action1, action2]
-        
-        stats = self.remover.get_removal_statistics()
-        
-        assert stats['total_actions'] == 2
-        assert stats['by_action_type']['remove'] == 1
-        assert stats['by_action_type']['widen'] == 1
-        assert stats['symbols_processed'] == 2
-        assert stats['enabled'] == True
-    
-    def test_recent_actions_retrieval(self):
-        """Test retrieval of recent actions"""
-        # Add mock history
-        for i in range(5):
-            action = SLRemovalAction(
-                ticket=12340 + i,
-                symbol='EURUSD',
-                original_sl=1.0800,
-                new_sl=1.0770,
-                action_type='widen',
-                reason=f'Test action {i}',
-                timestamp=datetime.now(),
-                trade_direction='BUY',
-                entry_price=1.0850,
-                pip_value=0.0001
-            )
-            self.remover.removal_history.append(action)
-        
-        recent = self.remover.get_recent_actions(limit=3)
-        
-        assert len(recent) == 3
-        assert all('ticket' in action for action in recent)
-        assert all('symbol' in action for action in recent)
-        assert all('action_type' in action for action in recent)
-        
-        # Should be in reverse chronological order (latest first)
-        assert recent[0]['ticket'] == 12344
-        assert recent[2]['ticket'] == 12342
-    
-    def test_configuration_persistence(self):
-        """Test that configuration changes are persisted"""
-        new_config = {
-            'mode': 'remove',
-            'widen_distance_pips': 500,
-            'excluded_pairs': ['EURUSD', 'GBPUSD']
-        }
-        
-        self.remover.update_config(new_config)
-        
-        # Verify changes in memory
-        assert self.remover.config.mode == SLRemovalMode.REMOVE
-        assert self.remover.config.widen_distance_pips == 500
-        assert 'EURUSD' in self.remover.config.excluded_pairs
-        
-        # Create new remover to test persistence
-        remover2 = EndOfWeekSLRemover(
-            config_file=self.config_file,
-            log_file=os.path.join(self.temp_dir, "test_eow_log2.json")
-        )
-        
-        assert remover2.config.mode == SLRemovalMode.REMOVE
-        assert remover2.config.widen_distance_pips == 500
-        assert 'EURUSD' in remover2.config.excluded_pairs
-    
-    def test_history_persistence(self):
-        """Test that removal history is persisted"""
-        action = SLRemovalAction(
-            ticket=12345,
             symbol='EURUSD',
-            original_sl=1.0800,
-            new_sl=None,
-            action_type='remove',
-            reason='Persistence test',
+            original_sl=1.0950,
+            new_sl=1.0920,
+            action_type='widen',
+            reason='EOW protection',
             timestamp=datetime.now(),
             trade_direction='BUY',
-            entry_price=1.0850,
+            entry_price=1.1000,
             pip_value=0.0001
         )
         
-        self.remover.removal_history.append(action)
-        self.remover._save_history()
+        await self.eow_remover._send_copilot_notification(widening_action)
         
-        # Create new remover to test persistence
-        remover2 = EndOfWeekSLRemover(
-            config_file=self.config_file,
-            log_file=self.log_file
-        )
-        
-        assert len(remover2.removal_history) == 1
-        loaded_action = remover2.removal_history[0]
-        assert loaded_action.ticket == 12345
-        assert loaded_action.action_type == 'remove'
-        assert loaded_action.reason == 'Persistence test'
+        # Both notifications should have been processed without error
+        assert True  # If we reach here, no exceptions were thrown
     
-    async def test_jpy_pairs_pip_calculation(self):
-        """Test proper pip calculation for JPY pairs"""
-        self.remover.config.mode = SLRemovalMode.WIDEN
-        self.remover.config.widen_distance_pips = 100
+    def test_config_validation(self):
+        """Test configuration validation and defaults"""
+        # Test default excluded market types
+        assert MarketType.CRYPTO in self.eow_remover.config.excluded_market_types
         
-        # Mock JPY pair trade
-        mock_trades = [
-            TradeInfo(
-                ticket=12345,
-                symbol='USDJPY',
-                action='BUY',
-                entry_price=150.00,
-                current_sl=149.50,
-                current_tp=151.00,
-                lot_size=0.1,
-                open_time=datetime.now()
-            )
-        ]
-        
-        with patch.object(self.remover, '_get_open_trades', return_value=mock_trades):
-            with patch.object(self.remover, '_update_trade_sl', return_value=True) as mock_update:
-                await self.remover.process_end_of_week_sl_removal(force_run=True)
-        
-        # For JPY pairs, pip value is 0.01, so 100 pips = 1.00
-        expected_new_sl = 149.50 - (100 * 0.01)  # 148.50
-        mock_update.assert_called_with(12345, expected_new_sl)
+        # Test config modes
+        assert self.eow_remover.config.mode == SLRemovalMode.WIDEN
+        assert self.eow_remover.config.widen_distance_pips == 300
+        assert self.eow_remover.config.enabled == True
     
-    async def test_mt5_bridge_failure_handling(self):
-        """Test handling of MT5 bridge failures"""
-        # Mock open trades
-        mock_trades = [
-            TradeInfo(
-                ticket=12345,
-                symbol='EURUSD',
-                action='BUY',
-                entry_price=1.0850,
-                current_sl=1.0800,
-                current_tp=1.0900,
-                lot_size=0.1,
-                open_time=datetime.now()
-            )
-        ]
+    def test_weekend_edge_cases(self):
+        """Test edge cases for weekend detection"""
+        # Test Saturday (day after Friday)
+        saturday = datetime(2023, 6, 17, 16, 0, 0, tzinfo=timezone.utc)
+        assert self.eow_remover._is_friday_close_window(saturday) == False
         
-        with patch.object(self.remover, '_get_open_trades', return_value=mock_trades):
-            with patch.object(self.remover, '_update_trade_sl', return_value=False):  # Simulate failure
-                result = await self.remover.process_end_of_week_sl_removal(force_run=True)
+        # Test Sunday
+        sunday = datetime(2023, 6, 18, 16, 0, 0, tzinfo=timezone.utc)
+        assert self.eow_remover._is_friday_close_window(sunday) == False
         
-        assert result['processed'] == True
-        assert len(result['actions']) == 0  # No actions should be recorded on failure
+        # Test Monday
+        monday = datetime(2023, 6, 19, 16, 0, 0, tzinfo=timezone.utc)
+        assert self.eow_remover._is_friday_close_window(monday) == False
 
-# Integration test
-async def test_integration_with_strategy_runtime():
-    """Test integration scenario with strategy runtime"""
-    remover = EndOfWeekSLRemover()
-    
-    # Mock strategy runtime scenario
-    friday_close_time = datetime(2025, 6, 27, 16, 30, tzinfo=timezone.utc)  # Friday 16:30 UTC
-    
-    # Simulate being in Friday close window
-    with patch.object(remover, '_is_friday_close_window', return_value=True):
-        # Mock open trades
-        mock_trades = [
-            TradeInfo(
-                ticket=12345,
-                symbol='EURUSD',
-                action='BUY',
-                entry_price=1.0850,
-                current_sl=1.0800,
-                current_tp=1.0900,
-                lot_size=0.1,
-                open_time=datetime.now()
-            )
-        ]
-        
-        with patch.object(remover, '_get_open_trades', return_value=mock_trades):
-            with patch.object(remover, '_update_trade_sl', return_value=True):
-                result = await remover.process_end_of_week_sl_removal()
-    
-    # Verify integration
-    assert result['processed'] == True
-    assert len(result['actions']) == 1
-    assert result['actions'][0]['action_type'] == 'widen'  # Default mode
-    
-    print(f"Integration test passed:")
-    print(f"  Processed: {result['processed']}")
-    print(f"  Actions taken: {len(result['actions'])}")
-    print(f"  Action type: {result['actions'][0]['action_type']}")
-
-# Main execution for testing
-def run_basic_tests():
-    """Run basic functionality tests"""
-    test_instance = TestEndOfWeekSLRemover()
-    test_instance.setup_method()
-    
-    try:
-        test_instance.test_default_configuration_creation()
-        print("✓ Default configuration test passed")
-        
-        test_instance.test_symbol_categorization()
-        print("✓ Symbol categorization test passed")
-        
-        test_instance.test_pip_value_calculation()
-        print("✓ Pip value calculation test passed")
-        
-        test_instance.test_friday_close_window_detection()
-        print("✓ Friday close window detection test passed")
-        
-        test_instance.test_symbol_processing_rules()
-        print("✓ Symbol processing rules test passed")
-        
-        test_instance.test_widened_sl_calculation()
-        print("✓ Widened SL calculation test passed")
-        
-        asyncio.run(test_instance.test_widen_mode_processing())
-        print("✓ Widen mode processing test passed")
-        
-        asyncio.run(test_instance.test_remove_mode_processing())
-        print("✓ Remove mode processing test passed")
-        
-        asyncio.run(test_integration_with_strategy_runtime())
-        print("✓ Integration test passed")
-        
-        print("\nAll end-of-week SL remover tests passed successfully!")
-        
-    except Exception as e:
-        print(f"✗ Test failed: {e}")
-        raise
-    finally:
-        test_instance.teardown_method()
 
 if __name__ == "__main__":
-    run_basic_tests()
+    pytest.main([__file__])

@@ -324,43 +324,54 @@ class EntryRangeEngine:
             self.logger.error(f"Failed to place range orders for signal {position.signal_id}: {e}")
 
     async def _place_average_entry_orders(self, position: EntryRangePosition):
-        """Place orders for average entry strategy"""
-        # Place orders at multiple levels for averaging
+        """Place orders for average entry strategy - midpoint calculation"""
         config = position.config
-        num_orders = min(config.max_entries, 3)
         
-        price_step = (config.upper_bound - config.lower_bound) / (num_orders - 1)
-        lot_per_order = config.total_lot_size / num_orders
-        
-        for i in range(num_orders):
-            price = config.lower_bound + (i * price_step)
-            
-            # Determine order type based on direction and price level
-            if position.direction == TradeDirection.BUY:
-                order_type = "limit" if price < await self._get_current_price(position.symbol) else "stop"
-            else:
-                order_type = "limit" if price > await self._get_current_price(position.symbol) else "stop"
-            
+        # Handle single entry fallback
+        if config.upper_bound == config.lower_bound:
+            # Fallback to single entry at the only available price
+            single_price = config.upper_bound
             ticket = await self._place_pending_order(
                 symbol=position.symbol,
                 direction=position.direction,
-                price=price,
-                lot_size=lot_per_order,
-                order_type=order_type
+                price=single_price,
+                lot_size=config.total_lot_size,
+                order_type="limit"
             )
-            
             if ticket:
                 position.pending_orders.append(ticket)
+            return
+        
+        # Calculate average (midpoint) entry price
+        average_price = (config.upper_bound + config.lower_bound) / 2.0
+        current_price = await self._get_current_price(position.symbol)
+        
+        # Determine order type
+        if position.direction == TradeDirection.BUY:
+            order_type = "limit" if average_price < current_price else "stop"
+        else:
+            order_type = "limit" if average_price > current_price else "stop"
+        
+        ticket = await self._place_pending_order(
+            symbol=position.symbol,
+            direction=position.direction,
+            price=average_price,
+            lot_size=config.total_lot_size,
+            order_type=order_type
+        )
+        
+        if ticket:
+            position.pending_orders.append(ticket)
 
     async def _place_best_entry_orders(self, position: EntryRangePosition):
-        """Place orders for best entry strategy"""
+        """Place orders for best entry strategy - lowest price for BUY, highest for SELL"""
         config = position.config
         
-        # Place order at the most favorable price in the range
+        # Best entry: most favorable price in the range
         if position.direction == TradeDirection.BUY:
-            best_price = config.lower_bound  # Best buy price is lowest
+            best_price = config.lower_bound  # Lowest price for BUY
         else:
-            best_price = config.upper_bound  # Best sell price is highest
+            best_price = config.upper_bound  # Highest price for SELL
         
         current_price = await self._get_current_price(position.symbol)
         
@@ -382,30 +393,39 @@ class EntryRangeEngine:
             position.pending_orders.append(ticket)
 
     async def _place_second_entry_orders(self, position: EntryRangePosition):
-        """Place orders for second entry strategy"""
+        """Place orders for second entry strategy - second best price from sorted list"""
         config = position.config
         
-        # Place order at second-best price in the range
-        range_size = config.upper_bound - config.lower_bound
-        second_best_offset = range_size * 0.25  # 25% into the range
+        # Create sorted price list for second-best selection
+        price_range = config.upper_bound - config.lower_bound
+        num_levels = 5  # Create 5 price levels for selection
+        price_step = price_range / (num_levels - 1)
         
+        price_levels = []
+        for i in range(num_levels):
+            price = config.lower_bound + (i * price_step)
+            price_levels.append(price)
+        
+        # Sort prices by favorability
         if position.direction == TradeDirection.BUY:
-            second_price = config.lower_bound + second_best_offset
+            price_levels.sort()  # For BUY, lower prices are better
+            second_best_price = price_levels[1] if len(price_levels) > 1 else price_levels[0]
         else:
-            second_price = config.upper_bound - second_best_offset
+            price_levels.sort(reverse=True)  # For SELL, higher prices are better
+            second_best_price = price_levels[1] if len(price_levels) > 1 else price_levels[0]
         
         current_price = await self._get_current_price(position.symbol)
         
         # Determine order type
         if position.direction == TradeDirection.BUY:
-            order_type = "limit" if second_price < current_price else "stop"
+            order_type = "limit" if second_best_price < current_price else "stop"
         else:
-            order_type = "limit" if second_price > current_price else "stop"
+            order_type = "limit" if second_best_price > current_price else "stop"
         
         ticket = await self._place_pending_order(
             symbol=position.symbol,
             direction=position.direction,
-            price=second_price,
+            price=second_best_price,
             lot_size=config.total_lot_size,
             order_type=order_type
         )
