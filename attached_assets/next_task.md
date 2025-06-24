@@ -3,32 +3,32 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement the `copilot_alert_manager.py` module from **Phase 10: Copilot & Command**.
+Implement the `ProviderCompare.tsx` component from **Phase 11: Analytics + UI**.
 
 🔧 File to Create:
-`/desktop-app/copilot_alert_manager.py`
+`/client/src/components/ProviderCompare.tsx`
 
 🧩 Description:
-Build an alert management system that sends notifications via Telegram copilot bot for critical trading events and system status changes.
+Build a React component that displays side-by-side comparison of signal provider performance metrics for analytics dashboard.
 
 Key Features:
 
-* Send alerts for drawdown limit breaches and margin warnings
-* Notify about failed trades and MT5 connection issues
-* Alert on prop firm risk triggers and emergency stops
-* Configurable alert levels: info, warning, critical, emergency
-* Rate limiting and alert throttling to prevent spam
-* Alert templates with customizable formatting
-* Integration with existing copilot bot and notification systems
-* Alert history tracking and acknowledgment system
+* Display provider performance metrics in comparison table format
+* Show profit/loss, win rate, average R:R, drawdown, and execution speed
+* Interactive sorting and filtering by performance criteria
+* Visual charts for performance trends and comparison graphs
+* Provider reliability badges and rating system
+* Export functionality for performance reports
+* Integration with existing dashboard layout and theme system
+* Real-time data updates via WebSocket or polling
 
 🧪 Required Tests:
-`/desktop-app/tests/test_copilot_alert_manager.py`
+`/client/src/components/__tests__/ProviderCompare.test.tsx`
 
-* Test alert generation for different event types and severity levels
-* Test rate limiting and throttling mechanisms
-* Test integration with copilot bot notification system
-* Test alert formatting and template rendering
+* Test component rendering with mock provider data
+* Test sorting and filtering functionality
+* Test chart interactions and data visualization
+* Test responsive layout and accessibility features
 
 📂 Tracking Instructions:
 
@@ -38,6 +38,6 @@ Key Features:
 
 ❗ Rules:
 
-* Integrate with existing copilot_bot.py for message delivery
-* Implement proper rate limiting to avoid Telegram API limits
-* Provide clear alert categories and escalation levels
+* Follow existing UI component patterns and styling
+* Ensure responsive design for mobile and desktop
+* Use TypeScript with proper type definitions for all props and data

@@ -526,5 +526,17 @@
         ],
         "stealth_commands_enabled": true,
         "replay_commands_enabled": true
+    },
+    "copilot_alert_manager": {
+        "enabled": true,
+        "max_retries": 3,
+        "retry_delay": 5,
+        "batch_size": 10,
+        "processing_interval": 2.0,
+        "default_rate_limit": 30,
+        "enable_quiet_hours": true,
+        "fallback_to_logs": true,
+        "alert_timeout": 30,
+        "user_settings": {}
     }
 }
