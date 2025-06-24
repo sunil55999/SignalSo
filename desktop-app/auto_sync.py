@@ -13,6 +13,13 @@ import requests
 from dataclasses import dataclass, asdict
 import os
 
+try:
+    from api_client import register_terminal, validate_terminal_auth
+    from auth import is_authenticated
+except ImportError:
+    # Handle import errors gracefully
+    pass
+
 @dataclass
 class SyncStatus:
     last_sync: datetime

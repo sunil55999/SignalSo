@@ -1,85 +1,89 @@
-📌 NEXT TASK – Replit Agent Build Guide (Phase 10: Simulation + Symbol Mapping)
+📌 NEXT TASK – Replit Agent Build Guide (Phase 13: Auth + Terminal Integration)
 
-🧠 Dual Module Task:
-You must now implement two essential modules to complete SignalOS’s dry-run sandbox and broker symbol compatibility layer.
+🧠 Objective:
+Integrate user authentication and terminal identification to securely bind desktop app usage to dashboard users.
 
 ---
 
-### ✅ 1. `/desktop-app/signal_simulator.py` – Signal Dry-Run Execution
+🔧 1. `/desktop-app/auth.py` – Desktop Auth Token Manager
+📂 Description:
+- Handle login via token input OR read from `.signalos/config.json`
+- Store JWT securely for future sessions
+- Validate token by calling `/api/me` endpoint
 
-🎯 Purpose:
-Allow users to preview signal execution logic (entry, SL/TP, lotsize) without sending real trades.
-
-🧩 Features:
-- Accept input: parsed signal + strategy config
-- Simulate:
-  - Entry selection
-  - Lotsize calculation (invoke `lotsize_engine.py`)
-  - SL/TP adjustment logic
-- Return dry-run summary:
+✅ Implement:
 ```python
-{
-  "entry": 1.1055,
-  "sl": 1.1020,
-  "tp": [1.1100, 1.1125],
-  "lot": 0.12,
-  "mode": "shadow",
-  "valid": True
-}
-🧪 Test File:
-/desktop-app/tests/test_signal_simulator.py
+get_auth_token() → str
+store_auth_token(token: str)
+validate_token(token: str) → bool
+🔧 2. /desktop-app/terminal_identity.py – Terminal Fingerprint
+📂 Description:
 
-✅ Test:
+Generate a terminal_id using UUID4 + OS + MAC hash
 
-Valid BUY signal → correct simulation
+Save to local file and reuse across sessions
 
-TP override from strategy
-
-Shadow mode test (no SL shown)
-
-Fallback if config missing
-
-✅ 2. /desktop-app/symbol_mapper.py – Broker Symbol Normalizer
-🎯 Purpose:
-Map general signal symbols (e.g., “GOLD”, “GER30”) to broker-specific equivalents (e.g., “XAUUSD”, “DE40.cash”).
-
-🧩 Features:
-
-Load symbol map config (e.g., from /config/symbol_map.json)
-
-Function:
+✅ Implement:
 
 python
 Copy
 Edit
-normalize_symbol(input_symbol: str) → str
-Support dynamic overrides (per user/account)
+get_terminal_id() → str
+🔧 3. /desktop-app/api_client.py – Authenticated API Utility
+📂 Description:
 
-Case-insensitive mapping (e.g., “gold” → “XAUUSD”)
+Reusable helper to send authenticated requests
 
-🧪 Test File:
-/desktop-app/tests/test_symbol_mapper.py
+Handles errors + retries + token inclusion
 
-✅ Test:
+✅ Must Support:
 
-“GOLD” → “XAUUSD”
+POST /api/register_terminal
 
-Unknown symbol returns input
+GET /api/terminal_config
 
-User override map test
+POST /api/report_status
 
-📂 After Completion (Both Modules):
+🔧 4. Add Call to register_terminal() on Startup
+📂 File to Update: main.py or auto_sync.py
 
-✅ Mark complete in /attached_assets/feature_status.md
+✅ Payload Example:
 
-🧾 Append to /attached_assets/execution_history.md
+json
+Copy
+Edit
+{
+  "token": "<JWT>",
+  "terminal_id": "xyz-1234",
+  "os": "Windows",
+  "version": "1.0.6"
+}
+🧩 Server API will respond with:
 
-📘 Log both changes in /attached_assets/dev_changelog.md
+✅ Whether the terminal is approved
+
+🧠 Config overrides if present
+
+🧪 5. Add Tests:
+
+/tests/test_auth.py – validate token storage and retry
+
+/tests/test_terminal_identity.py – test ID persistency
+
+/tests/test_api_client.py – simulate mock API and retry logic
+
+📦 Once Done:
+
+✅ Update feature_status.md
+
+📘 Log into dev_changelog.md
+
+🧾 Log into execution_history.md
 
 ❗ Guidelines:
 
-Do not call MT5 or send live trades in simulation
+Do not hardcode token anywhere
 
-Store all dry-run previews in /logs/simulation.log (optional)
+Do not allow trade execution if auth fails
 
-Make sure symbol_mapper.py is accessible from parser.py, retry_engine.py, and lotsize_engine.py
+Future support: QR token auth, multi-terminal management

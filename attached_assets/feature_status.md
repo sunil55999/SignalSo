@@ -98,6 +98,7 @@ Mark modules as:
 ⛔ mt5\_bridge.py ← Referenced but not implemented
 ⛔ signal\_simulator.py ← Dry-run system missing
 ⛔ symbol\_mapper.py ← Not found
+⛔ Shared Auth
 
 ---
 
