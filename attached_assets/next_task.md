@@ -1,44 +1,51 @@
-# 📌 NEXT TASK – Replit Agent Build Guide (Auto Updated per Phase)
+# 📌 NEXT TASK – Replit Agent Build Guide (Final Upgrade Phase)
 
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `email_reporter.ts` from **Phase 12: Infrastructure**.
+Upgrade `entrypoint_range_handler.py` to support advanced entrypoint resolution logic.
 
-🔧 File to Create:
-`/server/utils/email_reporter.ts`
+🔧 File to Upgrade:
+`/desktop-app/entrypoint_range_handler.py`
 
 🧩 Description:
-Build a backend utility to send daily/weekly email reports summarizing:
+Support multi-entry logic from a signal. Add entry mode evaluation:
 
-* Total trades executed
-* Win rate and average RR
-* Top performing providers
-* Errors or blocked signals
+* `average`: Mean of all entries
+* `best`: Closest to market price
+* `second`: Second entrypoint from list
 
 Key Features:
 
-* Support SMTP or API-based email sending (SendGrid, Mailgun, etc.)
-* HTML and plain text email format
-* Read data from PostgreSQL or API endpoints
-* Schedule via cron job or manual trigger
-* Configurable per user or admin scope
+* Accept list of entry prices from parser
+* New method:
+
+```python
+resolve_entry(entry_list: List[float], mode: str, current_price: float) -> float
+```
+
+* Fallback to first entry if list invalid
+
+📂 Integration:
+
+* `strategy_runtime.py`
+* `parser.py`
 
 🧪 Required Tests:
-`/server/tests/email_reporter.test.ts`
+`/desktop-app/tests/test_entrypoint_range_handler.py`
 
-* Test successful email formatting and delivery
-* Handle SMTP/API failures gracefully
-* Ensure template loads dynamic stats properly
+* Validate correct resolution per mode
+* Test with invalid or single-entry signals
+* Confirm correct fallback behavior
 
-📂 Tracking Instructions:
+📁 Tracking:
 
-* ✅ Update `/attached_assets/feature_status.md`
-* 📘 Append log in `/attached_assets/dev_changelog.md`
-* 🧾 Register task in `/attached_assets/execution_history.md`
+* ✅ Update `feature_status.md`
+* 🧾 Append to `execution_history.md`
+* 📘 Log to `dev_changelog.md`
 
 ❗ Rules:
 
-* Use server-side only, do not expose secrets in frontend
-* Place templates in `/server/templates/` as `.html`
-* Log success/failure of reports in `/logs/email_reports.log`
+* Log fallback/invalid mode to `/logs/trade_errors.log`
+* Support float precision to 5 decimals
+* Must not break current single-entry logic
