@@ -197,4 +197,17 @@
 📂 /client/components/StrategyBuilder.vue
 🧠 Drag & drop block builder for signal logic
 
+## [2025-06-23] Margin Filter Block Implementation
+- 📂 `/desktop-app/blocks/margin_filter.py`, `/desktop-app/tests/test_margin_filter.py`
+- 🧠 Risk management filter that checks margin levels before allowing signal execution
+- ✅ MT5 account margin level monitoring with configurable percentage and absolute thresholds
+- ✅ Strategy-specific threshold overrides for conservative, aggressive, and custom profiles
+- ✅ Emergency threshold protection preventing trades below critical margin levels
+- ✅ Robust fallback handling when MT5 account data is unavailable
+- ✅ Comprehensive decision logging with detailed margin data tracking
+- ✅ Statistics monitoring including allow/block rates and cache performance
+- ✅ Configuration management with dynamic threshold updates
+- ✅ Complete test suite with 15 unit tests covering all edge cases and scenarios
+- 🕒 Timestamp: 2025-06-23 20:15:00
+
 ✅ Changelog maintained manually after each module.

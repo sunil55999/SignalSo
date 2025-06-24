@@ -99,4 +99,16 @@
   - Integration gaps identified: missing strategy_runtime connection, limited R:R filtering
   - Test coverage: 600+ lines of comprehensive test suite
 
+### [2025-06-23] Margin Filter Block Implementation
+
+* **margin_filter.py** – Risk management block for strategy builder
+  - Checks MT5 account margin level before signal execution
+  - Configurable percentage and absolute margin thresholds
+  - Strategy-specific override thresholds for different risk profiles
+  - Emergency threshold protection with immediate blocking
+  - Fallback handling when MT5 data unavailable
+  - Comprehensive logging with detailed decision tracking
+  - Statistics monitoring and configuration management
+  - Test coverage: 15 unit tests covering all scenarios
+
 ✅ Logs end here. Update this file after every feature completion.

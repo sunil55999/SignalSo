@@ -26,7 +26,7 @@
 * ✅ equity\_limits.ts
 * ✅ drawdown\_handler.ts
 * ✅ signal\_conflict\_resolver.py
-* 🚧 margin\_filter block
+* ✅ margin\_filter block
 * ✅ keyword\_blacklist block
 * ✅ spread\_checker.py
 * ✅ news\_filter.py

@@ -34,31 +34,6 @@
             }
         }
     },
-    "smart_entry": {
-        "enabled": true,
-        "default_mode": "smart_wait",
-        "default_wait_seconds": 300,
-        "default_price_tolerance_pips": 2.0,
-        "max_concurrent_entries": 50,
-        "price_update_interval": 0.5,
-        "cleanup_completed_hours": 24,
-        "require_spread_improvement": true,
-        "fallback_to_immediate": true,
-        "symbol_specific_settings": {
-            "EURUSD": {
-                "price_tolerance_pips": 1.5,
-                "max_wait_seconds": 180
-            },
-            "GBPUSD": {
-                "price_tolerance_pips": 2.0,
-                "max_wait_seconds": 240
-            },
-            "XAUUSD": {
-                "price_tolerance_pips": 5.0,
-                "max_wait_seconds": 600
-            }
-        }
-    },
     "trigger_pending_order": {
         "enabled": true,
         "default_mode": "auto",
@@ -161,10 +136,15 @@
         },
         "manual_override_duration": 60,
         "update_interval": 300,
-        "news_sources": ["forexfactory"],
+        "news_sources": [
+            "forexfactory"
+        ],
         "api_settings": {
             "forexfactory_url": "https://nfs.faireconomy.media/ff_calendar_thisweek.json",
-            "backup_sources": ["investing", "fxstreet"],
+            "backup_sources": [
+                "investing",
+                "fxstreet"
+            ],
             "request_timeout": 30,
             "retry_attempts": 3
         }
@@ -181,13 +161,28 @@
         "emergency_override_limit": 5,
         "cleanup_days": 7,
         "symbol_specific_limits": {
-            "XAUUSD": {"hourly": 2, "daily": 6},
-            "BTCUSD": {"hourly": 1, "daily": 3},
-            "ETHUSD": {"hourly": 1, "daily": 3}
+            "XAUUSD": {
+                "hourly": 2,
+                "daily": 6
+            },
+            "BTCUSD": {
+                "hourly": 1,
+                "daily": 3
+            },
+            "ETHUSD": {
+                "hourly": 1,
+                "daily": 3
+            }
         },
         "provider_specific_limits": {
-            "high_frequency_provider": {"hourly": 2, "daily": 8},
-            "premium_provider": {"hourly": 10, "daily": 40}
+            "high_frequency_provider": {
+                "hourly": 2,
+                "daily": 8
+            },
+            "premium_provider": {
+                "hourly": 10,
+                "daily": 40
+            }
         }
     },
     "margin_level_checker": {
@@ -205,27 +200,52 @@
         },
         "symbol_groups": {
             "major_pairs": {
-                "symbols": ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF"],
+                "symbols": [
+                    "EURUSD",
+                    "GBPUSD",
+                    "AUDUSD",
+                    "NZDUSD",
+                    "USDCAD",
+                    "USDCHF"
+                ],
                 "risk_multiplier": 1.0,
                 "max_exposure": 50.0
             },
             "minor_pairs": {
-                "symbols": ["EURGBP", "EURAUD", "EURCHF", "GBPAUD", "GBPCHF"],
+                "symbols": [
+                    "EURGBP",
+                    "EURAUD",
+                    "EURCHF",
+                    "GBPAUD",
+                    "GBPCHF"
+                ],
                 "risk_multiplier": 1.2,
                 "max_exposure": 30.0
             },
             "exotic_pairs": {
-                "symbols": ["USDZAR", "USDTRY", "USDRUB"],
+                "symbols": [
+                    "USDZAR",
+                    "USDTRY",
+                    "USDRUB"
+                ],
                 "risk_multiplier": 2.0,
                 "max_exposure": 20.0
             },
             "commodities": {
-                "symbols": ["XAUUSD", "XAGUSD", "USOIL", "UKOIL"],
+                "symbols": [
+                    "XAUUSD",
+                    "XAGUSD",
+                    "USOIL",
+                    "UKOIL"
+                ],
                 "risk_multiplier": 1.5,
                 "max_exposure": 25.0
             },
             "crypto": {
-                "symbols": ["BTCUSD", "ETHUSD"],
+                "symbols": [
+                    "BTCUSD",
+                    "ETHUSD"
+                ],
                 "risk_multiplier": 3.0,
                 "max_exposure": 15.0
             }
@@ -268,7 +288,9 @@
                 "mode": "full_reverse",
                 "enabled": false,
                 "priority": 3,
-                "providers": ["contrarian_provider"]
+                "providers": [
+                    "contrarian_provider"
+                ]
             }
         ],
         "symbol_settings": {
@@ -426,16 +448,62 @@
             }
         ],
         "market_sessions": {
-            "asian": {"start": "21:00", "end": "06:00"},
-            "european": {"start": "07:00", "end": "16:00"},
-            "american": {"start": "13:00", "end": "22:00"}
+            "asian": {
+                "start": "21:00",
+                "end": "06:00"
+            },
+            "european": {
+                "start": "07:00",
+                "end": "16:00"
+            },
+            "american": {
+                "start": "13:00",
+                "end": "22:00"
+            }
         },
         "symbol_classifications": {
-            "major_pairs": ["EURUSD", "GBPUSD", "AUDUSD", "NZDUSD", "USDCAD", "USDCHF", "USDJPY"],
-            "minor_pairs": ["EURGBP", "EURAUD", "EURCHF", "GBPAUD", "GBPCHF"],
-            "exotic_pairs": ["USDZAR", "USDTRY", "USDRUB"],
-            "commodities": ["XAUUSD", "XAGUSD", "USOIL", "UKOIL"],
-            "crypto": ["BTCUSD", "ETHUSD"]
+            "major_pairs": [
+                "EURUSD",
+                "GBPUSD",
+                "AUDUSD",
+                "NZDUSD",
+                "USDCAD",
+                "USDCHF",
+                "USDJPY"
+            ],
+            "minor_pairs": [
+                "EURGBP",
+                "EURAUD",
+                "EURCHF",
+                "GBPAUD",
+                "GBPCHF"
+            ],
+            "exotic_pairs": [
+                "USDZAR",
+                "USDTRY",
+                "USDRUB"
+            ],
+            "commodities": [
+                "XAUUSD",
+                "XAGUSD",
+                "USOIL",
+                "UKOIL"
+            ],
+            "crypto": [
+                "BTCUSD",
+                "ETHUSD"
+            ]
         }
+    },
+    "margin_filter": {
+        "enabled": true,
+        "threshold_value": 200.0,
+        "threshold_type": "percentage",
+        "emergency_threshold": 100.0,
+        "fallback_action": "block",
+        "check_free_margin": true,
+        "min_free_margin": 1000.0,
+        "warning_threshold": 300.0,
+        "per_strategy_overrides": {}
     }
 }

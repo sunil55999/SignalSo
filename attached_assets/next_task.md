@@ -3,30 +3,32 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement the `strategy_condition_router.py` module from **Phase 9: Strategy Behavior & Logic**.
+Implement the `copilot_command_interpreter.py` module from **Phase 10: Copilot & Command**.
 
 🔧 File to Create:
-`/desktop-app/strategy_condition_router.py`
+`/desktop-app/copilot_command_interpreter.py`
 
 🧩 Description:
-Build a strategy condition router that routes signals through different processing paths based on configurable conditions and market states.
+Build a natural language command interpreter that converts Telegram bot commands into signal operations and strategy management actions.
 
 Key Features:
 
-* Route signals through different strategy modules based on conditions
-* Support for conditional logic with market state evaluation
-* Dynamic strategy selection based on volatility, time, and market conditions
-* Integration with all existing strategy modules (reverse, grid, multi-signal)
-* Fallback routing and error handling for strategy failures
-* Performance monitoring and strategy effectiveness tracking
+* Parse natural language commands from Telegram copilot bot
+* Convert text to structured commands (pause, resume, adjust, replay)
+* Support signal management: "Pause GBP signals", "Resume GOLD trades"  
+* Strategy adjustments: "Set EURUSD lot to 0.05", "Enable reverse mode"
+* Signal replay: "Replay last Gold signal", "Re-execute GBPUSD from 10am"
+* Integration with existing strategy modules and signal processing
+* Command validation and confirmation before execution
+* Comprehensive logging and audit trail
 
 🧪 Required Tests:
-`/desktop-app/tests/test_strategy_condition_router.py`
+`/desktop-app/tests/test_copilot_command_interpreter.py`
 
-* Test condition evaluation and routing logic
-* Test strategy module integration and execution
-* Test fallback mechanisms and error handling
-* Test performance monitoring and statistics
+* Test command parsing for different natural language inputs
+* Test strategy adjustment commands and validation
+* Test signal management operations (pause/resume)
+* Test integration with strategy modules and error handling
 
 📂 Tracking Instructions:
 
@@ -36,6 +38,6 @@ Key Features:
 
 ❗ Rules:
 
-* Implement flexible condition evaluation system
-* All logs must go to `/logs/strategy_condition_router.log`
-* Ensure routing logic prevents strategy conflicts
+* Commands must be validated before execution
+* Provide clear feedback on command interpretation
+* Integrate with existing copilot_bot.py for seamless operation

@@ -1,0 +1,16 @@
+[
+  {
+    "timestamp": "2025-06-24T09:21:21.198457",
+    "signal_id": "DEMO_001",
+    "symbol": "EURUSD",
+    "strategy_id": null,
+    "result": "allow",
+    "reason": "Margin level acceptable: 1960.0%",
+    "margin_data": {
+      "margin_level": 1960.0,
+      "free_margin": 9300.0,
+      "balance": 10000.0,
+      "equity": 9800.0
+    }
+  }
+]
