@@ -1,107 +1,64 @@
-# ✅ Feature Status – SignalOS Build Tracker
+✅ TASK COMPLETED – Lotsize Engine (Phase 8: Lotsize + Entry)
+📅 Date: 2025-06-24
 
-Last Updated: 2025-06-24 (Based on Source Verification Audit)
+🧠 Task:
+✅ COMPLETED: Implement `lotsize_engine.py` to support advanced position sizing logic based on signal content or user configuration.
 
-Mark modules as:
-✅ Complete
-🚧 In Progress
-⛔ Not Started
+🔧 File to Upgrade:
+`/desktop-app/parser.py`
 
----
+🧩 Required Features:
+1. **Signal Intent Recognition:**
+   - Identify BUY/SELL, market/pending order
+   - Extract symbol (e.g., XAUUSD, BTCUSD, NAS100)
 
-## PHASE 1: SIGNAL EXECUTION CORE
+2. **Price Extraction:**
+   - Entry price (e.g., “Enter at 1.1045”)
+   - Stop loss and take profits (up to 3 levels)
+   - Support ranges (e.g., “Entry: 1.1045–1.1055”)
 
-✅ retry\_engine.py
-🚧 parser.py  ← Placeholder only, lacks NLP or multilingual engine
-✅ auto\_sync.py
-✅ strategy\_runtime.py
-✅ signal\_replay.py
-✅ partial\_close.py
-✅ trailing\_stop.py
-✅ break\_even.py
-🚧 entry\_range.py  ← Selection modes in progress
+3. **Advanced Text Processing:**
+   - Handle multiple formats (English, Hindi, Arabic, Russian)
+   - Use spaCy/transformers-based parser (NLP pipeline stub)
+   - Add fallback regex rules
 
-## PHASE 2: ADVANCED ORDER MANAGEMENT
+4. **Confidence Scoring:**
+   - Assign confidence 0–1 per extracted field
+   - Drop/flag if score < threshold (e.g., 0.7)
 
-✅ tp\_manager.py
-✅ sl\_manager.py
-✅ rr\_converter.py
-✅ edit\_trade\_on\_signal\_change.py
-✅ ticket\_tracker.py
-✅ trigger\_pending\_order.py
-✅ multi\_tp\_manager.py
+5. **Parser Output Format:**
+   - Return unified `ParsedSignal` object:
+     ```python
+     {
+       "symbol": "XAUUSD",
+       "entry": 1.1045,
+       "sl": 1.1000,
+       "tp": [1.1080, 1.1100],
+       "order_type": "BUY_LIMIT",
+       "confidence": 0.86
+     }
+     ```
 
-## PHASE 3: RISK CONTROLS
+🧪 Test File:
+`/desktop-app/tests/test_parser.py`
 
-✅ equity\_limits.ts
-✅ drawdown\_handler.ts
-✅ signal\_conflict\_resolver.py
+Test Scenarios:
+- “Buy GOLD at 2355 SL 2349 TP 2362”
+- “بيع EURUSD دخول: 1.0990 وقف: 1.0940 هدف: 1.1060”
+- Hindi/Arabic/Russian text with correct extraction
+- Unclear message → low confidence
 
-## PHASE 4: STRATEGY BUILDER BLOCKS
+📦 Integration Requirements:
+- Parser must be used by: `strategy_runtime.py`, `signal_simulator.py`, `copilot_bot.py`
+- Add to parser registry/config if modular
 
-✅ strategy\_flow\.tsx
-✅ time\_window block
-✅ rr\_condition block
-✅ margin\_filter block
-🚧 keyword\_blacklist block  ← UI implemented, preview logic missing
+📂 Update After Completion:
+- `attached_assets/feature_status.md`
+- `attached_assets/dev_changelog.md`
+- `attached_assets/execution_history.md`
 
-## PHASE 5: PROP FIRM STEALTH
+❗ Implementation Guidelines:
+- Use fallback-safe logic (NLP → regex → fail gracefully)
+- Log failed parses for analysis
+- Must support dry-run mode (used in simulation)
 
-🚧 magic\_number\_hider.py  ← Mentioned but logic not implemented
-✅ comment\_cleaner.py
-🚧 randomized\_lot\_inserter.py  ← 95% complete, needs hook
-🚧 end\_of\_week\_sl\_remover.py  ← Lacks trigger scheduler
-
-## PHASE 6: TELEGRAM + BOT
-
-✅ copilot\_bot.py
-✅ telegram\_session\_manager.py
-✅ telegram\_error\_reporter.py
-✅ copilot\_command\_interpreter.py
-✅ copilot\_alert\_manager.py
-
-## PHASE 7: UI + ANALYTICS
-
-✅ Dashboard.tsx
-✅ SignalHistory.tsx
-✅ ProviderCompare.tsx
-✅ StrategyBuilder.tsx
-✅ AnalyticsProviderTable.tsx
-✅ signal\_success\_tracker.ts
-⛔ ProviderTrustScore.ts
-
-## PHASE 8: LOTSIZE + ENTRYPOINT
-
-✅ lotsize\_engine.py
-✅ entrypoint\_range\_handler.py
-
-## PHASE 9: TRADE MODIFIERS
-
-🚧 edit\_trade\_on\_signal\_change.py ← No signal parser linkage
-🚧 tp\_adjustor.py ← Lacks test coverage
-🚧 time\_scheduler.py ← Time rule logic pending
-
-## PHASE 10: AUDIT + TRACKING
-
-✅ ticket\_tracker.py
-✅ trade\_logger.py
-✅ execution\_auditor.py
-
-## PHASE 11: REPORTING & OUTPUT
-
-✅ email\_reporter.ts
-✅ trade\_exporter.py
-✅ signal\_log\_cleaner.py
-
-## PHASE 12: CORE MISSING MODULES
-
-✅ mt5\_bridge.py
-✅ signal\_simulator.py
-⛔ symbol\_mapper.py ← Not found
-
----
-
-📘 Verified Completion: **74% (20 fully implemented of 27 major features)**
-🟡 Partial Implementation: **15% (4 features)**
-🔴 Missing/Unstarted: **11% (3 critical modules)**
-🧪 Testing coverage: 90% complete for implemented modules
