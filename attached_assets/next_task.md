@@ -3,28 +3,38 @@
 📅 Date: 2025-06-23
 
 🧠 Task:
-Implement `signal_success_tracker.ts` from **Phase 11: Analytics + UI**.
+Implement `AnalyticsProviderTable.tsx` from **Phase 11: Analytics + UI**.
 
 🔧 File to Create:
-`/client/src/utils/signal_success_tracker.ts`
+`/client/src/components/analytics/AnalyticsProviderTable.tsx`
 
 🧩 Description:
-Build a tracking utility that analyzes the success rate of signals from providers based on execution results, RR targets hit, and SL trigger history.
+Build a UI table component that displays performance stats for all signal providers in a sortable and filterable format.
 
 Key Features:
 
-* Accept signal execution logs (via API or client data cache)
-* Aggregate stats by provider: win rate %, average RR, max drawdown, signal count
-* Cache results in local storage or query live from backend
-* Provide easy method: `getSuccessStats(providerId: string)`
-* UI-ready format output for rendering in dashboards
+* Fetch provider stats from `/server/routes.ts` (API endpoint: `/api/providers/stats`)
+* Columns:
+
+  * Provider Name
+  * Total Signals
+  * Win Rate %
+  * Avg RR
+  * Max Drawdown
+  * Last Signal Date
+* Table features:
+
+  * Column sorting (asc/desc)
+  * Row filtering by win rate or symbol
+  * Export to CSV
+  * Highlight top performers
 
 🧪 Required Tests:
-`/client/src/tests/signal_success_tracker.test.ts`
+Use mock data in `/client/src/tests/mocks/provider_stats.json`
 
-* Validate correct win rate calculation
-* Confirm proper RR average aggregation
-* Simulate edge cases: 0 trades, mixed win/losses, extreme drawdowns
+* Validate column sorting logic
+* Check conditional rendering (e.g. highlight win rate > 75%)
+* Test mobile responsiveness and hover states
 
 📂 Tracking Instructions:
 
@@ -34,6 +44,6 @@ Key Features:
 
 ❗ Rules:
 
-* Should not require full re-fetch for each view
-* Use memoized selectors or localStorage where applicable
-* Ensure API fallback if local data is missing
+* Use `shadcn/ui` table components
+* Keep styling consistent with SignalHistory.vue and ProviderCompare.tsx
+* Ensure accessibility and keyboard navigation support

@@ -425,6 +425,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Provider stats API endpoint
+  app.get("/api/providers/stats", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const signals = await storage.getSignals(1000); // Get recent signals for analysis
+      const trades = await storage.getUserTrades(req.user!.id, 1000);
+      
+      // Group signals by provider/channel
+      const providerMap = new Map();
+      
+      signals.forEach(signal => {
+        const providerId = signal.channelId || `channel_${signal.id}`;
+        const providerName = signal.channelName || `Channel ${signal.id}`;
+        
+        if (!providerMap.has(providerId)) {
+          providerMap.set(providerId, {
+            id: providerId,
+            name: providerName,
+            signals: [],
+            trades: []
+          });
+        }
+        
+        providerMap.get(providerId).signals.push(signal);
+      });
+      
+      // Add trades to providers
+      trades.forEach(trade => {
+        if (trade.signalId) {
+          const signal = signals.find(s => s.id === trade.signalId);
+          if (signal) {
+            const providerId = signal.channelId || `channel_${signal.id}`;
+            if (providerMap.has(providerId)) {
+              providerMap.get(providerId).trades.push(trade);
+            }
+          }
+        }
+      });
+      
+      // Calculate statistics for each provider
+      const providerStats = Array.from(providerMap.values()).map(provider => {
+        const signals = provider.signals;
+        const trades = provider.trades;
+        
+        const totalSignals = signals.length;
+        const executedSignals = signals.filter(s => s.status === "executed").length;
+        const successfulTrades = trades.filter(t => parseFloat(t.profit || "0") > 0);
+        const losingTrades = trades.filter(t => parseFloat(t.profit || "0") < 0);
+        
+        const winCount = successfulTrades.length;
+        const lossCount = losingTrades.length;
+        const winRate = executedSignals > 0 ? (winCount / executedSignals) * 100 : 0;
+        
+        const totalPnL = trades.reduce((sum, trade) => sum + parseFloat(trade.profit || "0"), 0);
+        
+        // Calculate average R:R ratio
+        let totalRR = 0;
+        let rrCount = 0;
+        trades.forEach(trade => {
+          const profit = parseFloat(trade.profit || "0");
+          const entry = parseFloat(trade.entryPrice || "0");
+          const sl = parseFloat(trade.stopLoss || "0");
+          
+          if (profit > 0 && entry > 0 && sl > 0) {
+            const risk = Math.abs(entry - sl);
+            const reward = Math.abs(profit / parseFloat(trade.lotSize || "0.01"));
+            if (risk > 0) {
+              totalRR += reward / risk;
+              rrCount++;
+            }
+          }
+        });
+        const averageRR = rrCount > 0 ? totalRR / rrCount : 0;
+        
+        // Calculate max drawdown
+        let peak = 0;
+        let maxDrawdown = 0;
+        let runningPnL = 0;
+        
+        trades.sort((a, b) => new Date(a.openTime || 0).getTime() - new Date(b.openTime || 0).getTime());
+        trades.forEach(trade => {
+          runningPnL += parseFloat(trade.profit || "0");
+          if (runningPnL > peak) peak = runningPnL;
+          const currentDrawdown = peak - runningPnL;
+          if (currentDrawdown > maxDrawdown) maxDrawdown = currentDrawdown;
+        });
+        
+        // Calculate performance grade
+        let grade = 'F';
+        const score = (winRate * 0.4) + (Math.min(averageRR * 25, 100) * 0.4) + (Math.min(executedSignals / totalSignals * 100, 100) * 0.2);
+        if (score >= 80) grade = 'A';
+        else if (score >= 70) grade = 'B';
+        else if (score >= 60) grade = 'C';
+        else if (score >= 50) grade = 'D';
+        
+        const lastSignal = signals.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())[0];
+        const lastSignalDate = lastSignal ? lastSignal.createdAt : new Date().toISOString();
+        
+        // Check if active (signal in last 7 days)
+        const isActive = lastSignal ? 
+          (new Date().getTime() - new Date(lastSignal.createdAt || 0).getTime()) < (7 * 24 * 60 * 60 * 1000) : 
+          false;
+        
+        return {
+          id: provider.id,
+          name: provider.name,
+          totalSignals,
+          executedSignals,
+          winCount,
+          lossCount,
+          winRate: Number(winRate.toFixed(2)),
+          averageRR: Number(averageRR.toFixed(2)),
+          maxDrawdown: Number(maxDrawdown.toFixed(2)),
+          totalPnL: Number(totalPnL.toFixed(2)),
+          lastSignalDate,
+          performanceGrade: grade,
+          isActive
+        };
+      }).filter(provider => provider.totalSignals > 0);
+      
+      res.json(providerStats);
+    } catch (error) {
+      console.error("Provider stats error:", error);
+      res.status(500).json({ message: "Failed to fetch provider statistics" });
+    }
+  });
+
   // Dashboard stats
   app.get("/api/dashboard/stats", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

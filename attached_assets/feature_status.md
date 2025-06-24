@@ -63,7 +63,7 @@
 * ✅ SignalHistory.tsx
 * ✅ ProviderCompare.tsx
 * ✅ StrategyBuilder.tsx
-* 🚧 AnalyticsProviderTable.tsx
+* ✅ AnalyticsProviderTable.tsx
 * ⛔ EmailReporter.ts
 * ✅ signal\_success\_tracker.ts
 * ✅ pair\_mapper.ts
