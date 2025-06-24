@@ -4,8 +4,16 @@
 🧠 Task:
 ✅ COMPLETED: Implement `lotsize_engine.py` to support advanced position sizing logic based on signal content or user configuration.
 
-🔧 File to Upgrade:
-`/desktop-app/parser.py`
+🔧 File Completed:
+`/desktop-app/lotsize_engine.py`
+
+✅ All Required Features Implemented:
+- Signal text lot size extraction ("0.1 lots", "Risk 2%", "HIGH RISK")
+- Multiple risk modes: fixed_lot, risk_percent, fixed_cash, pip_value, balance_percent
+- Risk keyword multipliers with automatic application
+- Safe bounds enforcement (0.01 to 5.0 lots)
+- Legacy compatibility function for strategy_runtime integration
+- Comprehensive test coverage with 17+ test cases
 
 🧩 Required Features:
 1. **Signal Intent Recognition:**
