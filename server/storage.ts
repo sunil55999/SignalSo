@@ -1,9 +1,9 @@
 import { 
-  users, channels, strategies, signals, trades, mt5Status, syncLogs,
+  users, channels, strategies, signals, trades, mt5Status, syncLogs, providerStats,
   type User, type InsertUser, type Channel, type InsertChannel,
   type Strategy, type InsertStrategy, type Signal, type InsertSignal,
   type Trade, type InsertTrade, type Mt5Status, type InsertMt5Status,
-  type SyncLog, type InsertSyncLog
+  type SyncLog, type InsertSyncLog, type ProviderStats, type InsertProviderStats
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -54,6 +54,12 @@ export interface IStorage {
   // Sync Log operations
   getSyncLogs(userId: number, limit?: number): Promise<SyncLog[]>;
   createSyncLog(log: InsertSyncLog): Promise<SyncLog>;
+
+  // Provider Stats operations
+  getProviderStats(): Promise<ProviderStats[]>;
+  getProviderStat(providerId: string): Promise<ProviderStats | undefined>;
+  createProviderStats(stats: InsertProviderStats): Promise<ProviderStats>;
+  updateProviderStats(providerId: string, updates: Partial<InsertProviderStats>): Promise<ProviderStats | undefined>;
 
   // Session store
   sessionStore: session.Store;
@@ -243,6 +249,28 @@ export class DatabaseStorage implements IStorage {
   async createSyncLog(log: InsertSyncLog): Promise<SyncLog> {
     const [newLog] = await db.insert(syncLogs).values(log).returning();
     return newLog;
+  }
+
+  async getProviderStats(): Promise<ProviderStats[]> {
+    return await db.select().from(providerStats).orderBy(desc(providerStats.winRate));
+  }
+
+  async getProviderStat(providerId: string): Promise<ProviderStats | undefined> {
+    const [stat] = await db.select().from(providerStats).where(eq(providerStats.providerId, providerId));
+    return stat;
+  }
+
+  async createProviderStats(stats: InsertProviderStats): Promise<ProviderStats> {
+    const [created] = await db.insert(providerStats).values(stats).returning();
+    return created;
+  }
+
+  async updateProviderStats(providerId: string, updates: Partial<InsertProviderStats>): Promise<ProviderStats | undefined> {
+    const [updated] = await db.update(providerStats)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(providerStats.providerId, providerId))
+      .returning();
+    return updated;
   }
 }
 

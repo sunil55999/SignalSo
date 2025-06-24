@@ -99,6 +99,25 @@ export const equityLimits = pgTable("equity_limits", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const providerStats = pgTable("provider_stats", {
+  id: serial("id").primaryKey(),
+  providerId: text("provider_id").notNull().unique(),
+  providerName: text("provider_name").notNull(),
+  totalSignals: integer("total_signals").default(0),
+  successfulSignals: integer("successful_signals").default(0),
+  winRate: decimal("win_rate", { precision: 5, scale: 2 }).default("0"),
+  avgRrRatio: decimal("avg_rr_ratio", { precision: 5, scale: 2 }).default("0"),
+  avgExecutionDelay: integer("avg_execution_delay").default(0), // in milliseconds
+  maxDrawdown: decimal("max_drawdown", { precision: 5, scale: 2 }).default("0"),
+  totalProfit: decimal("total_profit", { precision: 10, scale: 2 }).default("0"),
+  totalLoss: decimal("total_loss", { precision: 10, scale: 2 }).default("0"),
+  avgConfidence: decimal("avg_confidence", { precision: 5, scale: 2 }).default("0"),
+  isActive: boolean("is_active").default(true),
+  lastSignalAt: timestamp("last_signal_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const equityEvents = pgTable("equity_events", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
@@ -310,6 +329,12 @@ export const insertDrawdownEventSchema = createInsertSchema(drawdownEvents).omit
   timestamp: true,
 });
 
+export const insertProviderStatsSchema = createInsertSchema(providerStats).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -333,3 +358,5 @@ export type DrawdownLimit = typeof drawdownLimits.$inferSelect;
 export type InsertDrawdownLimit = z.infer<typeof insertDrawdownLimitSchema>;
 export type DrawdownEvent = typeof drawdownEvents.$inferSelect;
 export type InsertDrawdownEvent = z.infer<typeof insertDrawdownEventSchema>;
+export type ProviderStats = typeof providerStats.$inferSelect;
+export type InsertProviderStats = z.infer<typeof insertProviderStatsSchema>;

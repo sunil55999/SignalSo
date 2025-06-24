@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import Dashboard from "@/pages/dashboard";
 import AdminPage from "@/pages/admin-page";
 import AuthPage from "@/pages/auth-page";
+import ProviderCompare from "@/pages/ProviderCompare";
 import NotFound from "@/pages/not-found";
 import { ProtectedRoute } from "./lib/protected-route";
 
