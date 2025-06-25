@@ -5,7 +5,65 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertChannelSchema, insertStrategySchema, insertSignalSchema, insertMt5StatusSchema } from "@shared/schema";
 import { setupEquityLimitsRoutes } from "./routes/equity_limits";
-// import { setupDrawdownHandlerRoutes } from "../signalos/server/routes/drawdown_handler";
+
+interface WebSocketClient extends WebSocket {
+  userId?: number;
+  isAlive?: boolean;
+}
+
+interface ConnectedClients {
+  [userId: number]: WebSocketClient[];
+}
+
+let connectedClients: ConnectedClients = {};
+let wsServer: WebSocketServer;
+
+// Broadcast message to specific user
+function broadcastToUser(userId: number, message: any) {
+  const clients = connectedClients[userId];
+  if (clients && clients.length > 0) {
+    const messageStr = JSON.stringify({
+      ...message,
+      timestamp: new Date().toISOString(),
+      id: `srv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    });
+    
+    clients.forEach(client => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(messageStr);
+      }
+    });
+  }
+}
+
+// Broadcast message to all connected clients
+function broadcastToAll(message: any) {
+  const messageStr = JSON.stringify({
+    ...message,
+    timestamp: new Date().toISOString(),
+    id: `srv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+  });
+  
+  Object.values(connectedClients).flat().forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(messageStr);
+    }
+  });
+}
+
+// Clean up disconnected clients
+function cleanupDisconnectedClients() {
+  Object.keys(connectedClients).forEach(userIdStr => {
+    const userId = parseInt(userIdStr);
+    connectedClients[userId] = connectedClients[userId].filter(
+      client => client.readyState === WebSocket.OPEN
+    );
+    
+    if (connectedClients[userId].length === 0) {
+      delete connectedClients[userId];
+    }
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -13,9 +71,236 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Setup equity limits routes
   setupEquityLimitsRoutes(app);
-  
-  // Setup drawdown handler routes
-  // setupDrawdownHandlerRoutes(app);
+
+  // Trading Control API endpoints
+  app.post("/api/trading/emergency-stop", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      
+      // Send emergency stop to desktop app via WebSocket
+      broadcastToUser(userId, {
+        type: 'emergency_stop_command',
+        data: { timestamp: new Date().toISOString() }
+      });
+      
+      // Update MT5 status to stopped
+      await storage.updateMt5Status(userId, {
+        isConnected: false,
+        tradingEnabled: false,
+        emergencyStop: true,
+        lastUpdate: new Date().toISOString()
+      });
+      
+      // Broadcast to all clients
+      broadcastToUser(userId, {
+        type: 'emergency_stop',
+        data: { message: 'Emergency stop activated' }
+      });
+      
+      res.json({ success: true, message: 'Emergency stop activated' });
+    } catch (error) {
+      console.error('Emergency stop error:', error);
+      res.status(500).json({ error: 'Failed to activate emergency stop' });
+    }
+  });
+
+  app.post("/api/trading/pause", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      
+      broadcastToUser(userId, {
+        type: 'pause_trading_command',
+        data: { timestamp: new Date().toISOString() }
+      });
+      
+      await storage.updateMt5Status(userId, {
+        tradingEnabled: false,
+        lastUpdate: new Date().toISOString()
+      });
+      
+      broadcastToUser(userId, {
+        type: 'trading_paused',
+        data: { message: 'Trading paused' }
+      });
+      
+      res.json({ success: true, message: 'Trading paused' });
+    } catch (error) {
+      console.error('Pause trading error:', error);
+      res.status(500).json({ error: 'Failed to pause trading' });
+    }
+  });
+
+  app.post("/api/trading/resume", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      
+      broadcastToUser(userId, {
+        type: 'resume_trading_command',
+        data: { timestamp: new Date().toISOString() }
+      });
+      
+      await storage.updateMt5Status(userId, {
+        tradingEnabled: true,
+        emergencyStop: false,
+        lastUpdate: new Date().toISOString()
+      });
+      
+      broadcastToUser(userId, {
+        type: 'trading_resumed',
+        data: { message: 'Trading resumed' }
+      });
+      
+      res.json({ success: true, message: 'Trading resumed' });
+    } catch (error) {
+      console.error('Resume trading error:', error);
+      res.status(500).json({ error: 'Failed to resume trading' });
+    }
+  });
+
+  app.post("/api/trading/stealth-toggle", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      const { stealthMode } = req.body;
+      
+      broadcastToUser(userId, {
+        type: 'stealth_mode_command',
+        data: { enabled: stealthMode, timestamp: new Date().toISOString() }
+      });
+      
+      res.json({ success: true, message: `Stealth mode ${stealthMode ? 'enabled' : 'disabled'}` });
+    } catch (error) {
+      console.error('Stealth mode toggle error:', error);
+      res.status(500).json({ error: 'Failed to toggle stealth mode' });
+    }
+  });
+
+  app.post("/api/firebridge/force-sync", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      
+      broadcastToUser(userId, {
+        type: 'force_sync_command',
+        data: { timestamp: new Date().toISOString() }
+      });
+      
+      res.json({ success: true, message: 'Sync initiated' });
+    } catch (error) {
+      console.error('Force sync error:', error);
+      res.status(500).json({ error: 'Failed to initiate sync' });
+    }
+  });
+
+  // Trade Management API endpoints
+  app.post("/api/trades/:id/close", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      const tradeId = req.params.id;
+      
+      broadcastToUser(userId, {
+        type: 'close_trade_command',
+        data: { tradeId, timestamp: new Date().toISOString() }
+      });
+      
+      res.json({ success: true, message: 'Close trade command sent' });
+    } catch (error) {
+      console.error('Close trade error:', error);
+      res.status(500).json({ error: 'Failed to close trade' });
+    }
+  });
+
+  app.post("/api/trades/:id/partial-close", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      const tradeId = req.params.id;
+      const { percentage } = req.body;
+      
+      broadcastToUser(userId, {
+        type: 'partial_close_command',
+        data: { tradeId, percentage, timestamp: new Date().toISOString() }
+      });
+      
+      res.json({ success: true, message: 'Partial close command sent' });
+    } catch (error) {
+      console.error('Partial close error:', error);
+      res.status(500).json({ error: 'Failed to partial close trade' });
+    }
+  });
+
+  app.put("/api/trades/:id/modify", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      const tradeId = req.params.id;
+      const { stopLoss, takeProfit } = req.body;
+      
+      broadcastToUser(userId, {
+        type: 'modify_trade_command',
+        data: { tradeId, stopLoss, takeProfit, timestamp: new Date().toISOString() }
+      });
+      
+      res.json({ success: true, message: 'Modify trade command sent' });
+    } catch (error) {
+      console.error('Modify trade error:', error);
+      res.status(500).json({ error: 'Failed to modify trade' });
+    }
+  });
+
+  app.post("/api/trades/:id/trailing-stop", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      const tradeId = req.params.id;
+      const { distance, step } = req.body;
+      
+      broadcastToUser(userId, {
+        type: 'trailing_stop_command',
+        data: { tradeId, distance, step, timestamp: new Date().toISOString() }
+      });
+      
+      res.json({ success: true, message: 'Trailing stop activated' });
+    } catch (error) {
+      console.error('Trailing stop error:', error);
+      res.status(500).json({ error: 'Failed to activate trailing stop' });
+    }
+  });
+
+  // System Health endpoints
+  app.get("/api/system/health", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      const mt5Status = await storage.getMt5Status(userId);
+      const activeTrades = await storage.getActiveTrades(userId);
+      
+      res.json({
+        status: 'healthy',
+        mt5Connected: mt5Status?.isConnected || false,
+        tradingEnabled: mt5Status?.tradingEnabled || false,
+        activeTrades: activeTrades.length,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Health check error:', error);
+      res.status(500).json({ error: 'Health check failed' });
+    }
+  });
 
   // Dashboard API endpoints
   app.get("/api/dashboard/stats", async (req, res) => {
@@ -352,7 +637,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       // Broadcast trade update to WebSocket clients
-      broadcastToClients('trade_update', trade);
+      broadcastToUser(userId, {
+        type: 'trade_update',
+        data: trade
+      });
       
       res.json({ success: true, tradeId: trade.id });
     } catch (error) {
@@ -1725,4 +2013,123 @@ function getSupportedSignalFormats() {
       confidence: "high"
     }
   ];
+
+  const server = createServer(app);
+
+  // Setup WebSocket server with enhanced features
+  wsServer = new WebSocketServer({ 
+    server,
+    path: '/ws',
+    perMessageDeflate: false,
+    maxPayload: 1024 * 1024 // 1MB max message size
+  });
+
+  wsServer.on('connection', (ws: WebSocketClient, req) => {
+    console.log('WebSocket client connected from:', req.socket.remoteAddress);
+    
+    ws.isAlive = true;
+    ws.userId = undefined;
+
+    // Handle client authentication
+    ws.on('message', (data) => {
+      try {
+        const message = JSON.parse(data.toString());
+        
+        if (message.type === 'authenticate') {
+          // Extract user ID from session or JWT token
+          // For now, we'll use a simple approach - in production, validate properly
+          const userId = message.data?.userId || 1; // Default to user 1 for demo
+          ws.userId = userId;
+          
+          // Add to connected clients
+          if (!connectedClients[userId]) {
+            connectedClients[userId] = [];
+          }
+          connectedClients[userId].push(ws);
+          
+          console.log(`User ${userId} authenticated, ${connectedClients[userId].length} connections`);
+          
+          // Send authentication confirmation
+          ws.send(JSON.stringify({
+            type: 'authenticated',
+            data: { userId, timestamp: new Date().toISOString() }
+          }));
+          
+        } else if (message.type === 'ping') {
+          // Respond to ping with pong
+          ws.send(JSON.stringify({
+            type: 'pong',
+            data: { timestamp: new Date().toISOString() }
+          }));
+          ws.isAlive = true;
+          
+        } else if (message.type === 'ack') {
+          // Handle message acknowledgment
+          console.log('Message acknowledged:', message.data?.messageId);
+          
+        } else {
+          // Handle other message types from desktop app
+          console.log('Received WebSocket message:', message.type);
+          
+          // Broadcast updates to all clients of the same user
+          if (ws.userId) {
+            broadcastToUser(ws.userId, message);
+          }
+        }
+      } catch (error) {
+        console.error('WebSocket message parse error:', error);
+      }
+    });
+
+    // Handle connection close
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+      if (ws.userId && connectedClients[ws.userId]) {
+        connectedClients[ws.userId] = connectedClients[ws.userId].filter(client => client !== ws);
+        if (connectedClients[ws.userId].length === 0) {
+          delete connectedClients[ws.userId];
+        }
+      }
+    });
+
+    // Handle connection errors
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+    });
+
+    // Send initial connection confirmation
+    ws.send(JSON.stringify({
+      type: 'connection_established',
+      data: { 
+        timestamp: new Date().toISOString(),
+        message: 'Please authenticate to receive updates'
+      }
+    }));
+  });
+
+  // Heartbeat mechanism to detect broken connections
+  const heartbeatInterval = setInterval(() => {
+    wsServer.clients.forEach((ws: WebSocketClient) => {
+      if (!ws.isAlive) {
+        console.log('Terminating inactive WebSocket connection');
+        return ws.terminate();
+      }
+      
+      ws.isAlive = false;
+      ws.ping();
+    });
+    
+    // Clean up disconnected clients
+    cleanupDisconnectedClients();
+  }, 30000); // Check every 30 seconds
+
+  // Handle server shutdown
+  process.on('SIGTERM', () => {
+    clearInterval(heartbeatInterval);
+    wsServer.close();
+  });
+
+  console.log('WebSocket server initialized on /ws');
+
+  return server;
 }
