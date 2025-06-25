@@ -24,11 +24,6 @@ export default function AuthPage() {
   const { user, loginMutation, registerMutation } = useAuth();
   const [activeTab, setActiveTab] = useState("login");
 
-  // Redirect if already logged in (after hook calls to avoid violating rules of hooks)
-  if (user) {
-    return <Redirect to="/" />;
-  }
-
   const loginForm = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -45,6 +40,11 @@ export default function AuthPage() {
       email: "",
     },
   });
+
+  // Redirect if already logged in (after all hook calls to avoid violating rules of hooks)
+  if (user) {
+    return <Redirect to="/" />;
+  }
 
   const onLogin = (data: LoginForm) => {
     loginMutation.mutate(data);
