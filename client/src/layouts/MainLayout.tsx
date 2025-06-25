@@ -3,6 +3,9 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ThemeProvider } from "next-themes";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/use-auth";
+import LoginButton from "@/components/auth/LoginButton";
+import ConnectionStatus from "@/components/dashboard/ConnectionStatus";
 import {
   Activity,
   BarChart3,
@@ -94,6 +97,7 @@ const sidebarItems = [
 export default function MainLayout({ children, className }: MainLayoutProps) {
   const [location, navigate] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const { user, isLoading } = useAuth();
   
   const getCurrentTab = () => {
     const currentItem = sidebarItems.find(item => item.path === location);
@@ -101,6 +105,43 @@ export default function MainLayout({ children, className }: MainLayoutProps) {
   };
   
   const activeTab = getCurrentTab();
+
+  // Show login if not authenticated
+  if (!user && !isLoading) {
+    return (
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-6">
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+              SignalOS
+            </h1>
+            <p className="text-slate-600 dark:text-slate-400 mb-8">
+              Professional Trading Automation Platform
+            </p>
+          </div>
+          <LoginButton />
+        </div>
+      </ThemeProvider>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mx-auto mb-6 animate-pulse">
+              <Zap className="w-8 h-8 text-white" />
+            </div>
+            <p className="text-slate-600 dark:text-slate-400">Loading SignalOS...</p>
+          </div>
+        </div>
+      </ThemeProvider>
+    );
+  }
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
@@ -184,8 +225,12 @@ export default function MainLayout({ children, className }: MainLayoutProps) {
               </div>
               {sidebarOpen && (
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Trader</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">Pro Account</div>
+                  <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                    {user?.username || "Trader"}
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    {user?.role === "admin" ? "Admin Account" : "Pro Account"}
+                  </div>
                 </div>
               )}
             </div>
