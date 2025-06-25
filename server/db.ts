@@ -15,5 +15,14 @@ if (!DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: DATABASE_URL });
+// Optimized connection pool for better performance
+export const pool = new Pool({ 
+  connectionString: DATABASE_URL,
+  max: 20,                      // Maximum connections
+  idleTimeoutMillis: 30000,     // Close idle connections after 30s
+  connectionTimeoutMillis: 5000, // Connection timeout 5s
+  maxUses: 7500,                // Refresh connections after 7500 uses
+  allowExitOnIdle: true         // Allow pool to close when idle
+});
+
 export const db = drizzle({ client: pool, schema });

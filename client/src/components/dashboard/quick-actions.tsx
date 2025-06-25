@@ -128,7 +128,11 @@ export default function QuickActions() {
             {/* Emergency Stop */}
             <Button
               variant="outline"
-              onClick={() => emergencyStopMutation.mutate()}
+              onClick={() => {
+                if (confirm('Are you sure you want to activate Emergency Stop? This will immediately halt all trading.')) {
+                  emergencyStopMutation.mutate();
+                }
+              }}
               disabled={emergencyStopMutation.isPending}
               className="flex items-center space-x-3 p-4 h-auto border-red-200 hover:bg-red-50 hover:border-red-300 transition-colors"
             >

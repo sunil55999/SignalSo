@@ -76,10 +76,25 @@ export function useWebSocket() {
         setConnectionState('connected');
         setIsConnected(true);
         reconnectAttemptsRef.current = 0;
+        
+        // Authenticate immediately
+        setTimeout(() => {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            const authMessage = {
+              type: 'authenticate',
+              data: { userId: 1 },
+              timestamp: new Date().toISOString(),
+              id: `auth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+            };
+            wsRef.current.send(JSON.stringify(authMessage));
+            console.log("Authentication message sent");
+          }
+        }, 100);
+        
         startHeartbeat();
         processMessageQueue();
         
-        console.log("WebSocket connected");
+        console.log("WebSocket connected successfully");
         toast({
           title: "Connection Restored",
           description: "Real-time updates are now active",
@@ -125,6 +140,18 @@ export function useWebSocket() {
           // Handle heartbeat
           if (message.type === 'pong') {
             return; // Just acknowledge the pong
+          }
+          
+          // Handle authentication confirmation
+          if (message.type === 'authenticated') {
+            console.log('WebSocket authenticated successfully');
+            return;
+          }
+          
+          // Handle connection establishment
+          if (message.type === 'connection_established') {
+            console.log('WebSocket connection established');
+            return;
           }
           
           // Send acknowledgment for messages with ID

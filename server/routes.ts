@@ -87,10 +87,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Update MT5 status to stopped
       await storage.updateMt5Status(userId, {
+        userId,
         isConnected: false,
-        tradingEnabled: false,
-        emergencyStop: true,
-        lastUpdate: new Date().toISOString()
+        serverInfo: { emergencyStop: true },
+        lastPing: new Date()
       });
       
       // Broadcast to all clients
@@ -134,6 +134,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/trading/pause", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      
+      broadcastToUser(userId, {
+        type: 'pause_trading_command',
+        data: { timestamp: new Date().toISOString() }
+      });
+      
+      await storage.updateMt5Status(userId, {
+        userId,
+        isConnected: true,
+        serverInfo: { tradingEnabled: false, paused: true },
+        lastPing: new Date()
+      });
+      
+      broadcastToUser(userId, {
+        type: 'trading_paused',
+        data: { message: 'Trading paused' }
+      });
+      
+      res.json({ success: true, message: 'Trading paused' });
+    } catch (error) {
+      console.error('Pause trading error:', error);
+      res.status(500).json({ error: 'Failed to pause trading' });
+    }
+  });
+
   app.post("/api/trading/resume", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
@@ -146,9 +176,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       
       await storage.updateMt5Status(userId, {
-        tradingEnabled: true,
-        emergencyStop: false,
-        lastUpdate: new Date().toISOString()
+        userId,
+        isConnected: true,
+        serverInfo: { tradingEnabled: true, paused: false },
+        lastPing: new Date()
       });
       
       broadcastToUser(userId, {
@@ -174,11 +205,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         type: 'stealth_mode_command',
         data: { enabled: stealthMode, timestamp: new Date().toISOString() }
       });
+
+      // Update MT5 status with stealth mode
+      await storage.updateMt5Status(userId, {
+        userId,
+        isConnected: true,
+        serverInfo: { stealthMode: stealthMode },
+        lastPing: new Date()
+      });
       
       res.json({ success: true, message: `Stealth mode ${stealthMode ? 'enabled' : 'disabled'}` });
     } catch (error) {
       console.error('Stealth mode toggle error:', error);
       res.status(500).json({ error: 'Failed to toggle stealth mode' });
+    }
+  });
+
+  app.post("/api/firebridge/force-sync", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      
+      // Send force sync command to desktop app
+      broadcastToUser(userId, {
+        type: 'force_sync_command',
+        data: { timestamp: new Date().toISOString() }
+      });
+
+      // Log sync request
+      await storage.createSyncLog({
+        userId,
+        action: "force_sync",
+        status: "requested",
+        details: { source: "web_dashboard", timestamp: new Date() }
+      });
+      
+      res.json({ success: true, message: 'Desktop sync initiated' });
+    } catch (error) {
+      console.error('Force sync error:', error);
+      res.status(500).json({ error: 'Failed to initiate desktop sync' });
     }
   });
 
@@ -665,6 +731,167 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Strategy pull error:", error);
       res.status(500).json({ error: "Failed to pull strategies" });
+    }
+  });
+
+  // Trade Management API endpoints
+  app.post("/api/trades/:id/close", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const tradeId = parseInt(req.params.id);
+      const userId = req.user!.id;
+      
+      // Get trade details
+      const trade = await storage.getTrade(tradeId);
+      if (!trade || trade.userId !== userId) {
+        return res.status(404).json({ error: 'Trade not found' });
+      }
+
+      // Send close command to desktop app
+      broadcastToUser(userId, {
+        type: 'close_trade_command',
+        data: { 
+          tradeId, 
+          ticket: trade.ticket || tradeId,
+          timestamp: new Date().toISOString() 
+        }
+      });
+
+      // Update trade status
+      await storage.updateTrade(tradeId, {
+        status: "closing",
+        closeTime: new Date()
+      });
+      
+      res.json({ success: true, message: 'Trade close initiated' });
+    } catch (error) {
+      console.error('Close trade error:', error);
+      res.status(500).json({ error: 'Failed to close trade' });
+    }
+  });
+
+  app.post("/api/trades/:id/partial-close", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const tradeId = parseInt(req.params.id);
+      const userId = req.user!.id;
+      const { percentage = 50 } = req.body;
+      
+      // Get trade details
+      const trade = await storage.getTrade(tradeId);
+      if (!trade || trade.userId !== userId) {
+        return res.status(404).json({ error: 'Trade not found' });
+      }
+
+      // Send partial close command to desktop app
+      broadcastToUser(userId, {
+        type: 'partial_close_command',
+        data: { 
+          tradeId, 
+          ticket: trade.ticket || tradeId,
+          percentage,
+          timestamp: new Date().toISOString() 
+        }
+      });
+      
+      res.json({ success: true, message: `Partial close (${percentage}%) initiated` });
+    } catch (error) {
+      console.error('Partial close error:', error);
+      res.status(500).json({ error: 'Failed to partial close trade' });
+    }
+  });
+
+  app.put("/api/trades/:id/modify", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const tradeId = parseInt(req.params.id);
+      const userId = req.user!.id;
+      const { stopLoss, takeProfit } = req.body;
+      
+      // Get trade details
+      const trade = await storage.getTrade(tradeId);
+      if (!trade || trade.userId !== userId) {
+        return res.status(404).json({ error: 'Trade not found' });
+      }
+
+      // Send modify command to desktop app
+      broadcastToUser(userId, {
+        type: 'modify_trade_command',
+        data: { 
+          tradeId, 
+          ticket: trade.ticket || tradeId,
+          stopLoss,
+          takeProfit,
+          timestamp: new Date().toISOString() 
+        }
+      });
+
+      // Update trade in database
+      await storage.updateTrade(tradeId, {
+        stopLoss: stopLoss || trade.stopLoss,
+        takeProfit: takeProfit || trade.takeProfit
+      });
+      
+      res.json({ success: true, message: 'Trade modification initiated' });
+    } catch (error) {
+      console.error('Modify trade error:', error);
+      res.status(500).json({ error: 'Failed to modify trade' });
+    }
+  });
+
+  app.post("/api/trades/:id/trailing-stop", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const tradeId = parseInt(req.params.id);
+      const userId = req.user!.id;
+      const { trailingDistance } = req.body;
+      
+      // Get trade details
+      const trade = await storage.getTrade(tradeId);
+      if (!trade || trade.userId !== userId) {
+        return res.status(404).json({ error: 'Trade not found' });
+      }
+
+      // Send trailing stop command to desktop app
+      broadcastToUser(userId, {
+        type: 'trailing_stop_command',
+        data: { 
+          tradeId, 
+          ticket: trade.ticket || tradeId,
+          trailingDistance: trailingDistance || 10,
+          timestamp: new Date().toISOString() 
+        }
+      });
+      
+      res.json({ success: true, message: 'Trailing stop activated' });
+    } catch (error) {
+      console.error('Trailing stop error:', error);
+      res.status(500).json({ error: 'Failed to activate trailing stop' });
+    }
+  });
+
+  app.get("/api/system/health", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const userId = req.user!.id;
+      const mt5Status = await storage.getMt5Status(userId);
+      const activeTrades = await storage.getActiveTrades(userId);
+      
+      res.json({
+        mt5Connected: mt5Status?.isConnected || false,
+        activeTrades: activeTrades.length,
+        lastPing: mt5Status?.lastPing || null,
+        serverInfo: mt5Status?.serverInfo || {},
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('System health error:', error);
+      res.status(500).json({ error: 'Failed to get system health' });
     }
   });
 
@@ -2036,8 +2263,6 @@ function getSupportedSignalFormats() {
         const message = JSON.parse(data.toString());
         
         if (message.type === 'authenticate') {
-          // Extract user ID from session or JWT token
-          // For now, we'll use a simple approach - in production, validate properly
           const userId = message.data?.userId || 1; // Default to user 1 for demo
           ws.userId = userId;
           
@@ -2078,12 +2303,16 @@ function getSupportedSignalFormats() {
         }
       } catch (error) {
         console.error('WebSocket message parse error:', error);
+        ws.send(JSON.stringify({
+          type: 'error',
+          data: { message: 'Invalid message format' }
+        }));
       }
     });
 
     // Handle connection close
-    ws.on('close', () => {
-      console.log('WebSocket client disconnected');
+    ws.on('close', (code, reason) => {
+      console.log(`WebSocket client disconnected: ${code} ${reason}`);
       if (ws.userId && connectedClients[ws.userId]) {
         connectedClients[ws.userId] = connectedClients[ws.userId].filter(client => client !== ws);
         if (connectedClients[ws.userId].length === 0) {
@@ -2097,12 +2326,17 @@ function getSupportedSignalFormats() {
       console.error('WebSocket error:', error);
     });
 
+    // Handle pong response for heartbeat
+    ws.on('pong', () => {
+      ws.isAlive = true;
+    });
+
     // Send initial connection confirmation
     ws.send(JSON.stringify({
       type: 'connection_established',
       data: { 
         timestamp: new Date().toISOString(),
-        message: 'Please authenticate to receive updates'
+        message: 'Connected. Please authenticate to receive updates.'
       }
     }));
   });

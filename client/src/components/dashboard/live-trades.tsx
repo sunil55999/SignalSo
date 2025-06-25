@@ -194,7 +194,11 @@ export default function LiveTrades() {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => closeTradeMediation.mutate(trade.id.toString())}
+                          onClick={() => {
+                            if (confirm('Are you sure you want to close this trade?')) {
+                              closeTradeMediation.mutate(trade.id.toString());
+                            }
+                          }}
                           disabled={closeTradeMediation.isPending}
                           className="h-8 px-2"
                         >
