@@ -58,6 +58,13 @@ const sidebarItems = [
     path: "/providers"
   },
   {
+    id: "config",
+    label: "Configure",
+    icon: Settings,
+    description: "Provider Setup",
+    path: "/providers/config"
+  },
+  {
     id: "strategy",
     label: "Strategy Builder",
     icon: Layers,

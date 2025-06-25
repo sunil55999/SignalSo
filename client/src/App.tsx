@@ -8,6 +8,7 @@ import Dashboard from "@/pages/dashboard";
 import SignalsPage from "@/pages/signals-page";
 import TradesPage from "@/pages/trades-page";
 import ProvidersPage from "@/pages/providers-page";
+import ProvidersConfigPage from "@/pages/providers-config";
 import StrategyPage from "@/pages/strategy-page";
 import CopilotPage from "@/pages/copilot-page";
 import RiskPage from "@/pages/risk-page";
@@ -26,6 +27,8 @@ function Router() {
       <ProtectedRoute path="/signals" component={SignalsPage} />
       <ProtectedRoute path="/trades" component={TradesPage} />
       <ProtectedRoute path="/providers" component={ProvidersPage} />
+      <ProtectedRoute path="/providers/config" component={ProvidersConfigPage} />
+      <Route path="/provider-compare" component={ProviderCompare} />
       <ProtectedRoute path="/strategy" component={StrategyPage} />
       <ProtectedRoute path="/copilot" component={CopilotPage} />
       <ProtectedRoute path="/risk" component={RiskPage} />
