@@ -1,11 +1,12 @@
 import { useState } from "react";
-import Sidebar from "@/components/layout/sidebar";
-import TopHeader from "@/components/layout/top-header";
-import StatsGrid from "@/components/dashboard/stats-grid";
-import LiveTrades from "@/components/dashboard/live-trades";
+import MainLayout from "@/layouts/MainLayout";
+import ModernStatsGrid from "@/components/dashboard/ModernStatsGrid";
+import SignalTable from "@/components/tables/SignalTable";
+import PerformanceChart from "@/components/charts/PerformanceChart";
+import ModernLiveTrades from "@/components/dashboard/ModernLiveTrades";
 import RecentSignals from "@/components/dashboard/recent-signals";
 import QuickActions from "@/components/dashboard/quick-actions";
-import StrategyBuilderModal from "@/components/modals/strategy-builder-modal";
+import ModernStrategyBuilder from "@/components/modals/ModernStrategyBuilder";
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -23,40 +24,19 @@ export default function Dashboard() {
     switch (activeTab) {
       case "dashboard":
         return (
-          <div className="fade-in">
-            <StatsGrid />
+          <div className="space-y-8">
+            <ModernStatsGrid />
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
-              <LiveTrades />
-              <RecentSignals />
-            </div>
-
-            <div className="mt-8">
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-dark">Strategy Performance</h3>
-                    <div className="flex items-center space-x-2">
-                      <select className="text-sm border border-gray-300 rounded-lg px-3 py-1 focus:outline-none focus:ring-2 focus:ring-primary/20">
-                        <option>Last 7 Days</option>
-                        <option>Last 30 Days</option>
-                        <option>Last 3 Months</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="h-64 bg-gray-50 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
-                    <div className="text-center">
-                      <i className="fas fa-chart-area text-4xl text-gray-400 mb-4"></i>
-                      <p className="text-gray-500 font-medium">Performance Chart</p>
-                      <p className="text-sm text-gray-400">Real-time P&L and signal success metrics</p>
-                    </div>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+              <div className="xl:col-span-2">
+                <PerformanceChart />
+              </div>
+              <div className="space-y-6">
+                <ModernLiveTrades />
               </div>
             </div>
 
+            <SignalTable />
             <QuickActions />
           </div>
         );
@@ -134,21 +114,15 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
-      
-      <main className="flex-1 overflow-hidden flex flex-col">
-        <TopHeader />
-        
-        <div className="flex-1 overflow-y-auto p-6">
-          {renderContent()}
-        </div>
-      </main>
+    <MainLayout>
+      <div className="max-w-7xl mx-auto">
+        {renderContent()}
+      </div>
 
-      <StrategyBuilderModal 
+      <ModernStrategyBuilder 
         isOpen={isStrategyModalOpen} 
         onClose={() => setIsStrategyModalOpen(false)} 
       />
-    </div>
+    </MainLayout>
   );
 }
