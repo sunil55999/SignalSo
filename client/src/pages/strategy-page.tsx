@@ -10,8 +10,25 @@ import {
   Settings,
   TrendingUp
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function StrategyPage() {
+  const { toast } = useToast();
+
+  const handleNewStrategy = () => {
+    toast({
+      title: "Strategy Builder",
+      description: "Opening visual strategy builder interface"
+    });
+  };
+
+  const handleBuildStrategy = () => {
+    toast({
+      title: "Build Strategy", 
+      description: "Strategy builder interface would open here"
+    });
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -27,7 +44,7 @@ export default function StrategyPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button size="sm">
+            <Button size="sm" onClick={handleNewStrategy}>
               <Plus className="w-4 h-4 mr-2" />
               New Strategy
             </Button>
@@ -46,7 +63,7 @@ export default function StrategyPage() {
                 <p className="text-slate-600 dark:text-slate-400 mb-6">
                   Create custom trading strategies with visual blocks
                 </p>
-                <Button>
+                <Button onClick={handleBuildStrategy}>
                   <Plus className="w-4 h-4 mr-2" />
                   Build Strategy
                 </Button>

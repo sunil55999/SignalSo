@@ -13,6 +13,7 @@ import {
   Download,
   RefreshCw
 } from "lucide-react";
+import { useToastActions } from "@/hooks/use-toast-actions";
 
 export default function TradesPage() {
   const { data: trades, isLoading, refetch } = useQuery({
@@ -24,6 +25,8 @@ export default function TradesPage() {
     queryKey: ["/api/dashboard/stats"],
     refetchInterval: 5000,
   });
+
+  const { handleFilter, handleExport, handleRefresh } = useToastActions();
 
   const tradesData = trades || [];
   const openTrades = tradesData.filter((t: any) => t.status === "open").length;
@@ -44,15 +47,15 @@ export default function TradesPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleFilter}>
               <Filter className="w-4 h-4 mr-2" />
               Filter
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
-            <Button onClick={() => refetch()} size="sm">
+            <Button onClick={() => { refetch(); handleRefresh(); }} size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>

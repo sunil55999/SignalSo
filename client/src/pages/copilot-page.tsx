@@ -8,8 +8,32 @@ import {
   Zap,
   Settings
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CopilotPage() {
+  const { toast } = useToast();
+
+  const handleConfigure = () => {
+    toast({
+      title: "AI Configuration",
+      description: "Opening AI copilot settings panel"
+    });
+  };
+
+  const handleStartChat = () => {
+    toast({
+      title: "AI Chat Started",
+      description: "AI copilot is ready to assist you"
+    });
+  };
+
+  const handleQuickAnalysis = () => {
+    toast({
+      title: "Analysis Running",
+      description: "AI is analyzing your trading performance"
+    });
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -25,7 +49,7 @@ export default function CopilotPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button size="sm">
+            <Button size="sm" onClick={handleConfigure}>
               <Settings className="w-4 h-4 mr-2" />
               Configure
             </Button>
@@ -44,11 +68,11 @@ export default function CopilotPage() {
                 Get intelligent insights, automated analysis, and smart recommendations for your trading strategies
               </p>
               <div className="flex justify-center space-x-4">
-                <Button>
+                <Button onClick={handleStartChat}>
                   <MessageSquare className="w-4 h-4 mr-2" />
                   Start Chat
                 </Button>
-                <Button variant="outline">
+                <Button variant="outline" onClick={handleQuickAnalysis}>
                   <Zap className="w-4 h-4 mr-2" />
                   Quick Analysis
                 </Button>

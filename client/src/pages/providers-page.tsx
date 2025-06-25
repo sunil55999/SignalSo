@@ -11,6 +11,7 @@ import {
   TrendingUp,
   RefreshCw
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function ProvidersPage() {
   const { data: providers, refetch } = useQuery({
@@ -18,7 +19,15 @@ export default function ProvidersPage() {
     refetchInterval: 10000,
   });
 
+  const { toast } = useToast();
   const providersData = providers || [];
+
+  const handleAddProvider = () => {
+    toast({
+      title: "Add Provider",
+      description: "Provider setup dialog would open here"
+    });
+  };
 
   return (
     <MainLayout>
@@ -39,7 +48,7 @@ export default function ProvidersPage() {
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
-            <Button size="sm">
+            <Button size="sm" onClick={handleAddProvider}>
               <Plus className="w-4 h-4 mr-2" />
               Add Provider
             </Button>
@@ -152,7 +161,7 @@ export default function ProvidersPage() {
                   <p className="text-slate-600 dark:text-slate-400 mb-6">
                     Start by adding your first signal provider to begin receiving trading signals
                   </p>
-                  <Button>
+                  <Button onClick={handleAddProvider}>
                     <Plus className="w-4 h-4 mr-2" />
                     Add Your First Provider
                   </Button>

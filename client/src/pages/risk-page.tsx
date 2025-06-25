@@ -8,8 +8,18 @@ import {
   Settings,
   TrendingDown
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function RiskPage() {
+  const { toast } = useToast();
+
+  const handleConfigureLimits = () => {
+    toast({
+      title: "Risk Configuration",
+      description: "Opening risk limit configuration panel"
+    });
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
@@ -25,7 +35,7 @@ export default function RiskPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button size="sm">
+            <Button size="sm" onClick={handleConfigureLimits}>
               <Settings className="w-4 h-4 mr-2" />
               Configure Limits
             </Button>

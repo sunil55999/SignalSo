@@ -13,9 +13,39 @@ import {
   Database,
   Save
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export default function SettingsPage() {
   const { user, logoutMutation } = useAuth();
+  const { toast } = useToast();
+
+  const handleSaveChanges = () => {
+    toast({
+      title: "Settings Saved",
+      description: "Your preferences have been updated successfully"
+    });
+  };
+
+  const handleNotificationSettings = () => {
+    toast({
+      title: "Notifications",
+      description: "Opening notification preferences"
+    });
+  };
+
+  const handleSecuritySettings = () => {
+    toast({
+      title: "Security",
+      description: "Opening security configuration"
+    });
+  };
+
+  const handleDataManagement = () => {
+    toast({
+      title: "Data Management",
+      description: "Opening data export and backup options"
+    });
+  };
 
   return (
     <MainLayout>
@@ -78,7 +108,7 @@ export default function SettingsPage() {
                 <Button variant="outline" onClick={() => logoutMutation.mutate()}>
                   Logout
                 </Button>
-                <Button>
+                <Button onClick={handleSaveChanges}>
                   <Save className="w-4 h-4 mr-2" />
                   Save Changes
                 </Button>
@@ -96,15 +126,15 @@ export default function SettingsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start" onClick={handleNotificationSettings}>
                   <Bell className="w-4 h-4 mr-2" />
                   Notification Settings
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start" onClick={handleSecuritySettings}>
                   <Shield className="w-4 h-4 mr-2" />
                   Security Settings
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button variant="outline" className="w-full justify-start" onClick={handleDataManagement}>
                   <Database className="w-4 h-4 mr-2" />
                   Data Management
                 </Button>

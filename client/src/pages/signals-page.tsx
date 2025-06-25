@@ -11,12 +11,15 @@ import {
   RefreshCw,
   Activity
 } from "lucide-react";
+import { useToastActions } from "@/hooks/use-toast-actions";
 
 export default function SignalsPage() {
   const { data: signals, isLoading, refetch } = useQuery({
     queryKey: ["/api/signals"],
     refetchInterval: 5000,
   });
+
+  const { handleFilter, handleExport, handleRefresh } = useToastActions();
 
   const signalsData = signals || [];
   const activeSignals = signalsData.filter((s: any) => s.status === "pending").length;
@@ -37,15 +40,15 @@ export default function SignalsPage() {
           </div>
           
           <div className="flex items-center space-x-3">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleFilter}>
               <Filter className="w-4 h-4 mr-2" />
               Filter
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleExport}>
               <Download className="w-4 h-4 mr-2" />
               Export
             </Button>
-            <Button onClick={() => refetch()} size="sm">
+            <Button onClick={() => { refetch(); handleRefresh(); }} size="sm">
               <RefreshCw className="w-4 h-4 mr-2" />
               Refresh
             </Button>
