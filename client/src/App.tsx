@@ -5,6 +5,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import Dashboard from "@/pages/dashboard";
+import SignalsPage from "@/pages/signals-page";
+import TradesPage from "@/pages/trades-page";
+import ProvidersPage from "@/pages/providers-page";
+import StrategyPage from "@/pages/strategy-page";
+import CopilotPage from "@/pages/copilot-page";
+import RiskPage from "@/pages/risk-page";
+import SettingsPage from "@/pages/settings-page";
 import Analytics from "@/pages/Analytics";
 import AdminPage from "@/pages/admin-page";
 import AuthPage from "@/pages/auth-page";
@@ -16,6 +23,13 @@ function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={Dashboard} />
+      <ProtectedRoute path="/signals" component={SignalsPage} />
+      <ProtectedRoute path="/trades" component={TradesPage} />
+      <ProtectedRoute path="/providers" component={ProvidersPage} />
+      <ProtectedRoute path="/strategy" component={StrategyPage} />
+      <ProtectedRoute path="/copilot" component={CopilotPage} />
+      <ProtectedRoute path="/risk" component={RiskPage} />
+      <ProtectedRoute path="/settings" component={SettingsPage} />
       <ProtectedRoute path="/analytics" component={Analytics} />
       <ProtectedRoute path="/admin" component={AdminPage} />
       <Route path="/auth" component={AuthPage} />
