@@ -4,7 +4,7 @@ import ModernStatsGrid from "@/components/dashboard/ModernStatsGrid";
 import SignalTable from "@/components/tables/SignalTable";
 import PerformanceChart from "@/components/charts/PerformanceChart";
 import ModernLiveTrades from "@/components/dashboard/ModernLiveTrades";
-import RecentSignals from "@/components/dashboard/recent-signals";
+import DesktopAppStatus from "@/components/desktop/DesktopAppStatus";
 import QuickActions from "@/components/dashboard/quick-actions";
 import ModernStrategyBuilder from "@/components/modals/ModernStrategyBuilder";
 
@@ -33,6 +33,7 @@ export default function Dashboard() {
               </div>
               <div className="space-y-6">
                 <ModernLiveTrades />
+                <DesktopAppStatus />
               </div>
             </div>
 
