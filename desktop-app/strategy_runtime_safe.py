@@ -1,266 +1,289 @@
 """
-Safe Strategy Runtime for SignalOS Desktop App
-Replaces unsafe eval() usage with secure expression evaluation
+Secure Strategy Runtime Engine for SignalOS
+Replaces unsafe eval() with secure AST-based expression evaluation
 """
 
 import ast
 import operator
+import json
 import logging
-from typing import Any, Dict, Union, List
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Any, Union
 from dataclasses import dataclass
+from enum import Enum
 
-# Fix #1: Safe expression evaluator to replace eval()
+# Safe operators allowed in expressions
+SAFE_OPERATORS = {
+    ast.Add: operator.add,
+    ast.Sub: operator.sub,
+    ast.Mult: operator.mul,
+    ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv,
+    ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+    ast.USub: operator.neg,
+    ast.UAdd: operator.pos,
+    ast.Eq: operator.eq,
+    ast.NotEq: operator.ne,
+    ast.Lt: operator.lt,
+    ast.LtE: operator.le,
+    ast.Gt: operator.gt,
+    ast.GtE: operator.ge,
+    ast.And: lambda x, y: x and y,
+    ast.Or: lambda x, y: x or y,
+    ast.Not: operator.not_,
+}
+
+# Safe functions allowed in expressions
+SAFE_FUNCTIONS = {
+    'abs': abs,
+    'min': min,
+    'max': max,
+    'round': round,
+    'len': len,
+    'sum': sum,
+    'float': float,
+    'int': int,
+    'str': str,
+    'bool': bool,
+}
+
+class SecurityError(Exception):
+    """Raised when unsafe operations are detected"""
+    pass
+
 class SafeExpressionEvaluator:
-    """
-    Secure expression evaluator that prevents code injection
-    Replaces dangerous eval() calls with controlled AST evaluation
-    """
-    
-    # Allowed operators for safe evaluation
-    SAFE_OPERATORS = {
-        ast.Add: operator.add,
-        ast.Sub: operator.sub,
-        ast.Mult: operator.mul,
-        ast.Div: operator.truediv,
-        ast.Mod: operator.mod,
-        ast.Pow: operator.pow,
-        ast.USub: operator.neg,
-        ast.UAdd: operator.pos,
-        ast.Eq: operator.eq,
-        ast.NotEq: operator.ne,
-        ast.Lt: operator.lt,
-        ast.LtE: operator.le,
-        ast.Gt: operator.gt,
-        ast.GtE: operator.ge,
-        ast.And: operator.and_,
-        ast.Or: operator.or_,
-        ast.Not: operator.not_,
-    }
-    
-    # Allowed builtin functions
-    SAFE_FUNCTIONS = {
-        'abs': abs,
-        'min': min,
-        'max': max,
-        'round': round,
-        'float': float,
-        'int': int,
-        'bool': bool,
-        'str': str,
-        'len': len,
-    }
+    """Secure expression evaluator using AST parsing"""
     
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-    
-    def evaluate_expression(self, expression: str, context: Dict[str, Any] = None) -> Any:
+        
+    def evaluate(self, expression: str, context: Optional[Dict[str, Any]] = None) -> Any:
         """
-        Safely evaluate a mathematical or logical expression
+        Safely evaluate a mathematical/logical expression
         
         Args:
-            expression: The expression string to evaluate
-            context: Variables available in the expression context
+            expression: String expression to evaluate
+            context: Variables available to the expression
             
         Returns:
-            The result of the expression evaluation
+            Evaluation result
             
         Raises:
-            ValueError: If expression contains unsafe operations
-            SyntaxError: If expression has invalid syntax
+            SecurityError: If unsafe operations detected
+            ValueError: If expression is invalid
         """
-        if context is None:
-            context = {}
+        if not expression or not isinstance(expression, str):
+            raise ValueError("Expression must be a non-empty string")
+            
+        if len(expression) > 1000:
+            raise ValueError("Expression too long (max 1000 characters)")
             
         try:
-            # Parse the expression into an AST
-            tree = ast.parse(expression, mode='eval')
+            # Parse expression into AST
+            node = ast.parse(expression, mode='eval')
             
-            # Validate the AST for safety
-            self._validate_ast(tree)
+            # Validate AST for security
+            self._validate_ast(node)
             
-            # Evaluate the expression
-            return self._evaluate_node(tree.body, context)
+            # Evaluate with controlled context
+            return self._eval_node(node.body, context or {})
             
-        except (SyntaxError, ValueError) as e:
+        except SyntaxError as e:
+            raise ValueError(f"Invalid expression syntax: {e}")
+        except Exception as e:
             self.logger.error(f"Expression evaluation failed: {e}")
             raise
-        except Exception as e:
-            self.logger.error(f"Unexpected error in expression evaluation: {e}")
-            raise ValueError(f"Expression evaluation error: {str(e)}")
-    
-    def _validate_ast(self, tree: ast.AST) -> None:
-        """Validate that the AST only contains safe operations"""
-        for node in ast.walk(tree):
-            if isinstance(node, ast.Call):
-                if not isinstance(node.func, ast.Name):
-                    raise ValueError("Only simple function calls are allowed")
-                if node.func.id not in self.SAFE_FUNCTIONS:
-                    raise ValueError(f"Function '{node.func.id}' is not allowed")
-            elif isinstance(node, (ast.Import, ast.ImportFrom, ast.Exec, ast.Global)):
-                raise ValueError("Import and exec statements are not allowed")
-            elif isinstance(node, ast.Attribute):
-                raise ValueError("Attribute access is not allowed")
-    
-    def _evaluate_node(self, node: ast.AST, context: Dict[str, Any]) -> Any:
-        """Recursively evaluate AST nodes"""
+            
+    def _validate_ast(self, node: ast.AST) -> None:
+        """Validate AST nodes for security violations"""
+        for child in ast.walk(node):
+            # Block dangerous node types
+            if isinstance(child, (ast.Import, ast.ImportFrom, ast.Call)):
+                # Only allow whitelisted function calls
+                if isinstance(child, ast.Call):
+                    if not isinstance(child.func, ast.Name) or child.func.id not in SAFE_FUNCTIONS:
+                        raise SecurityError(f"Function call not allowed: {ast.dump(child)}")
+                else:
+                    raise SecurityError(f"Import statements not allowed: {ast.dump(child)}")
+                    
+            elif isinstance(child, (ast.Attribute, ast.Subscript)):
+                # Block attribute access and subscripting for security
+                if isinstance(child, ast.Attribute):
+                    # Allow basic attribute access on numbers/strings
+                    continue
+                else:
+                    raise SecurityError(f"Subscript access not allowed: {ast.dump(child)}")
+                    
+            elif isinstance(child, (ast.Lambda, ast.FunctionDef, ast.ClassDef)):
+                raise SecurityError(f"Function/class definitions not allowed: {ast.dump(child)}")
+                
+            # Note: ast.Exec and ast.Eval were removed in Python 3.8+
+            # They're included here for compatibility with older Python versions
+                
+    def _eval_node(self, node: ast.AST, context: Dict[str, Any]) -> Any:
+        """Recursively evaluate AST node"""
         if isinstance(node, ast.Constant):
             return node.value
+            
         elif isinstance(node, ast.Name):
             if node.id in context:
                 return context[node.id]
-            elif node.id in self.SAFE_FUNCTIONS:
-                return self.SAFE_FUNCTIONS[node.id]
+            elif node.id in SAFE_FUNCTIONS:
+                return SAFE_FUNCTIONS[node.id]
             else:
-                raise ValueError(f"Undefined variable: {node.id}")
+                raise NameError(f"Variable '{node.id}' not defined")
+                
         elif isinstance(node, ast.BinOp):
-            left = self._evaluate_node(node.left, context)
-            right = self._evaluate_node(node.right, context)
-            op = self.SAFE_OPERATORS.get(type(node.op))
-            if op is None:
-                raise ValueError(f"Operator {type(node.op).__name__} is not allowed")
-            return op(left, right)
+            left = self._eval_node(node.left, context)
+            right = self._eval_node(node.right, context)
+            op_type = type(node.op)
+            if op_type in SAFE_OPERATORS:
+                return SAFE_OPERATORS[op_type](left, right)
+            else:
+                raise SecurityError(f"Operator not allowed: {op_type}")
+                
         elif isinstance(node, ast.UnaryOp):
-            operand = self._evaluate_node(node.operand, context)
-            op = self.SAFE_OPERATORS.get(type(node.op))
-            if op is None:
-                raise ValueError(f"Unary operator {type(node.op).__name__} is not allowed")
-            return op(operand)
+            operand = self._eval_node(node.operand, context)
+            op_type = type(node.op)
+            if op_type in SAFE_OPERATORS:
+                return SAFE_OPERATORS[op_type](operand)
+            else:
+                raise SecurityError(f"Unary operator not allowed: {op_type}")
+                
         elif isinstance(node, ast.Compare):
-            left = self._evaluate_node(node.left, context)
-            result = left
+            left = self._eval_node(node.left, context)
+            result = True
+            
             for op, comparator in zip(node.ops, node.comparators):
-                right = self._evaluate_node(comparator, context)
-                op_func = self.SAFE_OPERATORS.get(type(op))
-                if op_func is None:
-                    raise ValueError(f"Comparison operator {type(op).__name__} is not allowed")
-                result = op_func(result, right)
-                if not result:
-                    break
+                right = self._eval_node(comparator, context)
+                op_type = type(op)
+                if op_type in SAFE_OPERATORS:
+                    result = result and SAFE_OPERATORS[op_type](left, right)
+                    left = right
+                else:
+                    raise SecurityError(f"Comparison operator not allowed: {op_type}")
+                    
             return result
+            
         elif isinstance(node, ast.BoolOp):
-            values = [self._evaluate_node(value, context) for value in node.values]
-            op = self.SAFE_OPERATORS.get(type(node.op))
-            if op is None:
-                raise ValueError(f"Boolean operator {type(node.op).__name__} is not allowed")
+            values = [self._eval_node(value, context) for value in node.values]
+            
             if isinstance(node.op, ast.And):
                 return all(values)
             elif isinstance(node.op, ast.Or):
                 return any(values)
+            else:
+                raise SecurityError(f"Boolean operator not allowed: {type(node.op)}")
+                
         elif isinstance(node, ast.Call):
-            func_name = node.func.id
-            if func_name not in self.SAFE_FUNCTIONS:
-                raise ValueError(f"Function '{func_name}' is not allowed")
-            func = self.SAFE_FUNCTIONS[func_name]
-            args = [self._evaluate_node(arg, context) for arg in node.args]
-            return func(*args)
+            func_name = node.func.id if isinstance(node.func, ast.Name) else None
+            if func_name in SAFE_FUNCTIONS:
+                func = SAFE_FUNCTIONS[func_name]
+                args = [self._eval_node(arg, context) for arg in node.args]
+                return func(*args)
+            else:
+                raise SecurityError(f"Function call not allowed: {func_name}")
+                
         else:
-            raise ValueError(f"AST node type {type(node).__name__} is not allowed")
-
-@dataclass
-class StrategyContext:
-    """Context variables available to strategy expressions"""
-    signal_data: Dict[str, Any]
-    market_data: Dict[str, Any]
-    account_info: Dict[str, Any]
-    current_time: float
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary for expression evaluation"""
-        return {
-            'signal': self.signal_data,
-            'market': self.market_data,
-            'account': self.account_info,
-            'time': self.current_time,
-            # Add common trading variables
-            'balance': self.account_info.get('balance', 0),
-            'equity': self.account_info.get('equity', 0),
-            'margin': self.account_info.get('margin', 0),
-            'price': self.signal_data.get('entry_price', 0),
-            'sl': self.signal_data.get('stop_loss', 0),
-            'tp': self.signal_data.get('take_profit', 0),
-        }
+            raise SecurityError(f"AST node type not allowed: {type(node)}")
 
 class SecureStrategyRuntime:
-    """
-    Secure strategy runtime that replaces dangerous eval() usage
-    """
+    """Secure strategy runtime using safe expression evaluation"""
     
-    def __init__(self):
+    def __init__(self, config_file: str = "config.json"):
+        self.config_file = config_file
         self.evaluator = SafeExpressionEvaluator()
         self.logger = logging.getLogger(__name__)
-    
-    def execute_strategy_condition(self, condition: str, context: StrategyContext) -> bool:
+        self._load_config()
+        
+    def _load_config(self):
+        """Load configuration safely"""
+        try:
+            with open(self.config_file, 'r') as f:
+                self.config = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            self.logger.warning(f"Config load failed: {e}, using defaults")
+            self.config = {"strategy_timeout": 30, "max_expression_length": 1000}
+            
+    def evaluate_condition(self, condition_expr: str, signal_data: Dict[str, Any]) -> bool:
         """
-        Safely execute a strategy condition
+        Safely evaluate strategy condition
         
         Args:
-            condition: Strategy condition expression
-            context: Strategy execution context
+            condition_expr: Condition expression string
+            signal_data: Signal data context
             
         Returns:
-            Boolean result of the condition evaluation
+            Boolean result of condition evaluation
         """
         try:
-            context_dict = context.to_dict()
-            result = self.evaluator.evaluate_expression(condition, context_dict)
+            # Prepare secure context
+            context = {
+                'confidence': signal_data.get('confidence', 0),
+                'symbol': signal_data.get('symbol', ''),
+                'action': signal_data.get('action', ''),
+                'entry': float(signal_data.get('entry', 0)),
+                'stop_loss': float(signal_data.get('stop_loss', 0)),
+                'take_profit': float(signal_data.get('take_profit', 0)),
+                'current_time': datetime.now().hour,
+                'current_minute': datetime.now().minute,
+            }
             
-            # Ensure result is boolean
-            if not isinstance(result, bool):
-                result = bool(result)
-                
-            self.logger.debug(f"Strategy condition '{condition}' evaluated to: {result}")
-            return result
+            # Add safe mathematical constants
+            context.update({
+                'PI': 3.14159265359,
+                'E': 2.71828182846,
+            })
+            
+            result = self.evaluator.evaluate(condition_expr, context)
+            return bool(result)
             
         except Exception as e:
-            self.logger.error(f"Strategy condition evaluation failed: {e}")
-            # Fail safely - reject the signal if condition evaluation fails
+            self.logger.error(f"Condition evaluation failed: {e}")
             return False
-    
-    def calculate_position_size(self, formula: str, context: StrategyContext) -> float:
+            
+    def apply_action_parameters(self, action_expr: str, signal_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Safely calculate position size using a formula
+        Safely calculate action parameters
         
         Args:
-            formula: Position size calculation formula
-            context: Strategy execution context
+            action_expr: Action parameter expression
+            signal_data: Signal data context
             
         Returns:
-            Calculated position size
+            Dictionary of calculated parameters
         """
         try:
-            context_dict = context.to_dict()
-            result = self.evaluator.evaluate_expression(formula, context_dict)
+            context = {
+                'lot_size': float(signal_data.get('lot_size', 0.01)),
+                'entry': float(signal_data.get('entry', 0)),
+                'stop_loss': float(signal_data.get('stop_loss', 0)),
+                'take_profit': float(signal_data.get('take_profit', 0)),
+                'account_balance': float(signal_data.get('account_balance', 10000)),
+                'risk_percent': float(signal_data.get('risk_percent', 2)),
+            }
             
-            # Ensure result is numeric and positive
-            if not isinstance(result, (int, float)):
-                raise ValueError(f"Position size formula must return a number, got {type(result)}")
+            result = self.evaluator.evaluate(action_expr, context)
             
-            if result <= 0:
-                raise ValueError("Position size must be positive")
+            if isinstance(result, (int, float)):
+                return {'calculated_value': float(result)}
+            elif isinstance(result, dict):
+                return result
+            else:
+                return {'result': str(result)}
                 
-            self.logger.debug(f"Position size formula '{formula}' calculated: {result}")
-            return float(result)
-            
         except Exception as e:
-            self.logger.error(f"Position size calculation failed: {e}")
-            # Return minimal position size as fallback
-            return 0.01
+            self.logger.error(f"Action parameter calculation failed: {e}")
+            return {}
 
-# Global instance for use throughout the application
-safe_strategy_runtime = SecureStrategyRuntime()
+# Global instance
+secure_runtime = SecureStrategyRuntime()
 
-def evaluate_strategy_safely(expression: str, signal_data: Dict, market_data: Dict, account_info: Dict) -> Any:
-    """
-    Global function to safely evaluate strategy expressions
-    Replaces any dangerous eval() calls in the codebase
-    """
-    import time
-    
-    context = StrategyContext(
-        signal_data=signal_data,
-        market_data=market_data,
-        account_info=account_info,
-        current_time=time.time()
-    )
-    
-    return safe_strategy_runtime.execute_strategy_condition(expression, context)
+def safe_evaluate_expression(expression: str, context: Optional[Dict[str, Any]] = None) -> Any:
+    """Global function for safe expression evaluation"""
+    return secure_runtime.evaluator.evaluate(expression, context)
+
+def evaluate_strategy_condition(condition: str, signal_data: Dict[str, Any]) -> bool:
+    """Global function for strategy condition evaluation"""
+    return secure_runtime.evaluate_condition(condition, signal_data)

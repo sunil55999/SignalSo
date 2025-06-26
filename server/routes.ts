@@ -721,34 +721,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Desktop App Integration endpoints
-  app.post("/api/firebridge/sync-user", async (req, res) => {
+  app.post("/api/firebridge/sync-user", [
+    body('userId').isInt({ min: 1 }).withMessage('Valid user ID required'),
+    body('terminalId').optional().isString().trim().escape(),
+    body('status.isConnected').optional().isBoolean(),
+    body('status.serverInfo').optional().isObject()
+  ], async (req, res) => {
     try {
-      const { userId, terminalId, status } = req.body;
-      
-      // Update MT5 status from desktop app
-      if (userId && status) {
-        await storage.updateMt5Status(userId, {
-          userId,
-          isConnected: status.isConnected || false,
-          serverInfo: status.serverInfo || {},
-          lastPing: new Date()
+      // Fix #22: Comprehensive input validation
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ 
+          error: "Validation failed", 
+          details: errors.array().map(e => e.msg)
         });
       }
+
+      const { userId, terminalId, status } = req.body;
       
-      // Log sync activity
-      if (userId) {
+      // Fix #6: Sanitize inputs to prevent injection
+      const sanitizedUserId = parseInt(userId);
+      const sanitizedTerminalId = terminalId ? sanitizeHtml(terminalId.toString()) : null;
+      
+      // Update MT5 status from desktop app with validation
+      if (sanitizedUserId && status) {
+        const sanitizedStatus = {
+          userId: sanitizedUserId,
+          isConnected: Boolean(status.isConnected),
+          serverInfo: status.serverInfo ? JSON.parse(JSON.stringify(status.serverInfo)) : {},
+          lastPing: new Date()
+        };
+        
+        await storage.updateMt5Status(sanitizedUserId, sanitizedStatus);
+      }
+      
+      // Log sync activity with sanitized data
+      if (sanitizedUserId) {
         await storage.createSyncLog({
-          userId,
+          userId: sanitizedUserId,
           action: "desktop_sync",
           status: "success",
-          details: { terminalId, syncTime: new Date() }
+          details: { 
+            terminalId: sanitizedTerminalId, 
+            syncTime: new Date(),
+            userAgent: req.get('User-Agent') || 'Unknown'
+          }
         });
       }
       
       res.json({ success: true, timestamp: new Date() });
     } catch (error) {
       console.error("Desktop sync error:", error);
-      res.status(500).json({ error: "Failed to sync with desktop app" });
+      res.status(500).json({ error: "Server error occurred" });
     }
   });
 
