@@ -82,6 +82,7 @@ export function setupAuth(app: Express) {
 
   app.use('/api', apiLimiter);
 
+  // Fix #29: Enhanced session management with lifecycle controls
   const sessionSettings: session.SessionOptions = {
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -91,10 +92,12 @@ export function setupAuth(app: Express) {
     cookie: {
       secure: process.env.NODE_ENV === "production",
       httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      maxAge: 2 * 60 * 60 * 1000, // 2 hours (reduced from 24 for security)
       sameSite: 'strict'
     },
     name: 'signalos.sid', // Custom session name
+    rolling: true, // Reset expiration on activity
+    unset: 'destroy' // Destroy session data on logout
   };
 
   app.set("trust proxy", 1);
