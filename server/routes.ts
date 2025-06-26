@@ -115,6 +115,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
   
+  // Fix #12: Role-based access control middleware
+  function requireRole(role: string) {
+    return (req: any, res: any, next: any) => {
+      if (!req.user) {
+        return res.status(401).json({ error: "Authentication required" });
+      }
+      
+      // Check user role (default to 'user' if not set)
+      const userRole = req.user.role || 'user';
+      
+      // Define role hierarchy
+      const roleHierarchy: { [key: string]: string[] } = {
+        'admin': ['admin', 'user'],
+        'user': ['user']
+      };
+      
+      if (!roleHierarchy[role] || !roleHierarchy[role].includes(userRole)) {
+        return res.status(403).json({ error: "Insufficient permissions" });
+      }
+      
+      next();
+    };
+  }
+  
+  // Admin-only middleware
+  const requireAdmin = requireRole('admin');
+  
   // Setup equity limits routes
   setupEquityLimitsRoutes(app);
 
