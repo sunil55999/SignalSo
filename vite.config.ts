@@ -30,8 +30,7 @@ export default defineConfig({
   },
   server: {
     hmr: {
-      clientPort: 5000,
-      host: "localhost",
+      clientPort: 80,
     },
     fs: {
       strict: true,
