@@ -2,6 +2,25 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
+// Fix #38: Environment validation
+if (!process.env.SESSION_SECRET) {
+  process.env.SESSION_SECRET = "7f8a9b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2";
+  console.warn("WARNING: Using default SESSION_SECRET. Set SESSION_SECRET environment variable in production.");
+}
+
+// Fix #15: Handle unhandled promise rejections
+process.on('unhandledRejection', (reason: any, promise: Promise<any>) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Gracefully handle the error instead of crashing
+});
+
+// Fix #24: Add process exit handling
+process.on('uncaughtException', (error: Error) => {
+  console.error('Uncaught Exception:', error);
+  // Log the error and exit gracefully
+  setTimeout(() => process.exit(1), 100);
+});
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

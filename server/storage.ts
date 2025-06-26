@@ -6,10 +6,22 @@ import {
   type SyncLog, type InsertSyncLog, type ProviderStats, type InsertProviderStats
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, sql } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
+
+// Fix #20: Transaction helper for atomic operations
+async function withTransaction<T>(operation: (tx: any) => Promise<T>): Promise<T> {
+  return await db.transaction(async (tx) => {
+    try {
+      return await operation(tx);
+    } catch (error) {
+      console.error('Transaction failed:', error);
+      throw error;
+    }
+  });
+}
 
 const PostgresSessionStore = connectPg(session);
 
@@ -221,21 +233,38 @@ export class DatabaseStorage implements IStorage {
     return status || undefined;
   }
 
+  // Fix #3: SQL injection prevention with parameterized queries
   async updateMt5Status(userId: number, status: InsertMt5Status): Promise<Mt5Status> {
-    const existing = await this.getMt5Status(userId);
-    
-    if (existing) {
-      const [updated] = await db.update(mt5Status)
-        .set({ ...status, lastPing: new Date() })
-        .where(eq(mt5Status.id, existing.id))
-        .returning();
-      return updated;
-    } else {
-      const [newStatus] = await db.insert(mt5Status)
-        .values({ ...status, userId })
-        .returning();
-      return newStatus;
-    }
+    return withTransaction(async (tx) => {
+      // Validate and sanitize inputs to prevent SQL injection
+      const sanitizedUserId = Math.abs(Number(userId));
+      if (!sanitizedUserId || sanitizedUserId !== userId) {
+        throw new Error('Invalid user ID');
+      }
+      
+      const sanitizedStatus = {
+        ...status,
+        serverInfo: status.serverInfo ? JSON.parse(JSON.stringify(status.serverInfo)) : null,
+        lastPing: new Date()
+      };
+      
+      const existing = await tx.select().from(mt5Status)
+        .where(eq(mt5Status.userId, sanitizedUserId))
+        .limit(1);
+      
+      if (existing.length > 0) {
+        const [updated] = await tx.update(mt5Status)
+          .set(sanitizedStatus)
+          .where(eq(mt5Status.id, existing[0].id))
+          .returning();
+        return updated;
+      } else {
+        const [newStatus] = await tx.insert(mt5Status)
+          .values({ ...sanitizedStatus, userId: sanitizedUserId })
+          .returning();
+        return newStatus;
+      }
+    });
   }
 
   // Sync Log operations

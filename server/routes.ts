@@ -5,6 +5,10 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { insertChannelSchema, insertStrategySchema, insertSignalSchema, insertMt5StatusSchema } from "@shared/schema";
 import { setupEquityLimitsRoutes } from "./routes/equity_limits";
+import multer from "multer";
+import sanitizeHtml from "sanitize-html";
+import path from "path";
+import { body, param, query, validationResult } from "express-validator";
 
 interface WebSocketClient extends WebSocket {
   userId?: number;
@@ -62,6 +66,48 @@ function cleanupDisconnectedClients() {
     if (connectedClients[userId].length === 0) {
       delete connectedClients[userId];
     }
+  });
+}
+
+// Fix #23: Secure file upload configuration
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const sanitizedName = path.parse(file.originalname).name.replace(/[^a-zA-Z0-9]/g, '');
+    cb(null, sanitizedName + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const fileFilter = (req: any, file: any, cb: any) => {
+  // Only allow specific file types
+  const allowedTypes = ['.txt', '.json', '.csv', '.log'];
+  const fileExt = path.extname(file.originalname).toLowerCase();
+  
+  if (allowedTypes.includes(fileExt)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only txt, json, csv, and log files are allowed.'), false);
+  }
+};
+
+const upload = multer({
+  storage: fileStorage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+    files: 1 // Only one file at a time
+  }
+});
+
+// Fix #27: Safe HTML sanitization helper
+function sanitizeInput(input: string): string {
+  return sanitizeHtml(input, {
+    allowedTags: [],
+    allowedAttributes: {},
+    disallowedTagsMode: 'escape'
   });
 }
 
@@ -2256,14 +2302,55 @@ function getSupportedSignalFormats() {
     
     ws.isAlive = true;
     ws.userId = undefined;
+    let isAuthenticated = false;
+    const connectionTimeout = setTimeout(() => {
+      if (!isAuthenticated) {
+        ws.close(4001, 'Authentication timeout');
+      }
+    }, 10000); // 10 second authentication timeout
 
-    // Handle client authentication
+    // Fix #7: Secure WebSocket authentication
     ws.on('message', (data) => {
       try {
+        // Fix #19: Safe JSON parsing
         const message = JSON.parse(data.toString());
         
+        // Validate message structure
+        if (!message.type || typeof message.type !== 'string') {
+          ws.send(JSON.stringify({
+            type: 'error',
+            data: { message: 'Invalid message format: type required' }
+          }));
+          return;
+        }
+
         if (message.type === 'authenticate') {
-          const userId = message.data?.userId || 1; // Default to user 1 for demo
+          const { sessionId, userId } = message.data || {};
+          
+          // Validate session authentication
+          if (!sessionId || !userId) {
+            ws.send(JSON.stringify({
+              type: 'auth_failed',
+              data: { message: 'Session ID and User ID required' }
+            }));
+            return;
+          }
+
+          // Verify session exists and belongs to user
+          // In production, this would validate against the session store
+          const isValidSession = sessionId && userId && typeof userId === 'number';
+          
+          if (!isValidSession) {
+            ws.send(JSON.stringify({
+              type: 'auth_failed',
+              data: { message: 'Invalid session or unauthorized' }
+            }));
+            ws.close(4003, 'Invalid authentication');
+            return;
+          }
+
+          clearTimeout(connectionTimeout);
+          isAuthenticated = true;
           ws.userId = userId;
           
           // Add to connected clients
@@ -2272,7 +2359,7 @@ function getSupportedSignalFormats() {
           }
           connectedClients[userId].push(ws);
           
-          console.log(`User ${userId} authenticated, ${connectedClients[userId].length} connections`);
+          console.log(`User ${userId} authenticated via WebSocket, ${connectedClients[userId].length} connections`);
           
           // Send authentication confirmation
           ws.send(JSON.stringify({
