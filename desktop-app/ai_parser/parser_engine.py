@@ -327,6 +327,134 @@ def configure_safe_parser(**kwargs):
     parser.configure_parser(**kwargs)
 
 
+def generate_parser_report() -> Dict[str, Any]:
+    """
+    Generate comprehensive parser report with statistics and patterns
+    
+    Returns:
+        Comprehensive report dictionary
+    """
+    from .feedback_logger import FeedbackLogger
+    
+    parser = get_safe_parser()
+    logger = FeedbackLogger()
+    
+    # Get current statistics
+    stats = parser.get_parser_stats()
+    
+    # Get failure and success patterns
+    failure_patterns = logger.get_failure_patterns(limit=50)
+    success_patterns = logger.get_success_patterns(limit=50)
+    
+    # Analyze patterns
+    report = {
+        "parser_statistics": stats,
+        "session_info": {
+            "total_attempts": stats.get("total_attempts", 0),
+            "success_rate": stats.get("success_rate", 0),
+            "ai_success_rate": stats.get("ai_success_rate", 0),
+            "fallback_rate": stats.get("fallback_rate", 0),
+            "failure_rate": stats.get("failure_rate", 0),
+            "avg_parse_time": stats.get("avg_parse_time", 0)
+        },
+        "failure_analysis": {
+            "total_failures": len(failure_patterns),
+            "common_errors": _analyze_common_errors(failure_patterns),
+            "failed_parser_methods": _analyze_failed_methods(failure_patterns)
+        },
+        "success_analysis": {
+            "total_successes": len(success_patterns),
+            "parser_method_distribution": _analyze_success_methods(success_patterns),
+            "confidence_distribution": _analyze_confidence_levels(success_patterns)
+        },
+        "recommendations": _generate_recommendations(stats, failure_patterns, success_patterns)
+    }
+    
+    return report
+
+
+def _analyze_common_errors(failures: List[Dict[str, Any]]) -> Dict[str, int]:
+    """Analyze common error patterns"""
+    error_counts = {}
+    for failure in failures:
+        error_msg = failure.get("error_message", "unknown")
+        # Categorize errors
+        if "timeout" in error_msg.lower():
+            error_counts["timeout"] = error_counts.get("timeout", 0) + 1
+        elif "validation" in error_msg.lower():
+            error_counts["validation"] = error_counts.get("validation", 0) + 1
+        elif "missing" in error_msg.lower():
+            error_counts["missing_fields"] = error_counts.get("missing_fields", 0) + 1
+        else:
+            error_counts["other"] = error_counts.get("other", 0) + 1
+    return error_counts
+
+
+def _analyze_failed_methods(failures: List[Dict[str, Any]]) -> Dict[str, int]:
+    """Analyze which parser methods fail most often"""
+    method_counts = {}
+    for failure in failures:
+        method = failure.get("parser_method", "unknown")
+        method_counts[method] = method_counts.get(method, 0) + 1
+    return method_counts
+
+
+def _analyze_success_methods(successes: List[Dict[str, Any]]) -> Dict[str, int]:
+    """Analyze success distribution by parser method"""
+    method_counts = {}
+    for success in successes:
+        method = success.get("parser_method", "unknown")
+        method_counts[method] = method_counts.get(method, 0) + 1
+    return method_counts
+
+
+def _analyze_confidence_levels(successes: List[Dict[str, Any]]) -> Dict[str, int]:
+    """Analyze confidence level distribution"""
+    confidence_buckets = {"high": 0, "medium": 0, "low": 0}
+    for success in successes:
+        confidence = success.get("confidence", 0)
+        if confidence >= 0.8:
+            confidence_buckets["high"] += 1
+        elif confidence >= 0.6:
+            confidence_buckets["medium"] += 1
+        else:
+            confidence_buckets["low"] += 1
+    return confidence_buckets
+
+
+def _generate_recommendations(stats: Dict[str, Any], failures: List[Dict[str, Any]], successes: List[Dict[str, Any]]) -> List[str]:
+    """Generate recommendations based on analysis"""
+    recommendations = []
+    
+    failure_rate = stats.get("failure_rate", 0)
+    ai_success_rate = stats.get("ai_success_rate", 0)
+    fallback_rate = stats.get("fallback_rate", 0)
+    
+    if failure_rate > 20:
+        recommendations.append("High failure rate detected. Consider improving signal preprocessing or fallback patterns.")
+    
+    if ai_success_rate < 50:
+        recommendations.append("AI parser success rate is low. Consider retraining or improving AI model.")
+    
+    if fallback_rate > 30:
+        recommendations.append("Heavy reliance on fallback parser. Consider improving AI model accuracy.")
+    
+    avg_parse_time = stats.get("avg_parse_time", 0)
+    if avg_parse_time > 5.0:
+        recommendations.append("Parse time is high. Consider optimizing AI model or reducing timeout.")
+    
+    if len(failures) > 20:
+        common_errors = _analyze_common_errors(failures)
+        top_error = max(common_errors.items(), key=lambda x: x[1]) if common_errors else None
+        if top_error:
+            recommendations.append(f"Most common error type: {top_error[0]}. Focus on fixing this error category.")
+    
+    if not recommendations:
+        recommendations.append("Parser performance is good. Continue monitoring for improvements.")
+    
+    return recommendations
+
+
 # Testing function
 def test_safe_parser():
     """Test the safe parser with various inputs"""
