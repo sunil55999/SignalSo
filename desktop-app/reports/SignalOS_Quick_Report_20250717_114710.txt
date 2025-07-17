@@ -1,0 +1,59 @@
+============================================================
+SIGNALOS BACKTEST REPORT
+============================================================
+
+EXECUTIVE SUMMARY
+----------------------------------------
+Initial Balance: $10,000.00
+Final Balance: $9,555.12
+Total Return: -4.45%
+Total Trades: 30
+Win Rate: 40.0%
+Profit Factor: 0.67
+Max Drawdown: 6.38%
+Sharpe Ratio: -0.16
+
+PERFORMANCE METRICS
+----------------------------------------
+Total Trades: 30
+Winning Trades: 12
+Losing Trades: 18
+Average Trade P&L: $-14.83
+Average Win: $73.89
+Average Loss: $-73.98
+Average Risk/Reward: 0.38
+Recovery Factor: -0.70
+
+MONTHLY RETURNS
+----------------------------------------
+2025-06: $-308.23 (13 trades, 38.5% win rate)
+2025-07: $-136.65 (17 trades, 41.2% win rate)
+
+TRADE DETAILS (First 20 Trades)
+----------------------------------------
+#   Symbol   Dir  Entry    Exit     P&L      Pips   Status  
+------------------------------------------------------------
+1   USDJPY   SELL 135.26721 134.62344 64.89    62.4   closed  
+2   NZDUSD   BUY  0.66268  0.65691  -156.40  -59.7  closed  
+3   USDJPY   SELL 133.93886 134.87751 -109.98  -95.9  closed  
+4   USDJPY   SELL 134.11636 135.05915 -201.58  -96.3  closed  
+5   USDCHF   SELL 0.94133  0.94260  -24.11   -14.7  closed  
+6   NZDUSD   BUY  0.65760  0.65598  -38.32   -18.3  closed  
+7   USDCHF   SELL 0.94274  0.93591  132.29   66.3   closed  
+8   EURUSD   BUY  1.07778  1.07308  -71.50   -49.0  closed  
+9   USDJPY   BUY  136.11296 136.08436 -8.76    -4.9   closed  
+10  USDJPY   SELL 136.73478 135.49168 137.17   122.3  closed  
+11  USDCHF   BUY  0.94068  0.94194  21.98    10.5   closed  
+12  AUDUSD   BUY  0.66980  0.67212  42.64    21.2   closed  
+13  NZDUSD   SELL 0.65477  0.65786  -96.53   -32.9  closed  
+14  AUDUSD   BUY  0.67357  0.66943  -113.06  -43.4  closed  
+15  USDCAD   SELL 1.43681  1.44005  -44.02   -34.4  closed  
+16  USDJPY   SELL 135.90061 136.23883 -57.62   -35.8  closed  
+17  AUDUSD   SELL 0.67554  0.67106  123.40   42.8   closed  
+18  USDCHF   BUY  0.94694  0.94966  35.40    25.2   closed  
+19  USDJPY   BUY  137.08040 138.08509 116.84   98.5   closed  
+20  AUDUSD   SELL 0.66437  0.66436  -8.37    -1.9   closed  
+
+============================================================
+Report generated: 2025-07-17 11:47:10
+============================================================
