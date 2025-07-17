@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { useSystemStatus, useSystemActions } from '@/hooks/useSystemStatus';
 import { 
   Activity, 
   TrendingUp, 
@@ -13,23 +14,28 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  BarChart3
+  BarChart3,
+  RefreshCw,
+  MessageSquare,
+  Server,
+  Cpu,
+  HardDrive,
+  Shield,
+  Database
 } from 'lucide-react';
 
 export function Dashboard() {
   const { toast } = useToast();
-
-  // Fetch router status
-  const { data: routerStatus } = useQuery({
-    queryKey: ['/api/router/status'],
-    refetchInterval: 5000, // Refresh every 5 seconds
-  });
-
-  // Fetch MT5 status
-  const { data: mt5Status } = useQuery({
-    queryKey: ['/api/mt5/status'],
-    refetchInterval: 5000,
-  });
+  const { systemStatus, isLoading, refetch } = useSystemStatus();
+  const { 
+    startRouter, 
+    stopRouter, 
+    connectMT5, 
+    disconnectMT5, 
+    connectTelegram, 
+    disconnectTelegram,
+    connectBridge 
+  } = useSystemActions();
 
   // Fetch recent logs
   const { data: recentLogs } = useQuery({
@@ -37,48 +43,62 @@ export function Dashboard() {
     refetchInterval: 10000,
   });
 
-  const handleStartRouter = async () => {
-    try {
-      const response = await fetch('/api/router/start', { method: 'POST' });
-      const result = await response.json();
-      
-      if (result.success) {
-        toast({ title: 'Router started successfully' });
-      } else {
-        toast({ 
-          title: 'Failed to start router', 
-          description: result.error,
-          variant: 'destructive' 
-        });
-      }
-    } catch (error) {
-      toast({ 
-        title: 'Error starting router', 
-        variant: 'destructive' 
-      });
+  // Fetch log stats for activity monitoring
+  const { data: logStats } = useQuery({
+    queryKey: ['/api/logs/stats'],
+    refetchInterval: 30000, // Poll every 30 seconds
+  });
+
+  const handleRefreshAll = () => {
+    refetch();
+    toast({
+      title: 'Status refreshed',
+      description: 'All system status has been updated',
+    });
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'running':
+      case 'connected':
+      case 'active':
+      case 'healthy':
+        return 'text-green-600 dark:text-green-400';
+      case 'stopped':
+      case 'disconnected':
+      case 'inactive':
+        return 'text-gray-600 dark:text-gray-400';
+      case 'error':
+      case 'degraded':
+        return 'text-red-600 dark:text-red-400';
+      default:
+        return 'text-gray-600 dark:text-gray-400';
     }
   };
 
-  const handleStopRouter = async () => {
-    try {
-      const response = await fetch('/api/router/stop', { method: 'POST' });
-      const result = await response.json();
-      
-      if (result.success) {
-        toast({ title: 'Router stopped successfully' });
-      } else {
-        toast({ 
-          title: 'Failed to stop router', 
-          description: result.error,
-          variant: 'destructive' 
-        });
-      }
-    } catch (error) {
-      toast({ 
-        title: 'Error stopping router', 
-        variant: 'destructive' 
-      });
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'running':
+      case 'connected':
+      case 'active':
+      case 'healthy':
+        return <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />;
+      case 'stopped':
+      case 'disconnected':
+      case 'inactive':
+        return <AlertCircle className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
+      case 'error':
+      case 'degraded':
+        return <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
+      default:
+        return <Activity className="h-5 w-5 text-gray-600 dark:text-gray-400 animate-pulse" />;
     }
+  };
+
+  const formatUptime = (seconds: number) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    return `${hours}h ${minutes}m`;
   };
 
   const handleConnectMT5 = async () => {

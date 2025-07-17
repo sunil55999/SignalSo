@@ -43,6 +43,65 @@ if (process.env.NODE_ENV === 'production') {
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../dist/client/index.html'));
   });
+} else {
+  // In development mode, serve a basic development message
+  app.get('/', (req, res) => {
+    res.send(`
+      <html>
+        <head>
+          <title>SignalOS - Development Mode</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+            .container { max-width: 800px; margin: 0 auto; }
+            .status { padding: 20px; background: #f0f8ff; border-radius: 8px; margin: 20px 0; }
+            .endpoint { padding: 10px; background: #f5f5f5; border-radius: 4px; margin: 10px 0; }
+            .healthy { color: #00aa00; }
+            .error { color: #aa0000; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>🚀 SignalOS - Trading Automation Platform</h1>
+            <div class="status">
+              <h3>Server Status: <span class="healthy">Running</span></h3>
+              <p>The SignalOS backend server is running successfully on port 3000.</p>
+            </div>
+            
+            <h3>API Endpoints</h3>
+            <div class="endpoint">
+              <strong>GET /api/health</strong> - Health check endpoint
+            </div>
+            <div class="endpoint">
+              <strong>POST /api/auth/login</strong> - User authentication
+            </div>
+            <div class="endpoint">
+              <strong>GET /api/mt5/status</strong> - MT5 connection status
+            </div>
+            <div class="endpoint">
+              <strong>GET /api/telegram/status</strong> - Telegram session status
+            </div>
+            <div class="endpoint">
+              <strong>GET /api/logs</strong> - System logs
+            </div>
+            <div class="endpoint">
+              <strong>POST /api/router/start</strong> - Start signal router
+            </div>
+            
+            <h3>Development Information</h3>
+            <p>The SignalOS server is running in development mode. The frontend build needs to be configured to serve the full web interface.</p>
+            
+            <h3>Next Steps</h3>
+            <ul>
+              <li>Use the API endpoints above to interact with the system</li>
+              <li>Configure the frontend build for the web interface</li>
+              <li>Set up MT5 connection via API</li>
+              <li>Configure Telegram integration</li>
+            </ul>
+          </div>
+        </body>
+      </html>
+    `);
+  });
 }
 
 // Error handling middleware
