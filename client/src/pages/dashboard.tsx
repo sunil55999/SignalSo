@@ -12,6 +12,8 @@ import { GlobalImportPanel } from '@/components/GlobalImportPanel';
 import { OnboardingWizard } from '@/components/OnboardingWizard';
 import { ImportExportPanel } from '@/components/ImportExportPanel';
 import { ActivityCenter } from '@/components/ActivityCenter';
+import { EnhancedManagementPanel } from '@/components/EnhancedManagementPanel';
+import { FeedbackSystem, useFeedbackSystem } from '@/components/FeedbackSystem';
 import { 
   Activity, 
   TrendingUp, 
@@ -36,7 +38,8 @@ export function Dashboard() {
   const { toast } = useToast();
   const [showImportPanel, setShowImportPanel] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'import' | 'activity'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'import' | 'activity' | 'manage'>('dashboard');
+  const { items: feedbackItems, addFeedback, updateFeedback, removeFeedback } = useFeedbackSystem();
   
   const { data: routerStatus } = useQuery({
     queryKey: ['/api/router/status'],
@@ -59,15 +62,34 @@ export function Dashboard() {
   });
 
   const handleStartRouter = async () => {
+    const feedbackId = addFeedback({
+      type: 'connection',
+      action: 'Starting Router',
+      status: 'loading',
+      message: 'Starting signal router...'
+    });
+
     try {
       const response = await apiRequest('/api/router/start', { method: 'POST' });
       if (response.success) {
+        updateFeedback(feedbackId, {
+          status: 'success',
+          message: 'Signal router started successfully'
+        });
+        
         toast({
           title: 'Router started',
           description: 'Signal router has been started successfully',
         });
+        
+        setTimeout(() => removeFeedback(feedbackId), 3000);
       }
     } catch (error) {
+      updateFeedback(feedbackId, {
+        status: 'error',
+        message: 'Failed to start router'
+      });
+      
       toast({
         title: 'Failed to start router',
         description: 'Could not start the signal router',
@@ -99,7 +121,15 @@ export function Dashboard() {
         </div>
         <div className="flex items-center gap-2">
           <Button 
-            variant="outline" 
+            variant={currentView === 'manage' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setCurrentView('manage')}
+          >
+            <Settings className="h-4 w-4 mr-2" />
+            Manage
+          </Button>
+          <Button 
+            variant={currentView === 'import' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setCurrentView('import')}
           >
@@ -107,7 +137,7 @@ export function Dashboard() {
             Import
           </Button>
           <Button 
-            variant="outline" 
+            variant={currentView === 'activity' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setCurrentView('activity')}
           >
@@ -193,6 +223,22 @@ export function Dashboard() {
         </div>
       )}
 
+      {/* Enhanced Management Panel View */}
+      {currentView === 'manage' && (
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 mb-4">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setCurrentView('dashboard')}
+            >
+              ← Back to Dashboard
+            </Button>
+          </div>
+          <EnhancedManagementPanel />
+        </div>
+      )}
+
       {/* Account & Risk Summary - Only show on dashboard view */}
       {currentView === 'dashboard' && (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -263,6 +309,15 @@ export function Dashboard() {
           onComplete={() => setShowOnboarding(false)} 
         />
       )}
+
+      {/* Global Feedback System */}
+      <FeedbackSystem 
+        items={feedbackItems} 
+        onRetry={(id) => {
+          console.log('Retry action:', id);
+        }}
+        onDismiss={removeFeedback}
+      />
     </div>
   );
 }
