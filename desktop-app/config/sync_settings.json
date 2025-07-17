@@ -1,0 +1,12 @@
+{
+  "auto_sync_enabled": true,
+  "sync_interval_minutes": 30,
+  "last_sync_timestamp": null,
+  "last_sync_hash": null,
+  "api_key": "test_api_key",
+  "user_id": "test_user_123",
+  "sync_conflicts_resolution": "cloud_wins",
+  "backup_before_sync": true,
+  "retry_attempts": 3,
+  "timeout_seconds": 30
+}

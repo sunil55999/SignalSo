@@ -1,0 +1,212 @@
+{
+  "en": {
+    "buy_signals": [
+      "buy",
+      "long",
+      "call",
+      "bullish",
+      "entry",
+      "purchase"
+    ],
+    "sell_signals": [
+      "sell",
+      "short",
+      "put",
+      "bearish",
+      "exit",
+      "close"
+    ],
+    "currency_pairs": [
+      "eurusd",
+      "gbpusd",
+      "usdjpy",
+      "usdchf",
+      "audusd"
+    ],
+    "take_profit": [
+      "tp",
+      "take profit",
+      "target",
+      "profit"
+    ],
+    "stop_loss": [
+      "sl",
+      "stop loss",
+      "stop",
+      "loss"
+    ]
+  },
+  "es": {
+    "buy_signals": [
+      "comprar",
+      "largo",
+      "alcista",
+      "entrada",
+      "compra"
+    ],
+    "sell_signals": [
+      "vender",
+      "corto",
+      "bajista",
+      "salida",
+      "venta"
+    ],
+    "currency_pairs": [
+      "eurusd",
+      "gbpusd",
+      "usdjpy",
+      "usdchf",
+      "audusd"
+    ],
+    "take_profit": [
+      "tp",
+      "tomar ganancia",
+      "objetivo",
+      "ganancia"
+    ],
+    "stop_loss": [
+      "sl",
+      "parar pérdida",
+      "parar",
+      "pérdida"
+    ]
+  },
+  "fr": {
+    "buy_signals": [
+      "acheter",
+      "long",
+      "haussier",
+      "entrée",
+      "achat"
+    ],
+    "sell_signals": [
+      "vendre",
+      "court",
+      "baissier",
+      "sortie",
+      "vente"
+    ],
+    "currency_pairs": [
+      "eurusd",
+      "gbpusd",
+      "usdjpy",
+      "usdchf",
+      "audusd"
+    ],
+    "take_profit": [
+      "tp",
+      "prendre profit",
+      "objectif",
+      "profit"
+    ],
+    "stop_loss": [
+      "sl",
+      "arrêter perte",
+      "arrêter",
+      "perte"
+    ]
+  },
+  "de": {
+    "buy_signals": [
+      "kaufen",
+      "lang",
+      "bullish",
+      "einstieg",
+      "kauf"
+    ],
+    "sell_signals": [
+      "verkaufen",
+      "kurz",
+      "bärisch",
+      "ausstieg",
+      "verkauf"
+    ],
+    "currency_pairs": [
+      "eurusd",
+      "gbpusd",
+      "usdjpy",
+      "usdchf",
+      "audusd"
+    ],
+    "take_profit": [
+      "tp",
+      "gewinn mitnehmen",
+      "ziel",
+      "gewinn"
+    ],
+    "stop_loss": [
+      "sl",
+      "verlust stoppen",
+      "stopp",
+      "verlust"
+    ]
+  },
+  "ru": {
+    "buy_signals": [
+      "покупать",
+      "длинный",
+      "бычий",
+      "вход",
+      "покупка"
+    ],
+    "sell_signals": [
+      "продавать",
+      "короткий",
+      "медвежий",
+      "выход",
+      "продажа"
+    ],
+    "currency_pairs": [
+      "eurusd",
+      "gbpusd",
+      "usdjpy",
+      "usdchf",
+      "audusd"
+    ],
+    "take_profit": [
+      "тп",
+      "взять прибыль",
+      "цель",
+      "прибыль"
+    ],
+    "stop_loss": [
+      "сл",
+      "стоп лосс",
+      "стоп",
+      "убыток"
+    ]
+  },
+  "ar": {
+    "buy_signals": [
+      "شراء",
+      "طويل",
+      "صاعد",
+      "دخول",
+      "شراء"
+    ],
+    "sell_signals": [
+      "بيع",
+      "قصير",
+      "هابط",
+      "خروج",
+      "بيع"
+    ],
+    "currency_pairs": [
+      "eurusd",
+      "gbpusd",
+      "usdjpy",
+      "usdchf",
+      "audusd"
+    ],
+    "take_profit": [
+      "جني ربح",
+      "هدف",
+      "ربح"
+    ],
+    "stop_loss": [
+      "وقف خسارة",
+      "وقف",
+      "خسارة"
+    ]
+  }
+}

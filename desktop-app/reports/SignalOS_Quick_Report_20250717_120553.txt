@@ -1,0 +1,59 @@
+============================================================
+SIGNALOS BACKTEST REPORT
+============================================================
+
+EXECUTIVE SUMMARY
+----------------------------------------
+Initial Balance: $10,000.00
+Final Balance: $10,291.31
+Total Return: 2.91%
+Total Trades: 30
+Win Rate: 46.7%
+Profit Factor: 1.27
+Max Drawdown: 5.08%
+Sharpe Ratio: 0.09
+
+PERFORMANCE METRICS
+----------------------------------------
+Total Trades: 30
+Winning Trades: 14
+Losing Trades: 16
+Average Trade P&L: $9.71
+Average Win: $98.35
+Average Loss: $-67.85
+Average Risk/Reward: 0.40
+Recovery Factor: 0.57
+
+MONTHLY RETURNS
+----------------------------------------
+2025-06: $337.11 (18 trades, 50.0% win rate)
+2025-07: $-45.80 (12 trades, 41.7% win rate)
+
+TRADE DETAILS (First 20 Trades)
+----------------------------------------
+#   Symbol   Dir  Entry    Exit     P&L      Pips   Status  
+------------------------------------------------------------
+1   NZDUSD   BUY  0.60858  0.61532  254.51   65.4   closed  
+2   USDCHF   SELL 0.80891  0.80789  15.83    8.2    closed  
+3   AUDUSD   SELL 0.64059  0.63919  26.80    12.0   closed  
+4   NZDUSD   BUY  0.61154  0.61587  114.78   41.3   closed  
+5   NZDUSD   BUY  0.61378  0.61566  45.31    16.8   closed  
+6   GBPUSD   SELL 1.22006  1.23166  -154.72  -118.0 closed  
+7   NZDUSD   BUY  0.61553  0.61187  -221.27  -38.5  closed  
+8   NZDUSD   BUY  0.61518  0.61464  -19.80   -7.3   closed  
+9   USDJPY   BUY  130.92215 130.40940 -101.34  -53.3  closed  
+10  NZDUSD   BUY  0.61633  0.61558  -33.95   -9.5   closed  
+11  EURUSD   BUY  1.21139  1.21678  139.43   51.9   closed  
+12  USDCAD   SELL 1.61373  1.59856  151.25   149.7  closed  
+13  USDCHF   SELL 0.80896  0.81353  -89.08   -47.7  closed  
+14  USDCAD   SELL 1.61026  1.59556  183.39   145.0  closed  
+15  USDCAD   BUY  1.60406  1.60142  -33.24   -28.4  closed  
+16  USDCAD   BUY  1.59771  1.59742  -10.44   -4.9   closed  
+17  USDJPY   BUY  130.52529 130.33116 -49.30   -21.4  closed  
+18  USDCAD   BUY  1.59362  1.59874  118.93   49.2   closed  
+19  GBPUSD   BUY  1.26167  1.25930  -55.23   -25.6  closed  
+20  USDJPY   BUY  130.29027 130.60856 39.98    29.8   closed  
+
+============================================================
+Report generated: 2025-07-17 12:05:53
+============================================================

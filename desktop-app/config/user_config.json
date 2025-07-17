@@ -1,0 +1,14 @@
+{
+  "user_preferences": {
+    "language": "en",
+    "theme": "dark",
+    "notifications": true
+  },
+  "trading_settings": {
+    "default_lot_size": 0.01,
+    "max_risk_percent": 2.0,
+    "auto_sl_enabled": true
+  },
+  "created_at": "2025-07-17T12:04:14.662302",
+  "version": "1.0.0"
+}
