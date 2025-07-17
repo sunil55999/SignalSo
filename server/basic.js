@@ -77,11 +77,6 @@ const handleAPI = (req, res, pathname) => {
           res.end(JSON.stringify({ success: true }));
           break;
           
-        case '/api/router/stop':
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true }));
-          break;
-          
         case '/api/router/status':
           res.writeHead(200);
           res.end(JSON.stringify({
@@ -103,16 +98,6 @@ const handleAPI = (req, res, pathname) => {
           }));
           break;
           
-        case '/api/mt5/connect':
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true }));
-          break;
-          
-        case '/api/mt5/disconnect':
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true }));
-          break;
-          
         case '/api/telegram/status':
           res.writeHead(200);
           res.end(JSON.stringify({
@@ -124,23 +109,11 @@ const handleAPI = (req, res, pathname) => {
           }));
           break;
           
-        case '/api/telegram/login':
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true }));
-          break;
-          
-        case '/api/telegram/logout':
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true }));
-          break;
-          
         case '/api/logs':
           const mockLogs = [
             { id: '1', level: 'info', message: 'Router started successfully', timestamp: new Date().toISOString(), component: 'router' },
             { id: '2', level: 'info', message: 'MT5 connection established', timestamp: new Date().toISOString(), component: 'mt5' },
-            { id: '3', level: 'info', message: 'Telegram authentication completed', timestamp: new Date().toISOString(), component: 'telegram' },
-            { id: '4', level: 'info', message: 'System health check passed', timestamp: new Date().toISOString(), component: 'system' },
-            { id: '5', level: 'warning', message: 'High CPU usage detected', timestamp: new Date().toISOString(), component: 'system' }
+            { id: '3', level: 'info', message: 'Telegram authentication completed', timestamp: new Date().toISOString(), component: 'telegram' }
           ];
           res.writeHead(200);
           res.end(JSON.stringify(mockLogs));
@@ -153,20 +126,6 @@ const handleAPI = (req, res, pathname) => {
             byLevel: { info: 80, warning: 15, error: 5 },
             byComponent: { router: 30, mt5: 25, telegram: 25, system: 20 }
           }));
-          break;
-          
-        case '/api/bridge/status':
-          res.writeHead(200);
-          res.end(JSON.stringify({
-            status: 'active',
-            version: '1.0.0',
-            lastUpdate: new Date().toISOString()
-          }));
-          break;
-          
-        case '/api/bridge/connect':
-          res.writeHead(200);
-          res.end(JSON.stringify({ success: true }));
           break;
           
         default:
@@ -213,7 +172,7 @@ const server = http.createServer((req, res) => {
   let filePath;
   
   if (pathname === '/') {
-    filePath = path.join(clientDir, 'simple.html');
+    filePath = path.join(clientDir, 'index.html');
   } else {
     filePath = path.join(clientDir, pathname);
   }

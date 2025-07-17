@@ -1,326 +1,188 @@
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useSystemStatus, useSystemActions } from '@/hooks/useSystemStatus';
 import { 
   Activity, 
   TrendingUp, 
-  DollarSign, 
   Users, 
-  Play, 
-  Pause, 
-  Square,
-  Zap,
-  AlertCircle,
+  DollarSign,
+  Play,
+  Pause,
   CheckCircle,
-  Clock,
-  BarChart3,
-  RefreshCw,
-  MessageSquare,
-  Server,
-  Cpu,
-  HardDrive,
-  Shield,
-  Database
+  XCircle,
+  AlertCircle
 } from 'lucide-react';
 
 export function Dashboard() {
   const { toast } = useToast();
-  const { systemStatus, isLoading, refetch } = useSystemStatus();
-  const { 
-    startRouter, 
-    stopRouter, 
-    connectMT5, 
-    disconnectMT5, 
-    connectTelegram, 
-    disconnectTelegram,
-    connectBridge 
-  } = useSystemActions();
-
-  // Fetch recent logs
-  const { data: recentLogs } = useQuery({
-    queryKey: ['/api/logs?limit=10'],
-    refetchInterval: 10000,
+  
+  const { data: routerStatus } = useQuery({
+    queryKey: ['/api/router/status'],
+    refetchInterval: 2000,
   });
 
-  // Fetch log stats for activity monitoring
-  const { data: logStats } = useQuery({
-    queryKey: ['/api/logs/stats'],
-    refetchInterval: 30000, // Poll every 30 seconds
+  const { data: mt5Status } = useQuery({
+    queryKey: ['/api/mt5/status'],
+    refetchInterval: 2000,
   });
 
-  const handleRefreshAll = () => {
-    refetch();
-    toast({
-      title: 'Status refreshed',
-      description: 'All system status has been updated',
-    });
-  };
+  const { data: telegramStatus } = useQuery({
+    queryKey: ['/api/telegram/status'],
+    refetchInterval: 2000,
+  });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'running':
-      case 'connected':
-      case 'active':
-      case 'healthy':
-        return 'text-green-600 dark:text-green-400';
-      case 'stopped':
-      case 'disconnected':
-      case 'inactive':
-        return 'text-gray-600 dark:text-gray-400';
-      case 'error':
-      case 'degraded':
-        return 'text-red-600 dark:text-red-400';
-      default:
-        return 'text-gray-600 dark:text-gray-400';
+  const { data: logs } = useQuery({
+    queryKey: ['/api/logs'],
+    refetchInterval: 5000,
+  });
+
+  const handleStartRouter = async () => {
+    try {
+      const response = await fetch('/api/router/start', { method: 'POST' });
+      if (response.ok) {
+        toast.success({
+          title: 'Router started',
+          description: 'Signal router has been started successfully',
+        });
+      }
+    } catch (error) {
+      toast.error({
+        title: 'Failed to start router',
+        description: 'Could not start the signal router',
+      });
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'running':
       case 'connected':
-      case 'active':
-      case 'healthy':
-        return <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />;
-      case 'stopped':
+      case 'running':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
       case 'disconnected':
-      case 'inactive':
-        return <AlertCircle className="h-5 w-5 text-gray-600 dark:text-gray-400" />;
-      case 'error':
-      case 'degraded':
-        return <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />;
+      case 'stopped':
+        return <XCircle className="h-5 w-5 text-red-500" />;
       default:
-        return <Activity className="h-5 w-5 text-gray-600 dark:text-gray-400 animate-pulse" />;
-    }
-  };
-
-  const formatUptime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours}h ${minutes}m`;
-  };
-
-  const handleConnectMT5 = async () => {
-    try {
-      const response = await fetch('/api/mt5/connect', { method: 'POST' });
-      const result = await response.json();
-      
-      if (result.success) {
-        toast({ title: 'MT5 connected successfully' });
-      } else {
-        toast({ 
-          title: 'Failed to connect MT5', 
-          description: result.error,
-          variant: 'destructive' 
-        });
-      }
-    } catch (error) {
-      toast({ 
-        title: 'Error connecting MT5', 
-        variant: 'destructive' 
-      });
+        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
     }
   };
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Monitor your trading automation system
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="h-2 w-2 rounded-full bg-green-500 pulse-green" />
-          <span className="text-sm text-gray-600 dark:text-gray-400">Live</span>
-        </div>
+        <h1 className="text-3xl font-bold">Trading Dashboard</h1>
+        <Button onClick={handleStartRouter} className="flex items-center gap-2">
+          <Play className="h-4 w-4" />
+          Start Signal Router
+        </Button>
       </div>
 
-      {/* Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Router Status</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {routerStatus?.isRunning ? 'Running' : 'Stopped'}
-              </p>
-            </div>
-            <div className={`p-3 rounded-full ${routerStatus?.isRunning ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'}`}>
-              {routerStatus?.isRunning ? (
-                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-              ) : (
-                <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
-              )}
-            </div>
-          </div>
-        </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Router Status</CardTitle>
+            {getStatusIcon(routerStatus?.status || 'unknown')}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{routerStatus?.status || 'Unknown'}</div>
+            <p className="text-xs text-muted-foreground">
+              Active tasks: {routerStatus?.activeTasks || 0}
+            </p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">MT5 Connection</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {mt5Status?.isConnected ? 'Connected' : 'Disconnected'}
-              </p>
-            </div>
-            <div className={`p-3 rounded-full ${mt5Status?.isConnected ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'}`}>
-              <Activity className={`h-6 w-6 ${mt5Status?.isConnected ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`} />
-            </div>
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">MT5 Connection</CardTitle>
+            {getStatusIcon(mt5Status?.status || 'unknown')}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{mt5Status?.status || 'Unknown'}</div>
+            <p className="text-xs text-muted-foreground">
+              Account: {mt5Status?.account || 'N/A'}
+            </p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Monitored Channels</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {routerStatus?.monitoredChannels?.length || 0}
-              </p>
-            </div>
-            <div className="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
-              <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Telegram</CardTitle>
+            {getStatusIcon(telegramStatus?.status || 'unknown')}
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{telegramStatus?.status || 'Unknown'}</div>
+            <p className="text-xs text-muted-foreground">
+              Channels: {telegramStatus?.channelCount || 0}
+            </p>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Account Balance</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                ${mt5Status?.accountInfo?.balance?.toFixed(2) || '10,000.00'}
-              </p>
-            </div>
-            <div className="p-3 rounded-full bg-green-100 dark:bg-green-900">
-              <DollarSign className="h-6 w-6 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-        </div>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Balance</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">${mt5Status?.balance || 0}</div>
+            <p className="text-xs text-muted-foreground">
+              Equity: ${mt5Status?.equity || 0}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Control Panel */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Control Panel</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <h3 className="font-medium text-gray-700 dark:text-gray-300">Signal Router</h3>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleStartRouter}
-                disabled={routerStatus?.isRunning}
-                size="sm"
-                className="flex-1"
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Start
-              </Button>
-              <Button 
-                onClick={handleStopRouter}
-                disabled={!routerStatus?.isRunning}
-                variant="outline"
-                size="sm"
-                className="flex-1"
-              >
-                <Pause className="h-4 w-4 mr-2" />
-                Stop
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-medium text-gray-700 dark:text-gray-300">MT5 Connection</h3>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleConnectMT5}
-                disabled={mt5Status?.isConnected}
-                size="sm"
-                className="flex-1"
-              >
-                <Zap className="h-4 w-4 mr-2" />
-                Connect
-              </Button>
-              <Button 
-                variant="outline"
-                size="sm"
-                className="flex-1"
-              >
-                <Square className="h-4 w-4 mr-2" />
-                Disconnect
-              </Button>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="font-medium text-gray-700 dark:text-gray-300">Emergency</h3>
-            <Button 
-              variant="destructive"
-              size="sm"
-              className="w-full"
-            >
-              <AlertCircle className="h-4 w-4 mr-2" />
-              Emergency Stop
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Logs</h2>
-          <div className="space-y-3">
-            {recentLogs?.slice(0, 5).map((log: any) => (
-              <div key={log.id} className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700">
-                <div className={`w-2 h-2 rounded-full ${
-                  log.level === 'error' ? 'bg-red-500' : 
-                  log.level === 'warning' ? 'bg-yellow-500' : 
-                  'bg-green-500'
-                }`} />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {log.message}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {log.component} • {new Date(log.timestamp).toLocaleTimeString()}
-                  </p>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Activity</CardTitle>
+            <CardDescription>Latest system logs and events</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {logs?.slice(0, 5).map((log: any) => (
+                <div key={log.id} className="flex items-center gap-2 text-sm">
+                  <div className={`h-2 w-2 rounded-full ${
+                    log.level === 'error' ? 'bg-red-500' : 
+                    log.level === 'warning' ? 'bg-yellow-500' : 'bg-green-500'
+                  }`} />
+                  <span className="text-muted-foreground">
+                    {new Date(log.timestamp).toLocaleTimeString()}
+                  </span>
+                  <span>{log.message}</span>
                 </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>System Performance</CardTitle>
+            <CardDescription>Real-time metrics and status</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">CPU Usage</span>
+                <span className="text-sm text-muted-foreground">45%</span>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">System Performance</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">CPU Usage</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">45%</span>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Memory Usage</span>
+                <span className="text-sm text-muted-foreground">2.1GB</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Network</span>
+                <span className="text-sm text-muted-foreground">Connected</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Uptime</span>
+                <span className="text-sm text-muted-foreground">
+                  {Math.floor((routerStatus?.uptime || 0) / 60)}h {(routerStatus?.uptime || 0) % 60}m
+                </span>
+              </div>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div className="bg-blue-600 h-2 rounded-full" style={{ width: '45%' }} />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Memory Usage</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">62%</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div className="bg-green-600 h-2 rounded-full" style={{ width: '62%' }} />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Signal Processing</span>
-              <span className="text-sm font-medium text-gray-900 dark:text-white">85%</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-              <div className="bg-purple-600 h-2 rounded-full" style={{ width: '85%' }} />
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

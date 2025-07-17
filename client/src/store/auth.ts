@@ -1,119 +1,89 @@
-import { useState, useEffect } from 'react';
-
-// Simple auth store without zustand
-let authState = {
-  isAuthenticated: false,
-  user: null as User | null,
-  token: null as string | null,
-};
-
-const listeners = new Set<() => void>();
-
-const notifyListeners = () => {
-  listeners.forEach(listener => listener());
-};
-
-const setAuthState = (newState: Partial<typeof authState>) => {
-  authState = { ...authState, ...newState };
-  localStorage.setItem('auth-storage', JSON.stringify(authState));
-  notifyListeners();
-};
-
-// Load from localStorage on init
-const stored = localStorage.getItem('auth-storage');
-if (stored) {
-  try {
-    authState = { ...authState, ...JSON.parse(stored) };
-  } catch (e) {
-    console.error('Failed to parse stored auth state:', e);
-  }
-}
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 interface User {
   id: string;
   username: string;
   email: string;
-  role: string;
 }
 
-export const useAuthStore = () => {
-  const [, forceUpdate] = useState({});
+interface AuthState {
+  user: User | null;
+  token: string | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  login: (credentials: { username: string; password: string }) => Promise<boolean>;
+  logout: () => Promise<void>;
+  checkAuth: () => void;
+}
 
-  useEffect(() => {
-    const listener = () => forceUpdate({});
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  }, []);
+const API_BASE_URL = '';
 
-  const login = async (username: string, password: string): Promise<boolean> => {
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        setAuthState({
-          isAuthenticated: true,
-          user: result.user,
-          token: result.token,
-        });
-        return true;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('Login error:', error);
-      return false;
-    }
-  };
-
-  const logout = async (): Promise<void> => {
-    try {
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
-
-    setAuthState({
-      isAuthenticated: false,
+export const useAuthStore = create<AuthState>()(
+  persist(
+    (set, get) => ({
       user: null,
       token: null,
-    });
-  };
+      isAuthenticated: false,
+      isLoading: false,
 
-  const checkAuth = async (): Promise<void> => {
-    const { token } = authState;
-    if (!token) {
-      setAuthState({ isAuthenticated: false, user: null, token: null });
-      return;
+      login: async (credentials: { username: string; password: string }) => {
+        set({ isLoading: true });
+        
+        try {
+          const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(credentials),
+          });
+
+          if (!response.ok) {
+            throw new Error('Login failed');
+          }
+
+          const data = await response.json();
+          
+          if (data.success) {
+            set({
+              user: data.user,
+              token: data.token,
+              isAuthenticated: true,
+              isLoading: false,
+            });
+            return true;
+          } else {
+            throw new Error(data.error || 'Login failed');
+          }
+        } catch (error) {
+          set({ isLoading: false });
+          throw error;
+        }
+      },
+
+      logout: async () => {
+        set({
+          user: null,
+          token: null,
+          isAuthenticated: false,
+        });
+      },
+
+      checkAuth: () => {
+        const { token } = get();
+        if (token) {
+          set({ isAuthenticated: true });
+        }
+      },
+    }),
+    {
+      name: 'auth-storage',
+      partialize: (state) => ({ 
+        user: state.user, 
+        token: state.token, 
+        isAuthenticated: state.isAuthenticated 
+      }),
     }
-
-    try {
-      // For now, assume authentication is valid if token exists
-      setAuthState({ isAuthenticated: true });
-    } catch (error) {
-      console.error('Auth check error:', error);
-      setAuthState({ isAuthenticated: false, user: null, token: null });
-    }
-  };
-
-  return {
-    isAuthenticated: authState.isAuthenticated,
-    user: authState.user,
-    token: authState.token,
-    login,
-    logout,
-    checkAuth,
-  };
-};
+  )
+);

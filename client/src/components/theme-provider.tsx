@@ -1,59 +1,68 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 
-type Theme = 'dark' | 'light';
+type Theme = 'dark' | 'light' | 'system';
 
-type ThemeProviderProps = {
-  children: React.ReactNode;
-  defaultTheme?: Theme;
-};
-
-type ThemeProviderState = {
+interface ThemeContextType {
   theme: Theme;
   setTheme: (theme: Theme) => void;
-};
+}
 
-const initialState: ThemeProviderState = {
-  theme: 'light',
-  setTheme: () => null,
-};
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+interface ThemeProviderProps {
+  children: React.ReactNode;
+  defaultTheme?: Theme;
+  storageKey?: string;
+}
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'light',
-  ...props
+  defaultTheme = 'system',
+  storageKey = 'ui-theme',
 }: ThemeProviderProps) {
   const [theme, setTheme] = useState<Theme>(
-    () => (localStorage.getItem('signalos-theme') as Theme) || defaultTheme
+    () => (localStorage.getItem(storageKey) as Theme) || defaultTheme
   );
 
   useEffect(() => {
     const root = window.document.documentElement;
+
     root.classList.remove('light', 'dark');
+
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
+        .matches
+        ? 'dark'
+        : 'light';
+
+      root.classList.add(systemTheme);
+      return;
+    }
+
     root.classList.add(theme);
   }, [theme]);
 
   const value = {
     theme,
     setTheme: (theme: Theme) => {
-      localStorage.setItem('signalos-theme', theme);
+      localStorage.setItem(storageKey, theme);
       setTheme(theme);
     },
   };
 
   return (
-    <ThemeProviderContext.Provider {...props} value={value}>
+    <ThemeContext.Provider value={value}>
       {children}
-    </ThemeProviderContext.Provider>
+    </ThemeContext.Provider>
   );
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
+  const context = useContext(ThemeContext);
 
-  if (context === undefined)
+  if (context === undefined) {
     throw new Error('useTheme must be used within a ThemeProvider');
+  }
 
   return context;
 };
