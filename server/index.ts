@@ -235,13 +235,10 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve static files from dist directory (production build)
-const distDir = path.join(__dirname, '../dist');
-app.use(express.static(distDir));
-
-// Handle React Router - serve index.html for all non-API routes
+// Development mode - serve the enhanced HTML page for now
 app.get('*', (req, res) => {
-  res.sendFile(path.join(distDir, 'index.html'));
+  const htmlPath = path.join(__dirname, '../dist/index.html');
+  res.sendFile(htmlPath);
 });
 
 // Start server
