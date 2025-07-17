@@ -1,0 +1,11 @@
+{
+  "id": "system_info_20250717_124128_754791",
+  "type": "system_info",
+  "title": "Test",
+  "message": "System test notification",
+  "priority": "low",
+  "timestamp": "2025-07-17T12:41:28.754804",
+  "read": true,
+  "data": {},
+  "read_at": "2025-07-17T12:41:28.759464"
+}

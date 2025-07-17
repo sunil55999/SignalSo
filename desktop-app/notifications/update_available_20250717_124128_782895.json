@@ -1,0 +1,27 @@
+{
+  "id": "update_available_20250717_124128_782895",
+  "type": "update_available",
+  "title": "AI Model Update Available",
+  "message": "New AI model version 2.1.0 is available (150.0 MB). The update will improve signal processing accuracy.",
+  "priority": "medium",
+  "timestamp": "2025-07-17T12:41:28.782913",
+  "read": false,
+  "data": {
+    "version_data": {
+      "version": "2.1.0",
+      "model_url": "https://api.signalojs.com/models/signalojs_ai_model_v2.1.0.tar.gz",
+      "model_name": "signalojs_ai_model",
+      "checksum": "abc123def456",
+      "size": 157286400,
+      "release_date": "2025-07-17T12:41:28.782864",
+      "changelog": [
+        "Improved signal parsing accuracy by 15%",
+        "Added support for new currency pairs",
+        "Enhanced risk management algorithms",
+        "Bug fixes and performance improvements"
+      ],
+      "required_restart": true
+    },
+    "update_type": "model"
+  }
+}

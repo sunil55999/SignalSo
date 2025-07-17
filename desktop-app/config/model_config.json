@@ -1,0 +1,25 @@
+{
+  "backend_url": "https://api.signalojs.com",
+  "models_dir": "models",
+  "check_interval_hours": 6,
+  "auto_download": true,
+  "backup_old_models": true,
+  "max_retries": 3,
+  "notification_enabled": true,
+  "verify_checksums": true,
+  "last_check": null,
+  "update_channels": {
+    "stable": {
+      "endpoint": "/api/models/stable/version.json",
+      "auto_update": true
+    },
+    "beta": {
+      "endpoint": "/api/models/beta/version.json", 
+      "auto_update": false
+    },
+    "alpha": {
+      "endpoint": "/api/models/alpha/version.json",
+      "auto_update": false
+    }
+  }
+}

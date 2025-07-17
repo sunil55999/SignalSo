@@ -1,0 +1,18 @@
+{
+  "id": "model_update_20250717_124128_753721",
+  "type": "model_update",
+  "title": "AI Model Updated",
+  "message": "AI model successfully updated to version 2.1.0. Enhanced signal processing is now active.",
+  "priority": "high",
+  "timestamp": "2025-07-17T12:41:28.753735",
+  "read": false,
+  "data": {
+    "version_data": {
+      "version": "2.1.0",
+      "size": 157286400,
+      "model_url": "https://api.signalojs.com/models/test.tar.gz"
+    },
+    "update_type": "model",
+    "status": "completed"
+  }
+}
