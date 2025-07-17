@@ -1,3 +1,7 @@
 # Parser package
-from .ocr_engine import OCREngine
-from .multilingual_parser import MultilingualSignalParser
+from parser.ocr_engine import OCREngine
+from parser.multilingual_parser import MultilingualSignalParser
+from parser.parser_core import SignalParserCore, ParsedSignalAdvanced
+from parser.config_parser import ConfigParser
+from parser.confidence_system import SignalConfidenceSystem
+from parser.prompt_to_config import PromptToConfigConverter

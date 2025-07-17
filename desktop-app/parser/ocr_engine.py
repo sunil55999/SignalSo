@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from PIL import Image
 import io
 import re
+import sqlite3
 
 try:
     import easyocr
@@ -70,6 +71,9 @@ class OCREngine:
         # Signal patterns for text extraction
         self.signal_patterns = self._load_signal_patterns()
         
+        # Learning database for OCR improvements
+        self.learning_db = self._init_learning_database()
+        
         # Statistics
         self.stats = {
             "total_extractions": 0,
@@ -79,6 +83,48 @@ class OCREngine:
             "extractions_by_method": {},
             "languages_detected": {}
         }
+    
+    def _init_learning_database(self) -> Optional[sqlite3.Connection]:
+        """Initialize learning database for OCR improvements"""
+        try:
+            db_path = Path("logs/ocr_learning.db")
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            db = sqlite3.connect(str(db_path))
+            
+            # Create tables
+            db.execute('''
+                CREATE TABLE IF NOT EXISTS ocr_extractions (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    image_hash TEXT,
+                    extracted_text TEXT,
+                    confidence_score REAL,
+                    method_used TEXT,
+                    language_detected TEXT,
+                    preprocessing_applied TEXT,
+                    timestamp TEXT,
+                    validation_result TEXT,
+                    user_feedback TEXT
+                )
+            ''')
+            
+            db.execute('''
+                CREATE TABLE IF NOT EXISTS ocr_improvements (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    image_hash TEXT,
+                    original_text TEXT,
+                    corrected_text TEXT,
+                    improvement_type TEXT,
+                    timestamp TEXT
+                )
+            ''')
+            
+            db.commit()
+            return db
+            
+        except Exception as e:
+            self.logger.error(f"Failed to initialize OCR learning database: {e}")
+            return None
         
     def _load_config(self) -> Dict[str, Any]:
         """Load OCR engine configuration"""

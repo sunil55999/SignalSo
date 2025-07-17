@@ -1,0 +1,268 @@
+{
+  "symbol": [
+    {
+      "regex": "\\b(EUR/USD|EURUSD|EUR-USD)\\b",
+      "confidence": 0.95,
+      "language": "en",
+      "description": "EURUSD pair",
+      "examples": []
+    },
+    {
+      "regex": "\\b(GBP/USD|GBPUSD|GBP-USD)\\b",
+      "confidence": 0.95,
+      "language": "en",
+      "description": "GBPUSD pair",
+      "examples": []
+    },
+    {
+      "regex": "\\b(USD/JPY|USDJPY|USD-JPY)\\b",
+      "confidence": 0.95,
+      "language": "en",
+      "description": "USDJPY pair",
+      "examples": []
+    },
+    {
+      "regex": "\\b(XAU/USD|XAUUSD|GOLD|Au)\\b",
+      "confidence": 0.9,
+      "language": "en",
+      "description": "Gold",
+      "examples": []
+    },
+    {
+      "regex": "\\b(XAG/USD|XAGUSD|SILVER|Ag)\\b",
+      "confidence": 0.9,
+      "language": "en",
+      "description": "Silver",
+      "examples": []
+    },
+    {
+      "regex": "\\b(US\\s?30|US30|DOW)\\b",
+      "confidence": 0.85,
+      "language": "en",
+      "description": "Dow Jones",
+      "examples": []
+    },
+    {
+      "regex": "\\b(NAS\\s?100|NAS100|NASDAQ)\\b",
+      "confidence": 0.85,
+      "language": "en",
+      "description": "Nasdaq",
+      "examples": []
+    },
+    {
+      "regex": "\\b(BTC/USD|BTCUSD|BITCOIN)\\b",
+      "confidence": 0.85,
+      "language": "en",
+      "description": "Bitcoin",
+      "examples": []
+    }
+  ],
+  "direction": [
+    {
+      "regex": "\\b(BUY|LONG|BULL|B)\\b",
+      "confidence": 0.95,
+      "language": "en",
+      "description": "Buy direction",
+      "examples": []
+    },
+    {
+      "regex": "\\b(SELL|SHORT|BEAR|S)\\b",
+      "confidence": 0.95,
+      "language": "en",
+      "description": "Sell direction",
+      "examples": []
+    },
+    {
+      "regex": "\\b(COMPRAR|LARGO)\\b",
+      "confidence": 0.9,
+      "language": "es",
+      "description": "Buy in Spanish",
+      "examples": []
+    },
+    {
+      "regex": "\\b(VENDER|CORTO)\\b",
+      "confidence": 0.9,
+      "language": "es",
+      "description": "Sell in Spanish",
+      "examples": []
+    },
+    {
+      "regex": "\\b(\u0634\u0631\u0627\u0621|\u0634\u0631\u064a|\u0637\u0648\u064a\u0644)\\b",
+      "confidence": 0.9,
+      "language": "ar",
+      "description": "Buy in Arabic",
+      "examples": []
+    },
+    {
+      "regex": "\\b(\u0628\u064a\u0639|\u0642\u0635\u064a\u0631)\\b",
+      "confidence": 0.9,
+      "language": "ar",
+      "description": "Sell in Arabic",
+      "examples": []
+    }
+  ],
+  "entry": [
+    {
+      "regex": "(?:ENTRY|ENTER|@|AT|PRICE)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "en",
+      "description": "Entry price",
+      "examples": []
+    },
+    {
+      "regex": "(?:ENTRADA|PRECIO)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "es",
+      "description": "Entry price Spanish",
+      "examples": []
+    },
+    {
+      "regex": "(?:\u062f\u062e\u0648\u0644|\u0633\u0639\u0631)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "ar",
+      "description": "Entry price Arabic",
+      "examples": []
+    },
+    {
+      "regex": "(?:\u8fdb\u5165|\u4ef7\u683c)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "zh",
+      "description": "Entry price Chinese",
+      "examples": []
+    },
+    {
+      "regex": "(?:ENTR\u00c9E|PRIX)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "fr",
+      "description": "Entry price French",
+      "examples": []
+    }
+  ],
+  "stop_loss": [
+    {
+      "regex": "(?:SL|S\\.L|STOP\\s*LOSS|STOP)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "en",
+      "description": "Stop loss",
+      "examples": []
+    },
+    {
+      "regex": "(?:PARE|PERDIDA)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "es",
+      "description": "Stop loss Spanish",
+      "examples": []
+    },
+    {
+      "regex": "(?:\u0648\u0642\u0641|\u062e\u0633\u0627\u0631\u0629)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "ar",
+      "description": "Stop loss Arabic",
+      "examples": []
+    },
+    {
+      "regex": "(?:\u6b62\u635f|\u505c\u6b62)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "zh",
+      "description": "Stop loss Chinese",
+      "examples": []
+    },
+    {
+      "regex": "(?:ARR\u00caT|PERTE)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "fr",
+      "description": "Stop loss French",
+      "examples": []
+    }
+  ],
+  "take_profit": [
+    {
+      "regex": "(?:TP\\s*[1-9]?|T\\.P\\s*[1-9]?|TAKE\\s*PROFIT\\s*[1-9]?|TARGET\\s*[1-9]?)[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "en",
+      "description": "Take profit",
+      "examples": []
+    },
+    {
+      "regex": "(?:OBJETIVO|BENEFICIO)\\s*[1-9]?[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "es",
+      "description": "Take profit Spanish",
+      "examples": []
+    },
+    {
+      "regex": "(?:\u0647\u062f\u0641|\u0631\u0628\u062d)\\s*[1-9]?[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "ar",
+      "description": "Take profit Arabic",
+      "examples": []
+    },
+    {
+      "regex": "(?:\u76ee\u6807|\u83b7\u5229)\\s*[1-9]?[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "zh",
+      "description": "Take profit Chinese",
+      "examples": []
+    },
+    {
+      "regex": "(?:OBJECTIF|PROFIT)\\s*[1-9]?[\\s:]*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.9,
+      "language": "fr",
+      "description": "Take profit French",
+      "examples": []
+    }
+  ],
+  "range": [
+    {
+      "regex": "([0-9]+\\.?[0-9]*)\\s*[-\u2013\u2014]\\s*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.75,
+      "language": "en",
+      "description": "Price range",
+      "examples": []
+    },
+    {
+      "regex": "([0-9]+\\.?[0-9]*)\\s*(?:to|TO|a|\u00c0)\\s*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.8,
+      "language": "en",
+      "description": "Range with \"to\"",
+      "examples": []
+    },
+    {
+      "regex": "(?:between|entre|\u0628\u064a\u0646|\u4e4b\u95f4)\\s*([0-9]+\\.?[0-9]*)\\s*(?:and|y|\u0648|\u548c)\\s*([0-9]+\\.?[0-9]*)",
+      "confidence": 0.85,
+      "language": "multi",
+      "description": "Range with \"between\"",
+      "examples": []
+    }
+  ],
+  "order_type": [
+    {
+      "regex": "\\b(MARKET|MKT)\\b",
+      "confidence": 0.9,
+      "language": "en",
+      "description": "Market order",
+      "examples": []
+    },
+    {
+      "regex": "\\b(LIMIT|LMT)\\b",
+      "confidence": 0.9,
+      "language": "en",
+      "description": "Limit order",
+      "examples": []
+    },
+    {
+      "regex": "\\b(STOP|STP)\\b",
+      "confidence": 0.9,
+      "language": "en",
+      "description": "Stop order",
+      "examples": []
+    },
+    {
+      "regex": "\\b(PENDING|PEND)\\b",
+      "confidence": 0.85,
+      "language": "en",
+      "description": "Pending order",
+      "examples": []
+    }
+  ]
+}

@@ -1,376 +1,236 @@
 #!/usr/bin/env python3
 """
-SignalOS Desktop Application - Main Entry Point
+Main Entry Point for SignalOS Desktop Application
+Phase 2: Advanced AI Parser and Strategy Builder
 
-This is the main entry point for the SignalOS desktop trading automation application.
-It initializes all core modules and starts the application's main loop.
+This is the main entry point that demonstrates the Phase 2 implementation
+with advanced AI parsing, OCR support, confidence scoring, and strategy management.
 """
 
 import asyncio
-import logging
-import signal
-import sys
 import json
+import logging
+import sys
 from pathlib import Path
-from typing import Optional, Dict, Any
 from datetime import datetime
 
-# Core modules
-from auth import AuthTokenManager, get_auth_token
-from api_client import APIClient
-from auto_sync import AutoSyncEngine
-from mt5_bridge import MT5Bridge
-from secure_signal_parser import SecureSignalParser
-from strategy_runtime import StrategyRuntime
-from copilot_bot import SignalOSCopilot
-from retry_engine import RetryEngine
+# Add the desktop-app directory to Python path
+sys.path.insert(0, str(Path(__file__).parent))
 
-# Create modules directory if it doesn't exist
-MODULES_DIR = Path(__file__).parent
-LOGS_DIR = MODULES_DIR / "logs"
-CONFIG_DIR = MODULES_DIR / "config"
+# Set up logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('logs/main.log'),
+        logging.StreamHandler(sys.stdout)
+    ]
+)
 
-# Ensure directories exist
-LOGS_DIR.mkdir(exist_ok=True)
-CONFIG_DIR.mkdir(exist_ok=True)
+logger = logging.getLogger(__name__)
 
+# Import Phase 2 components
+from advanced_signal_processor import AdvancedSignalProcessor
+from parser.parser_core import SignalType
+from parser.prompt_to_config import PromptType
 
-class SignalOSDesktopApp:
-    """Main application class for SignalOS Desktop"""
+class SignalOSApp:
+    """Main SignalOS Desktop Application"""
     
-    def __init__(self, config_file: str = "config.json"):
-        self.config_file = config_file
-        self.config = self._load_config()
+    def __init__(self):
+        self.processor = AdvancedSignalProcessor()
         self.is_running = False
-        self.shutdown_event = asyncio.Event()
-        
-        # Setup logging
-        self._setup_logging()
-        self.logger = logging.getLogger('SignalOSDesktop')
-        
-        # Initialize core modules
-        self.auth_manager: Optional[AuthTokenManager] = None
-        self.api_client: Optional[APIClient] = None
-        self.mt5_bridge: Optional[MT5Bridge] = None
-        self.signal_parser: Optional[SecureSignalParser] = None
-        self.strategy_runtime: Optional[StrategyRuntime] = None
-        self.auto_sync: Optional[AutoSyncEngine] = None
-        self.copilot_bot: Optional[SignalOSCopilot] = None
-        self.retry_engine: Optional[RetryEngine] = None
-        
-        # Application state
-        self.startup_time = datetime.now()
-        self.stats = {
-            "startup_time": self.startup_time.isoformat(),
-            "modules_initialized": 0,
-            "total_modules": 8
-        }
-        
-    def _load_config(self) -> Dict[str, Any]:
-        """Load application configuration"""
-        try:
-            config_path = MODULES_DIR / self.config_file
-            if config_path.exists():
-                with open(config_path, 'r') as f:
-                    return json.load(f)
-            else:
-                return self._create_default_config()
-        except Exception as e:
-            print(f"Failed to load config: {e}")
-            return self._create_default_config()
+        logger.info("SignalOS Desktop Application initialized")
     
-    def _create_default_config(self) -> Dict[str, Any]:
-        """Create default configuration"""
-        default_config = {
-            "app": {
-                "name": "SignalOS Desktop",
-                "version": "1.0.0",
-                "debug": False,
-                "log_level": "INFO"
-            },
-            "server": {
-                "url": "http://localhost:5000",
-                "timeout": 30,
-                "retry_attempts": 3
-            },
-            "mt5": {
-                "enabled": True,
-                "server": "MetaQuotes-Demo",
-                "login": 0,
-                "password": "",
-                "path": "C:\\Program Files\\MetaTrader 5\\terminal64.exe"
-            },
-            "telegram": {
-                "bot_token": "",
-                "allowed_chat_ids": [],
-                "enabled": False
-            },
-            "sync": {
-                "enabled": True,
-                "interval_seconds": 60,
-                "retry_attempts": 3
-            },
-            "strategy": {
-                "enabled": True,
-                "auto_execute": False,
-                "max_daily_trades": 10
-            },
-            "risk_management": {
-                "max_risk_per_trade": 2.0,
-                "daily_loss_limit": 5.0,
-                "max_concurrent_trades": 5
-            }
-        }
+    async def start(self):
+        """Start the application"""
+        logger.info("🚀 Starting SignalOS Desktop Application - Phase 2")
         
         try:
-            config_path = MODULES_DIR / self.config_file
-            with open(config_path, 'w') as f:
-                json.dump(default_config, f, indent=4)
-            print(f"Created default config at: {config_path}")
-        except Exception as e:
-            print(f"Failed to save default config: {e}")
-            
-        return default_config
-    
-    def _setup_logging(self):
-        """Setup application logging"""
-        log_level = getattr(logging, self.config.get("app", {}).get("log_level", "INFO"))
-        
-        # Create logs directory
-        log_file = LOGS_DIR / "signalos_desktop.log"
-        
-        logging.basicConfig(
-            level=log_level,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[
-                logging.FileHandler(log_file),
-                logging.StreamHandler(sys.stdout)
-            ]
-        )
-        
-    async def initialize_modules(self):
-        """Initialize all application modules"""
-        self.logger.info("Initializing SignalOS Desktop Application...")
-        
-        try:
-            # Initialize authentication
-            self.logger.info("Initializing authentication manager...")
-            self.auth_manager = AuthTokenManager()
-            self.stats["modules_initialized"] += 1
-            
-            # Initialize API client
-            self.logger.info("Initializing API client...")
-            server_url = self.config.get("server", {}).get("url")
-            self.api_client = APIClient(server_url=server_url)
-            self.stats["modules_initialized"] += 1
-            
-            # Initialize MT5 bridge
-            if self.config.get("mt5", {}).get("enabled", True):
-                self.logger.info("Initializing MT5 bridge...")
-                self.mt5_bridge = MT5Bridge(config_file=self.config_file)
-                self.stats["modules_initialized"] += 1
-            
-            # Initialize signal parser
-            self.logger.info("Initializing signal parser...")
-            self.signal_parser = SecureSignalParser(config_file=self.config_file)
-            self.stats["modules_initialized"] += 1
-            
-            # Initialize strategy runtime
-            if self.config.get("strategy", {}).get("enabled", True):
-                self.logger.info("Initializing strategy runtime...")
-                self.strategy_runtime = StrategyRuntime(config_file=self.config_file)
-                self.stats["modules_initialized"] += 1
-            
-            # Initialize retry engine
-            self.logger.info("Initializing retry engine...")
-            self.retry_engine = RetryEngine(config_file=self.config_file)
-            self.stats["modules_initialized"] += 1
-            
-            # Initialize auto sync
-            if self.config.get("sync", {}).get("enabled", True):
-                self.logger.info("Initializing auto sync engine...")
-                self.auto_sync = AutoSyncEngine(config_file=self.config_file)
-                # Inject module references
-                self.auto_sync.inject_modules(
-                    mt5_bridge=self.mt5_bridge,
-                    signal_parser=self.signal_parser,
-                    retry_engine=self.retry_engine,
-                    strategy_runtime=self.strategy_runtime
-                )
-                self.stats["modules_initialized"] += 1
-            
-            # Initialize Telegram copilot bot
-            if self.config.get("telegram", {}).get("enabled", False):
-                bot_token = self.config.get("telegram", {}).get("bot_token")
-                if bot_token:
-                    self.logger.info("Initializing Telegram copilot bot...")
-                    self.copilot_bot = SignalOSCopilot(config_file=self.config_file)
-                    self.stats["modules_initialized"] += 1
-                else:
-                    self.logger.warning("Telegram bot token not configured, skipping bot initialization")
-            
-            self.logger.info(f"Successfully initialized {self.stats['modules_initialized']}/{self.stats['total_modules']} modules")
-            return True
-            
-        except Exception as e:
-            self.logger.error(f"Failed to initialize modules: {e}")
-            return False
-    
-    async def start_services(self):
-        """Start all background services"""
-        self.logger.info("Starting background services...")
-        
-        tasks = []
-        
-        # Start auto sync service
-        if self.auto_sync:
-            self.logger.info("Starting auto sync service...")
-            sync_task = asyncio.create_task(self.auto_sync.start_sync_loop())
-            tasks.append(sync_task)
-        
-        # Start Telegram bot
-        if self.copilot_bot:
-            self.logger.info("Starting Telegram copilot bot...")
-            try:
-                bot_task = asyncio.create_task(self.copilot_bot.start())
-                tasks.append(bot_task)
-            except Exception as e:
-                self.logger.error(f"Failed to start Telegram bot: {e}")
-        
-        return tasks
-    
-    async def shutdown(self):
-        """Gracefully shutdown the application"""
-        self.logger.info("Shutting down SignalOS Desktop Application...")
-        self.is_running = False
-        self.shutdown_event.set()
-        
-        # Stop auto sync
-        if self.auto_sync and hasattr(self.auto_sync, 'stop_sync_loop'):
-            self.logger.info("Stopping auto sync service...")
-            await self.auto_sync.stop_sync_loop()
-        
-        # Stop Telegram bot
-        if self.copilot_bot and hasattr(self.copilot_bot, 'stop'):
-            self.logger.info("Stopping Telegram bot...")
-            try:
-                await self.copilot_bot.stop()
-            except Exception as e:
-                self.logger.error(f"Error stopping Telegram bot: {e}")
-        
-        # Close MT5 connection
-        if self.mt5_bridge and hasattr(self.mt5_bridge, 'disconnect'):
-            self.logger.info("Disconnecting from MT5...")
-            try:
-                self.mt5_bridge.disconnect()
-            except Exception as e:
-                self.logger.error(f"Error disconnecting from MT5: {e}")
-        
-        self.logger.info("Application shutdown complete")
-    
-    def get_status(self) -> Dict[str, Any]:
-        """Get current application status"""
-        status = {
-            "app": {
-                "name": self.config.get("app", {}).get("name", "SignalOS Desktop"),
-                "version": self.config.get("app", {}).get("version", "1.0.0"),
-                "running": self.is_running,
-                "startup_time": self.startup_time.isoformat(),
-                "uptime_seconds": (datetime.now() - self.startup_time).total_seconds()
-            },
-            "modules": {
-                "initialized": self.stats["modules_initialized"],
-                "total": self.stats["total_modules"],
-                "auth_manager": bool(self.auth_manager),
-                "api_client": bool(self.api_client),
-                "mt5_bridge": bool(self.mt5_bridge),
-                "signal_parser": bool(self.signal_parser),
-                "strategy_runtime": bool(self.strategy_runtime),
-                "auto_sync": bool(self.auto_sync),
-                "copilot_bot": bool(self.copilot_bot),
-                "retry_engine": bool(self.retry_engine)
-            }
-        }
-        
-        # Add MT5 status if available
-        if self.mt5_bridge and hasattr(self.mt5_bridge, 'get_status'):
-            try:
-                status["mt5"] = self.mt5_bridge.get_status()
-            except Exception as e:
-                status["mt5"] = {"error": str(e)}
-        
-        # Add sync status if available
-        if self.auto_sync and hasattr(self.auto_sync, 'get_sync_status'):
-            try:
-                status["sync"] = self.auto_sync.get_sync_status()
-            except Exception as e:
-                status["sync"] = {"error": str(e)}
-        
-        return status
-    
-    async def run(self):
-        """Main application run loop"""
-        self.logger.info("Starting SignalOS Desktop Application...")
-        
-        try:
-            # Initialize modules
-            if not await self.initialize_modules():
-                self.logger.error("Failed to initialize modules, exiting...")
-                return False
-            
-            # Start services
-            service_tasks = await self.start_services()
-            
+            # Start the advanced signal processor
+            await self.processor.start()
             self.is_running = True
-            self.logger.info("SignalOS Desktop Application is now running")
             
-            # Wait for shutdown signal
-            await self.shutdown_event.wait()
+            # Display system status
+            await self.display_system_status()
+            
+            # Run demonstration
+            await self.run_demonstration()
             
         except Exception as e:
-            self.logger.error(f"Application error: {e}")
-            return False
-        finally:
-            await self.shutdown()
-        
-        return True
-
-
-def setup_signal_handlers(app: SignalOSDesktopApp):
-    """Setup signal handlers for graceful shutdown"""
-    def signal_handler(signum, frame):
-        print(f"\nReceived signal {signum}, initiating graceful shutdown...")
-        asyncio.create_task(app.shutdown())
+            logger.error(f"Failed to start application: {e}")
+            raise
     
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
+    async def stop(self):
+        """Stop the application"""
+        logger.info("🛑 Stopping SignalOS Desktop Application")
+        
+        self.is_running = False
+        await self.processor.stop()
+    
+    async def display_system_status(self):
+        """Display system status and capabilities"""
+        print("\n" + "="*80)
+        print("🎯 SignalOS Desktop Application - Phase 2: Advanced AI Parser & Strategy Builder")
+        print("="*80)
+        
+        status = self.processor.get_system_status()
+        
+        print(f"📊 System Status: {'🟢 Running' if status['running'] else '🔴 Stopped'}")
+        print(f"🔧 Components Status:")
+        
+        for component, active in status['components'].items():
+            status_icon = "✅" if active else "❌"
+            component_name = component.replace('_', ' ').title()
+            print(f"   {status_icon} {component_name}")
+        
+        print(f"\n📈 Processing Statistics:")
+        stats = status['processing_stats']
+        print(f"   Total Processed: {stats['total_processed']}")
+        print(f"   Successful: {stats['successful_processing']}")
+        print(f"   Failed: {stats['failed_processing']}")
+        print(f"   Average Time: {stats['avg_processing_time']:.2f}s")
+        
+        print("\n🔍 Phase 2 Features:")
+        print("   ✅ AI Parser Core (Phi-3/Mistral + Regex Fallback)")
+        print("   ✅ Enhanced OCR Engine (EasyOCR + Multilingual)")
+        print("   ✅ Confidence System (Learning + Provider Analytics)")
+        print("   ✅ Strategy Core (Risk Management + Breakeven + Partial Close)")
+        print("   ✅ Natural Language Config Generator")
+        print("   ✅ Advanced Signal Processor Integration")
+        
+        print("\n" + "="*80)
+    
+    async def run_demonstration(self):
+        """Run Phase 2 demonstration"""
+        print("\n🎮 Running Phase 2 Demonstration...\n")
+        
+        # Demo signals
+        demo_signals = [
+            {
+                'signal': "EURUSD BUY @ 1.0850 SL: 1.0800 TP1: 1.0900 TP2: 1.0950",
+                'provider': "ForexSignals",
+                'description': "Classic forex signal with multiple TPs"
+            },
+            {
+                'signal': "GOLD SELL LIMIT 1950 SL 1960 TP 1940",
+                'provider': "GoldTrader",
+                'description': "Gold trading signal with limit order"
+            },
+            {
+                'signal': "GBPUSD شراء 1.2500 وقف 1.2450 هدف 1.2550",
+                'provider': "ArabicSignals",
+                'description': "Arabic language signal (Buy GBPUSD)"
+            }
+        ]
+        
+        # Process demo signals
+        for i, demo in enumerate(demo_signals, 1):
+            print(f"📡 Demo Signal {i}: {demo['description']}")
+            print(f"   Provider: {demo['provider']}")
+            print(f"   Signal: {demo['signal']}")
+            
+            # Process the signal
+            result = await self.processor.process_signal(
+                demo['signal'],
+                SignalType.TEXT,
+                demo['provider'],
+                10000.0  # $10,000 account balance
+            )
+            
+            print(f"   📊 Processing Result:")
+            print(f"      Signal ID: {result.signal_id}")
+            print(f"      Stage: {result.stage.value}")
+            print(f"      Confidence: {result.confidence_score:.3f}")
+            print(f"      Execution Approved: {'✅' if result.execution_approved else '❌'}")
+            print(f"      Processing Time: {result.processing_time:.2f}s")
+            
+            if result.parsed_signal:
+                print(f"      Parsed Data:")
+                print(f"         Symbol: {result.parsed_signal.symbol}")
+                print(f"         Direction: {result.parsed_signal.direction}")
+                print(f"         Entry: {result.parsed_signal.entry_price}")
+                print(f"         Stop Loss: {result.parsed_signal.stop_loss}")
+                print(f"         Take Profits: {result.parsed_signal.take_profits}")
+                print(f"         Parsing Method: {result.parsed_signal.parsing_method.value}")
+            
+            if result.trade_execution:
+                print(f"      Trade Execution:")
+                print(f"         Position Size: {result.trade_execution.position_size.lot_size}")
+                print(f"         Risk Amount: ${result.trade_execution.position_size.risk_amount:.2f}")
+                print(f"         Risk Percent: {result.trade_execution.position_size.risk_percent:.1f}%")
+            
+            print()
+        
+        # Demo natural language configuration
+        print("🗣️ Natural Language Configuration Demo:")
+        
+        config_prompts = [
+            ("I want to risk 2% per trade with conservative position sizing", PromptType.RISK_MANAGEMENT),
+            ("Set up breakeven when price moves 50% to first target", PromptType.BREAKEVEN_CONFIG),
+            ("Close 60% at TP1, 30% at TP2, keep 10% running", PromptType.PARTIAL_CLOSE)
+        ]
+        
+        for prompt_text, prompt_type in config_prompts:
+            print(f"   💬 Prompt: {prompt_text}")
+            
+            response = await self.processor.generate_config_from_prompt(prompt_text, prompt_type)
+            
+            if response:
+                print(f"   📝 Generated Config:")
+                print(f"      {json.dumps(response.config_json, indent=6)}")
+                print(f"   📖 Explanation: {response.explanation}")
+                print(f"   🎯 Confidence: {response.confidence_score:.2f}")
+                
+                if response.warnings:
+                    print(f"   ⚠️  Warnings: {', '.join(response.warnings)}")
+                
+                if response.suggestions:
+                    print(f"   💡 Suggestions: {', '.join(response.suggestions)}")
+            else:
+                print("   ❌ Failed to generate configuration")
+            
+            print()
+        
+        # Display final statistics
+        print("📊 Final System Statistics:")
+        stats = self.processor.get_processing_stats()
+        print(f"   Parser Success Rate: {stats.get('parser_stats', {}).get('success_rate', 0):.1%}")
+        print(f"   AI Parse Rate: {stats.get('parser_stats', {}).get('ai_success_rate', 0):.1%}")
+        print(f"   Cache Hit Rate: {stats.get('parser_stats', {}).get('cache_hit_rate', 0):.1%}")
+        
+        if 'confidence_stats' in stats:
+            conf_stats = stats['confidence_stats']
+            print(f"   Confidence System: {conf_stats.get('total_signals', 0)} signals tracked")
+            print(f"   Win Rate: {conf_stats.get('win_rate', 0):.1%}")
+        
+        print("\n🎉 Phase 2 demonstration completed successfully!")
 
 async def main():
-    """Main entry point"""
-    print("=" * 60)
-    print("SignalOS Desktop Trading Automation Application")
-    print("=" * 60)
-    
-    # Create application instance
-    app = SignalOSDesktopApp()
-    
-    # Setup signal handlers
-    setup_signal_handlers(app)
+    """Main application entry point"""
+    app = SignalOSApp()
     
     try:
-        # Run the application
-        success = await app.run()
-        return 0 if success else 1
+        await app.start()
         
+        # Keep the application running
+        print("\n💤 Application is running. Press Ctrl+C to stop.")
+        
+        while app.is_running:
+            await asyncio.sleep(1)
+            
     except KeyboardInterrupt:
-        print("\nShutdown initiated by user")
-        await app.shutdown()
-        return 0
+        logger.info("Received interrupt signal")
     except Exception as e:
-        print(f"Fatal error: {e}")
-        return 1
-
+        logger.error(f"Application error: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        await app.stop()
 
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    # Create logs directory
+    Path("logs").mkdir(exist_ok=True)
+    
+    # Run the application
+    asyncio.run(main())
