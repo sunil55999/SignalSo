@@ -1,337 +1,494 @@
+#!/usr/bin/env python3
 """
-Smart Retry Engine for MT5 Trade Execution
-Handles failed trades with configurable retry logic based on MT5 connection, slippage, spread conditions
+Retry Engine for SignalOS Desktop Application
+
+Handles failed operations with exponential backoff and retry logic.
+Manages retry queues for various operation types like signal processing,
+trade execution, and API calls.
 """
 
+import asyncio
 import json
-import time
 import logging
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Any
+import time
 from dataclasses import dataclass, asdict
+from datetime import datetime, timedelta
 from enum import Enum
-from spread_checker import spread_checker, SpreadCheckResult
+from pathlib import Path
+from typing import Dict, List, Optional, Any, Callable, Awaitable
+from uuid import uuid4
 
-class RetryReason(Enum):
-    MT5_DISCONNECTED = "mt5_disconnected"
-    HIGH_SLIPPAGE = "high_slippage"
-    WIDE_SPREAD = "wide_spread"
-    INSUFFICIENT_MARGIN = "insufficient_margin"
-    MARKET_CLOSED = "market_closed"
-    INVALID_PRICE = "invalid_price"
-    UNKNOWN_ERROR = "unknown_error"
+class OperationType(Enum):
+    """Types of operations that can be retried"""
+    SIGNAL_PARSE = "signal_parse"
+    TRADE_EXECUTE = "trade_execute"
+    API_CALL = "api_call"
+    MT5_CONNECT = "mt5_connect"
+    TELEGRAM_SEND = "telegram_send"
+    SYNC_DATA = "sync_data"
 
-@dataclass
-class TradeRequest:
-    signal_id: int
-    symbol: str
-    action: str  # BUY, SELL
-    lot_size: float
-    entry_price: Optional[float] = None
-    stop_loss: Optional[float] = None
-    take_profit: Optional[float] = None
-    comment: str = ""
-    magic_number: int = 0
+class RetryStatus(Enum):
+    """Status of retry operations"""
+    PENDING = "pending"
+    RUNNING = "running"
+    SUCCESS = "success"
+    FAILED = "failed"
+    EXPIRED = "expired"
 
 @dataclass
-class RetryEntry:
+class RetryOperation:
+    """Represents an operation that can be retried"""
     id: str
-    trade_request: TradeRequest
-    reason: RetryReason
-    attempts: int
+    operation_type: OperationType
+    data: Dict[str, Any]
     max_attempts: int
-    next_retry: datetime
+    current_attempts: int
+    next_retry_time: datetime
+    status: RetryStatus
     created_at: datetime
-    last_error: str = ""
-    
+    last_error: Optional[str] = None
+    backoff_factor: float = 2.0
+    base_delay: float = 1.0
+
     def to_dict(self) -> Dict[str, Any]:
-        return {
-            "id": self.id,
-            "trade_request": asdict(self.trade_request),
-            "reason": self.reason.value,
-            "attempts": self.attempts,
-            "max_attempts": self.max_attempts,
-            "next_retry": self.next_retry.isoformat(),
-            "created_at": self.created_at.isoformat(),
-            "last_error": self.last_error
-        }
+        """Convert to dictionary for JSON serialization"""
+        result = asdict(self)
+        result['operation_type'] = self.operation_type.value
+        result['status'] = self.status.value
+        result['next_retry_time'] = self.next_retry_time.isoformat()
+        result['created_at'] = self.created_at.isoformat()
+        return result
 
 class RetryEngine:
+    """Engine for handling failed operations with retry logic"""
+    
     def __init__(self, config_file: str = "config.json", log_file: str = "logs/retry_log.json"):
         self.config_file = config_file
         self.log_file = log_file
-        self.retry_buffer: Dict[str, RetryEntry] = {}
         self.config = self._load_config()
         self._setup_logging()
-        self._load_retry_buffer()
-    
-    def _load_config(self) -> Dict[str, Any]:
-        """Load retry configuration from config.json"""
-        default_config = {
-            "retry_delays": {
-                "mt5_disconnected": [30, 60, 120, 300],  # seconds
-                "high_slippage": [10, 30, 60],
-                "wide_spread": [5, 15, 30],
-                "insufficient_margin": [60, 300],
-                "market_closed": [300, 600, 1800],
-                "invalid_price": [5, 15, 30],
-                "unknown_error": [30, 60, 120]
-            },
-            "max_attempts": {
-                "mt5_disconnected": 4,
-                "high_slippage": 3,
-                "wide_spread": 3,
-                "insufficient_margin": 2,
-                "market_closed": 3,
-                "invalid_price": 3,
-                "unknown_error": 3
-            },
-            "conditions": {
-                "max_slippage_pips": 2.0,
-                "max_spread_pips": 3.0,
-                "min_margin_level": 200.0
-            }
+        
+        # Retry queues by operation type
+        self.retry_queues: Dict[OperationType, List[RetryOperation]] = {
+            op_type: [] for op_type in OperationType
         }
         
+        # Operation handlers
+        self.operation_handlers: Dict[OperationType, Callable] = {}
+        
+        # Processing state
+        self.is_running = False
+        self.processing_task: Optional[asyncio.Task] = None
+        
+        # Statistics
+        self.stats = {
+            "total_operations": 0,
+            "successful_retries": 0,
+            "failed_operations": 0,
+            "expired_operations": 0,
+            "operations_by_type": {op_type.value: 0 for op_type in OperationType}
+        }
+        
+        # Load existing retry operations
+        self._load_retry_history()
+        
+    def _load_config(self) -> Dict[str, Any]:
+        """Load retry engine configuration"""
         try:
             with open(self.config_file, 'r') as f:
                 config = json.load(f)
-                # Merge with defaults for missing keys
-                for key, value in default_config.items():
-                    if key not in config:
-                        config[key] = value
-                return config
+                return config.get('retry_engine', self._get_default_config())
         except FileNotFoundError:
-            # Create default config file
+            return self._create_default_config()
+    
+    def _get_default_config(self) -> Dict[str, Any]:
+        """Get default retry configuration"""
+        return {
+            "processing_interval": 5.0,  # Check for retries every 5 seconds
+            "max_queue_size": 1000,
+            "operation_defaults": {
+                "signal_parse": {
+                    "max_attempts": 3,
+                    "base_delay": 2.0,
+                    "backoff_factor": 2.0,
+                    "max_delay": 300.0
+                },
+                "trade_execute": {
+                    "max_attempts": 5,
+                    "base_delay": 1.0,
+                    "backoff_factor": 1.5,
+                    "max_delay": 60.0
+                },
+                "api_call": {
+                    "max_attempts": 3,
+                    "base_delay": 1.0,
+                    "backoff_factor": 2.0,
+                    "max_delay": 30.0
+                },
+                "mt5_connect": {
+                    "max_attempts": 10,
+                    "base_delay": 5.0,
+                    "backoff_factor": 1.2,
+                    "max_delay": 60.0
+                },
+                "telegram_send": {
+                    "max_attempts": 3,
+                    "base_delay": 1.0,
+                    "backoff_factor": 2.0,
+                    "max_delay": 30.0
+                },
+                "sync_data": {
+                    "max_attempts": 5,
+                    "base_delay": 10.0,
+                    "backoff_factor": 1.5,
+                    "max_delay": 300.0
+                }
+            },
+            "cleanup_expired_after_hours": 24,
+            "log_all_operations": True
+        }
+    
+    def _create_default_config(self) -> Dict[str, Any]:
+        """Create default configuration and save to file"""
+        default_config = {
+            "retry_engine": self._get_default_config()
+        }
+        
+        try:
             with open(self.config_file, 'w') as f:
-                json.dump(default_config, f, indent=2)
-            return default_config
+                json.dump(default_config, f, indent=4)
+        except Exception as e:
+            logging.error(f"Failed to save default config: {e}")
+            
+        return default_config["retry_engine"]
     
     def _setup_logging(self):
-        """Setup logging for retry operations"""
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-        )
+        """Setup logging for retry engine"""
         self.logger = logging.getLogger('RetryEngine')
+        self.logger.setLevel(logging.INFO)
+        
+        if not self.logger.handlers:
+            handler = logging.StreamHandler()
+            formatter = logging.Formatter(
+                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+            )
+            handler.setFormatter(formatter)
+            self.logger.addHandler(handler)
     
-    def _load_retry_buffer(self):
-        """Load existing retry entries from log file"""
+    def _load_retry_history(self):
+        """Load existing retry operations from log file"""
         try:
-            with open(self.log_file, 'r') as f:
-                data = json.load(f)
-                for entry_data in data.get("pending_retries", []):
-                    entry = RetryEntry(
-                        id=entry_data["id"],
-                        trade_request=TradeRequest(**entry_data["trade_request"]),
-                        reason=RetryReason(entry_data["reason"]),
-                        attempts=entry_data["attempts"],
-                        max_attempts=entry_data["max_attempts"],
-                        next_retry=datetime.fromisoformat(entry_data["next_retry"]),
-                        created_at=datetime.fromisoformat(entry_data["created_at"]),
-                        last_error=entry_data.get("last_error", "")
-                    )
-                    self.retry_buffer[entry.id] = entry
-        except (FileNotFoundError, json.JSONDecodeError, KeyError):
-            self.retry_buffer = {}
+            if Path(self.log_file).exists():
+                with open(self.log_file, 'r') as f:
+                    history_data = json.load(f)
+                    
+                # Restore pending operations
+                for op_data in history_data.get('pending_operations', []):
+                    try:
+                        op = RetryOperation(
+                            id=op_data['id'],
+                            operation_type=OperationType(op_data['operation_type']),
+                            data=op_data['data'],
+                            max_attempts=op_data['max_attempts'],
+                            current_attempts=op_data['current_attempts'],
+                            next_retry_time=datetime.fromisoformat(op_data['next_retry_time']),
+                            status=RetryStatus(op_data['status']),
+                            created_at=datetime.fromisoformat(op_data['created_at']),
+                            last_error=op_data.get('last_error'),
+                            backoff_factor=op_data.get('backoff_factor', 2.0),
+                            base_delay=op_data.get('base_delay', 1.0)
+                        )
+                        
+                        if op.status in [RetryStatus.PENDING, RetryStatus.RUNNING]:
+                            self.retry_queues[op.operation_type].append(op)
+                            
+                    except Exception as e:
+                        self.logger.warning(f"Failed to restore retry operation: {e}")
+                        
+                # Load statistics
+                if 'statistics' in history_data:
+                    self.stats.update(history_data['statistics'])
+                    
+        except Exception as e:
+            self.logger.warning(f"Failed to load retry history: {e}")
     
-    def _save_retry_buffer(self):
-        """Save retry buffer to log file"""
-        import os
-        os.makedirs(os.path.dirname(self.log_file), exist_ok=True)
-        
-        data = {
-            "pending_retries": [entry.to_dict() for entry in self.retry_buffer.values()],
-            "last_updated": datetime.now().isoformat()
-        }
-        
-        with open(self.log_file, 'w') as f:
-            json.dump(data, f, indent=2)
+    def _save_retry_history(self):
+        """Save current retry operations to log file"""
+        try:
+            # Ensure log directory exists
+            Path(self.log_file).parent.mkdir(parents=True, exist_ok=True)
+            
+            # Collect all pending operations
+            pending_operations = []
+            for queue in self.retry_queues.values():
+                for op in queue:
+                    if op.status in [RetryStatus.PENDING, RetryStatus.RUNNING]:
+                        pending_operations.append(op.to_dict())
+            
+            history_data = {
+                "pending_operations": pending_operations,
+                "statistics": self.stats,
+                "last_updated": datetime.now().isoformat()
+            }
+            
+            with open(self.log_file, 'w') as f:
+                json.dump(history_data, f, indent=4)
+                
+        except Exception as e:
+            self.logger.error(f"Failed to save retry history: {e}")
     
-    def add_failed_trade(self, trade_request: TradeRequest, reason: RetryReason, error_message: str = "") -> str:
-        """Add a failed trade to the retry buffer"""
-        entry_id = f"{trade_request.signal_id}_{int(time.time())}"
+    def register_handler(self, operation_type: OperationType, handler: Callable[[Dict[str, Any]], Awaitable[bool]]):
+        """Register a handler for a specific operation type"""
+        self.operation_handlers[operation_type] = handler
+        self.logger.info(f"Registered handler for {operation_type.value}")
+    
+    def add_operation(self, operation_type: OperationType, data: Dict[str, Any], 
+                     max_attempts: Optional[int] = None, base_delay: Optional[float] = None,
+                     backoff_factor: Optional[float] = None) -> str:
+        """Add an operation to the retry queue"""
         
-        # Get retry configuration for this reason
-        reason_str = reason.value
-        max_attempts = self.config["max_attempts"].get(reason_str, 3)
-        retry_delays = self.config["retry_delays"].get(reason_str, [30, 60, 120])
+        # Get configuration for this operation type
+        op_config = self.config.get("operation_defaults", {}).get(operation_type.value, {})
         
-        # Calculate next retry time (first delay)
-        next_retry = datetime.now() + timedelta(seconds=retry_delays[0])
+        if max_attempts is None:
+            max_attempts = op_config.get("max_attempts", 3)
+        if base_delay is None:
+            base_delay = op_config.get("base_delay", 1.0)
+        if backoff_factor is None:
+            backoff_factor = op_config.get("backoff_factor", 2.0)
         
-        entry = RetryEntry(
-            id=entry_id,
-            trade_request=trade_request,
-            reason=reason,
-            attempts=0,
+        # Create retry operation
+        operation = RetryOperation(
+            id=str(uuid4()),
+            operation_type=operation_type,
+            data=data,
             max_attempts=max_attempts,
-            next_retry=next_retry,
+            current_attempts=0,
+            next_retry_time=datetime.now(),
+            status=RetryStatus.PENDING,
             created_at=datetime.now(),
-            last_error=error_message
+            base_delay=base_delay,
+            backoff_factor=backoff_factor
         )
         
-        self.retry_buffer[entry_id] = entry
-        self._save_retry_buffer()
+        # Add to appropriate queue
+        queue = self.retry_queues[operation_type]
+        queue.append(operation)
         
-        self.logger.info(f"Added trade to retry buffer: {entry_id}, reason: {reason.value}")
-        return entry_id
+        # Update statistics
+        self.stats["total_operations"] += 1
+        self.stats["operations_by_type"][operation_type.value] += 1
+        
+        self.logger.info(f"Added {operation_type.value} operation {operation.id} to retry queue")
+        
+        # Save to persistent storage
+        self._save_retry_history()
+        
+        return operation.id
     
-    def get_pending_retries(self) -> List[RetryEntry]:
-        """Get all trades ready for retry"""
-        now = datetime.now()
-        pending = []
+    def _calculate_next_retry_time(self, operation: RetryOperation) -> datetime:
+        """Calculate the next retry time for an operation"""
+        delay = operation.base_delay * (operation.backoff_factor ** operation.current_attempts)
         
-        for entry in self.retry_buffer.values():
-            if entry.next_retry <= now and entry.attempts < entry.max_attempts:
-                pending.append(entry)
+        # Apply maximum delay limit
+        op_config = self.config.get("operation_defaults", {}).get(operation.operation_type.value, {})
+        max_delay = op_config.get("max_delay", 300.0)
+        delay = min(delay, max_delay)
         
-        return pending
+        return datetime.now() + timedelta(seconds=delay)
     
-    def mark_retry_attempt(self, entry_id: str, success: bool, error_message: str = "") -> bool:
-        """Mark a retry attempt as successful or failed"""
-        if entry_id not in self.retry_buffer:
+    async def _process_operation(self, operation: RetryOperation) -> bool:
+        """Process a single retry operation"""
+        if operation.operation_type not in self.operation_handlers:
+            self.logger.error(f"No handler registered for {operation.operation_type.value}")
             return False
         
-        entry = self.retry_buffer[entry_id]
-        entry.attempts += 1
-        entry.last_error = error_message
-        
-        if success:
-            # Remove from retry buffer on success
-            del self.retry_buffer[entry_id]
-            self.logger.info(f"Trade retry successful: {entry_id}")
-        else:
-            # Schedule next retry if attempts remaining
-            if entry.attempts < entry.max_attempts:
-                reason_str = entry.reason.value
-                retry_delays = self.config["retry_delays"].get(reason_str, [30, 60, 120])
-                
-                # Use the delay for current attempt (with bounds checking)
-                delay_index = min(entry.attempts - 1, len(retry_delays) - 1)
-                delay = retry_delays[delay_index]
-                
-                entry.next_retry = datetime.now() + timedelta(seconds=delay)
-                self.logger.info(f"Scheduled retry {entry.attempts}/{entry.max_attempts} for {entry_id} in {delay}s")
-            else:
-                # Max attempts reached, remove from buffer
-                del self.retry_buffer[entry_id]
-                self.logger.error(f"Trade retry failed permanently: {entry_id} after {entry.attempts} attempts")
-        
-        self._save_retry_buffer()
-        return True
-    
-    def should_retry_trade(self, mt5_result: Dict[str, Any]) -> Optional[RetryReason]:
-        """Analyze MT5 result and determine if trade should be retried"""
-        if not mt5_result.get("success", False):
-            error_code = mt5_result.get("error_code", 0)
-            error_message = mt5_result.get("error_message", "").lower()
+        try:
+            operation.status = RetryStatus.RUNNING
+            operation.current_attempts += 1
             
-            # Check for specific MT5 error conditions
-            if "no connection" in error_message or error_code in [6, 4]:
-                return RetryReason.MT5_DISCONNECTED
-            elif "market is closed" in error_message or error_code == 132:
-                return RetryReason.MARKET_CLOSED
-            elif "not enough money" in error_message or error_code == 134:
-                return RetryReason.INSUFFICIENT_MARGIN
-            elif "invalid price" in error_message or error_code in [129, 130]:
-                return RetryReason.INVALID_PRICE
-            elif "slippage" in error_message:
-                return RetryReason.HIGH_SLIPPAGE
-            else:
-                return RetryReason.UNKNOWN_ERROR
-        
-        return None
-    
-    def check_market_conditions(self, symbol: str, current_price: float, spread_pips: float = None) -> Optional[RetryReason]:
-        """Check if current market conditions allow trading"""
-        # Use integrated spread checker for more sophisticated spread checking
-        if spread_checker.config.get('enabled', True):
-            spread_check_result, spread_info = spread_checker.check_spread_before_trade(symbol)
+            handler = self.operation_handlers[operation.operation_type]
+            success = await handler(operation.data)
             
-            if spread_check_result in [SpreadCheckResult.BLOCKED_HIGH_SPREAD, 
-                                     SpreadCheckResult.BLOCKED_NO_QUOTES, 
-                                     SpreadCheckResult.BLOCKED_STALE_QUOTES]:
-                return RetryReason.WIDE_SPREAD
-        else:
-            # Fallback to original logic if spread checker is disabled
-            if spread_pips is not None:
-                max_spread = self.config["conditions"]["max_spread_pips"]
-                if spread_pips > max_spread:
-                    return RetryReason.WIDE_SPREAD
-        
-        return None
+            if success:
+                operation.status = RetryStatus.SUCCESS
+                self.stats["successful_retries"] += 1
+                self.logger.info(f"Successfully processed {operation.operation_type.value} operation {operation.id}")
+                return True
+            else:
+                # Operation failed, check if we should retry
+                if operation.current_attempts >= operation.max_attempts:
+                    operation.status = RetryStatus.FAILED
+                    self.stats["failed_operations"] += 1
+                    self.logger.error(f"Operation {operation.id} failed after {operation.max_attempts} attempts")
+                    return False
+                else:
+                    operation.status = RetryStatus.PENDING
+                    operation.next_retry_time = self._calculate_next_retry_time(operation)
+                    self.logger.warning(f"Operation {operation.id} failed, will retry at {operation.next_retry_time}")
+                    return False
+                    
+        except Exception as e:
+            operation.last_error = str(e)
+            operation.status = RetryStatus.PENDING
+            operation.next_retry_time = self._calculate_next_retry_time(operation)
+            self.logger.error(f"Error processing operation {operation.id}: {e}")
+            return False
     
-    def get_retry_stats(self) -> Dict[str, Any]:
-        """Get statistics about retry operations"""
-        total_pending = len(self.retry_buffer)
+    async def _process_queues(self):
+        """Process all retry queues"""
+        current_time = datetime.now()
+        operations_processed = 0
         
-        stats_by_reason = {}
-        for entry in self.retry_buffer.values():
-            reason = entry.reason.value
-            if reason not in stats_by_reason:
-                stats_by_reason[reason] = {"count": 0, "avg_attempts": 0}
-            stats_by_reason[reason]["count"] += 1
-            stats_by_reason[reason]["avg_attempts"] += entry.attempts
+        for operation_type, queue in self.retry_queues.items():
+            # Process operations that are ready for retry
+            ready_operations = [
+                op for op in queue 
+                if op.status == RetryStatus.PENDING and op.next_retry_time <= current_time
+            ]
+            
+            for operation in ready_operations:
+                try:
+                    await self._process_operation(operation)
+                    operations_processed += 1
+                except Exception as e:
+                    self.logger.error(f"Error processing operation {operation.id}: {e}")
+            
+            # Remove completed or failed operations
+            self.retry_queues[operation_type] = [
+                op for op in queue 
+                if op.status in [RetryStatus.PENDING, RetryStatus.RUNNING]
+            ]
         
-        # Calculate averages
-        for reason_stats in stats_by_reason.values():
-            if reason_stats["count"] > 0:
-                reason_stats["avg_attempts"] = reason_stats["avg_attempts"] / reason_stats["count"]
+        # Cleanup expired operations
+        self._cleanup_expired_operations()
+        
+        if operations_processed > 0:
+            self.logger.info(f"Processed {operations_processed} retry operations")
+            self._save_retry_history()
+    
+    def _cleanup_expired_operations(self):
+        """Remove operations that have been pending too long"""
+        expiry_time = datetime.now() - timedelta(hours=self.config.get("cleanup_expired_after_hours", 24))
+        
+        for operation_type, queue in self.retry_queues.items():
+            expired_count = 0
+            for operation in queue[:]:  # Create a copy to iterate over
+                if operation.created_at < expiry_time and operation.status == RetryStatus.PENDING:
+                    operation.status = RetryStatus.EXPIRED
+                    queue.remove(operation)
+                    expired_count += 1
+                    self.stats["expired_operations"] += 1
+            
+            if expired_count > 0:
+                self.logger.info(f"Cleaned up {expired_count} expired {operation_type.value} operations")
+    
+    async def start_processing(self):
+        """Start the retry processing loop"""
+        if self.is_running:
+            self.logger.warning("Retry engine is already running")
+            return
+        
+        self.is_running = True
+        self.logger.info("Starting retry engine processing loop")
+        
+        self.processing_task = asyncio.create_task(self._processing_loop())
+    
+    async def stop_processing(self):
+        """Stop the retry processing loop"""
+        if not self.is_running:
+            return
+        
+        self.is_running = False
+        self.logger.info("Stopping retry engine processing loop")
+        
+        if self.processing_task:
+            self.processing_task.cancel()
+            try:
+                await self.processing_task
+            except asyncio.CancelledError:
+                pass
+        
+        # Save final state
+        self._save_retry_history()
+    
+    async def _processing_loop(self):
+        """Main processing loop"""
+        try:
+            while self.is_running:
+                await self._process_queues()
+                await asyncio.sleep(self.config.get("processing_interval", 5.0))
+        except asyncio.CancelledError:
+            self.logger.info("Retry engine processing loop cancelled")
+        except Exception as e:
+            self.logger.error(f"Error in retry engine processing loop: {e}")
+    
+    def get_statistics(self) -> Dict[str, Any]:
+        """Get retry engine statistics"""
+        queue_stats = {}
+        for op_type, queue in self.retry_queues.items():
+            queue_stats[op_type.value] = {
+                "pending": len([op for op in queue if op.status == RetryStatus.PENDING]),
+                "running": len([op for op in queue if op.status == RetryStatus.RUNNING]),
+                "total": len(queue)
+            }
         
         return {
-            "total_pending": total_pending,
-            "by_reason": stats_by_reason,
-            "config": self.config
+            **self.stats,
+            "queues": queue_stats,
+            "is_running": self.is_running
         }
     
-    def cleanup_expired_retries(self, max_age_hours: int = 24):
-        """Remove retry entries older than specified hours"""
-        cutoff_time = datetime.now() - timedelta(hours=max_age_hours)
-        expired_ids = []
-        
-        for entry_id, entry in self.retry_buffer.items():
-            if entry.created_at < cutoff_time:
-                expired_ids.append(entry_id)
-        
-        for entry_id in expired_ids:
-            del self.retry_buffer[entry_id]
-            self.logger.info(f"Removed expired retry entry: {entry_id}")
-        
-        if expired_ids:
-            self._save_retry_buffer()
-        
-        return len(expired_ids)
+    def get_operation_status(self, operation_id: str) -> Optional[Dict[str, Any]]:
+        """Get status of a specific operation"""
+        for queue in self.retry_queues.values():
+            for operation in queue:
+                if operation.id == operation_id:
+                    return operation.to_dict()
+        return None
+
 
 # Example usage and testing
+async def main():
+    """Example usage of retry engine"""
+    engine = RetryEngine()
+    
+    # Example handlers
+    async def example_api_handler(data: Dict[str, Any]) -> bool:
+        """Example API call handler"""
+        print(f"Processing API call: {data}")
+        # Simulate random success/failure
+        import random
+        return random.random() > 0.7
+    
+    async def example_trade_handler(data: Dict[str, Any]) -> bool:
+        """Example trade execution handler"""
+        print(f"Executing trade: {data}")
+        # Simulate random success/failure
+        import random
+        return random.random() > 0.5
+    
+    # Register handlers
+    engine.register_handler(OperationType.API_CALL, example_api_handler)
+    engine.register_handler(OperationType.TRADE_EXECUTE, example_trade_handler)
+    
+    # Start processing
+    await engine.start_processing()
+    
+    # Add some test operations
+    engine.add_operation(OperationType.API_CALL, {"endpoint": "/test", "data": {"test": True}})
+    engine.add_operation(OperationType.TRADE_EXECUTE, {"symbol": "EURUSD", "volume": 0.1})
+    
+    # Let it run for a bit
+    await asyncio.sleep(30)
+    
+    # Show statistics
+    stats = engine.get_statistics()
+    print(f"Retry engine statistics: {json.dumps(stats, indent=2)}")
+    
+    # Stop processing
+    await engine.stop_processing()
+
+
 if __name__ == "__main__":
-    # Initialize retry engine
-    retry_engine = RetryEngine()
-    
-    # Example trade request
-    trade_request = TradeRequest(
-        signal_id=123,
-        symbol="EURUSD",
-        action="BUY",
-        lot_size=0.01,
-        entry_price=1.1000,
-        stop_loss=1.0950,
-        take_profit=1.1050
-    )
-    
-    # Simulate adding a failed trade
-    retry_id = retry_engine.add_failed_trade(
-        trade_request,
-        RetryReason.MT5_DISCONNECTED,
-        "MT5 connection lost"
-    )
-    
-    print(f"Added retry entry: {retry_id}")
-    
-    # Check pending retries
-    pending = retry_engine.get_pending_retries()
-    print(f"Pending retries: {len(pending)}")
-    
-    # Get stats
-    stats = retry_engine.get_retry_stats()
-    print(f"Retry stats: {json.dumps(stats, indent=2)}")
+    asyncio.run(main())

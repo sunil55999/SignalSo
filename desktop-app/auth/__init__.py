@@ -1,10 +1,6 @@
-#!/usr/bin/env python3
-"""
-Auth module - Main authentication interface
-"""
-
-from .auth.jwt_license_system import JWTLicenseSystem, LicenseStatus
-from .auth.telegram_auth import TelegramAuth
+# Authentication package
+from .jwt_license_system import JWTLicenseSystem, LicenseStatus
+from .telegram_auth import TelegramAuth
 
 # Main authentication manager
 class AuthTokenManager:
