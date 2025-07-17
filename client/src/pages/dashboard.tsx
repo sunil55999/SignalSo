@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 import { 
   Activity, 
   TrendingUp, 
@@ -39,17 +40,18 @@ export function Dashboard() {
 
   const handleStartRouter = async () => {
     try {
-      const response = await fetch('/api/router/start', { method: 'POST' });
-      if (response.ok) {
-        toast.success({
+      const response = await apiRequest('/api/router/start', { method: 'POST' });
+      if (response.success) {
+        toast({
           title: 'Router started',
           description: 'Signal router has been started successfully',
         });
       }
     } catch (error) {
-      toast.error({
+      toast({
         title: 'Failed to start router',
         description: 'Could not start the signal router',
+        variant: 'destructive',
       });
     }
   };

@@ -1,5 +1,8 @@
 import { QueryClient } from '@tanstack/react-query';
 
+// Get base URL from environment variable
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -10,9 +13,10 @@ export const queryClient = new QueryClient({
   },
 });
 
-// API request helper for mutations
+// API request helper for mutations with baseURL
 export const apiRequest = async (url: string, options?: RequestInit) => {
-  const response = await fetch(url, {
+  const fullUrl = `${API_BASE_URL}${url}`;
+  const response = await fetch(fullUrl, {
     headers: {
       'Content-Type': 'application/json',
       ...options?.headers,
