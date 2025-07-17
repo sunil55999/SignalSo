@@ -1,0 +1,306 @@
+[
+  {
+    "input": "BUY EURUSD @ 1.0850, SL: 1.0800, TP: 1.0900",
+    "output": {
+      "pair": "EURUSD",
+      "direction": "BUY",
+      "entry": [
+        1.085,
+        1.086
+      ],
+      "sl": 1.08,
+      "tp": [
+        1.09,
+        1.095
+      ],
+      "confidence": 0.8,
+      "risk_reward": 1.2727272727272396,
+      "lot_size": 0.01,
+      "parser_method": "mock_ai"
+    },
+    "success": true,
+    "confidence": 0.8,
+    "parser_method": "ai"
+  },
+  {
+    "input": "SELL XAUUSD Entry: 2345 SL: 2350 TP1: 2339 TP2: 2333",
+    "output": {
+      "pair": "EURUSD",
+      "direction": "BUY",
+      "entry": [
+        1.085,
+        1.086
+      ],
+      "sl": 1.08,
+      "tp": [
+        1.09,
+        1.095
+      ],
+      "confidence": 0.8,
+      "risk_reward": 1.2727272727272396,
+      "lot_size": 0.01,
+      "parser_method": "mock_ai"
+    },
+    "success": true,
+    "confidence": 0.8,
+    "parser_method": "ai"
+  },
+  {
+    "input": "🟢 GBPUSD LONG Entry range 1.2500-1.2520, Stop Loss 1.2450, Take Profit 1.2600",
+    "output": {
+      "pair": "GBPUSD",
+      "direction": "BUY",
+      "entry": [
+        1.25,
+        1.252
+      ],
+      "sl": 1.245,
+      "tp": [
+        1.26
+      ],
+      "confidence": 0.6,
+      "parser_method": "fallback_regex",
+      "risk_reward": 1.500000000000074,
+      "lot_size": 0.01
+    },
+    "success": true,
+    "confidence": 0.6,
+    "parser_method": "fallback"
+  },
+  {
+    "input": "🚀 EURUSD BUY NOW! 💰 Entry: 1.0850 🎯 SL: 1.0800 🏆 TP: 1.0900",
+    "output": {
+      "pair": "EURUSD",
+      "direction": "BUY",
+      "entry": [
+        1.085,
+        1.086
+      ],
+      "sl": 1.08,
+      "tp": [
+        1.09,
+        1.095
+      ],
+      "confidence": 0.8,
+      "risk_reward": 1.2727272727272396,
+      "lot_size": 0.01,
+      "parser_method": "mock_ai"
+    },
+    "success": true,
+    "confidence": 0.8,
+    "parser_method": "ai"
+  },
+  {
+    "input": "⚡ SELL USDJPY ⚡ @ 145.50, SL: 146.00, TP: 144.50",
+    "output": {
+      "pair": "EURUSD",
+      "direction": "BUY",
+      "entry": [
+        1.085,
+        1.086
+      ],
+      "sl": 1.08,
+      "tp": [
+        1.09,
+        1.095
+      ],
+      "confidence": 0.8,
+      "risk_reward": 1.2727272727272396,
+      "lot_size": 0.01,
+      "parser_method": "mock_ai"
+    },
+    "success": true,
+    "confidence": 0.8,
+    "parser_method": "ai"
+  },
+  {
+    "input": "Invalid signal without proper format",
+    "output": null,
+    "success": false,
+    "confidence": 0.0,
+    "parser_method": "complete_failure"
+  },
+  {
+    "input": "EURUSD BUY but missing prices",
+    "output": {
+      "pair": "EURUSD",
+      "direction": "BUY",
+      "entry": [
+        1.085,
+        1.086
+      ],
+      "sl": 1.08,
+      "tp": [
+        1.09,
+        1.095
+      ],
+      "confidence": 0.8,
+      "risk_reward": 1.2727272727272396,
+      "lot_size": 0.01,
+      "parser_method": "mock_ai"
+    },
+    "success": true,
+    "confidence": 0.8,
+    "parser_method": "ai"
+  },
+  {
+    "input": "Gold signal with unclear direction",
+    "output": null,
+    "success": false,
+    "confidence": 0.0,
+    "parser_method": "complete_failure"
+  },
+  {
+    "input": "",
+    "output": null,
+    "success": false,
+    "confidence": 0.0,
+    "parser_method": "complete_failure"
+  },
+  {
+    "input": "Random text that doesn't contain trading info",
+    "output": null,
+    "success": false,
+    "confidence": 0.0,
+    "parser_method": "complete_failure"
+  },
+  {
+    "input": "EUR/USD BUY 1.0850 1.0800 1.0900",
+    "output": {
+      "pair": "EURUSD",
+      "direction": "BUY",
+      "entry": [
+        1.085,
+        1.086
+      ],
+      "sl": 1.08,
+      "tp": [
+        1.09,
+        1.095
+      ],
+      "confidence": 0.8,
+      "risk_reward": 1.2727272727272396,
+      "lot_size": 0.01,
+      "parser_method": "mock_ai"
+    },
+    "success": true,
+    "confidence": 0.8,
+    "parser_method": "ai"
+  },
+  {
+    "input": "Signal: GBPUSD Direction: LONG Entry: 1.2500 Stop: 1.2450 Target: 1.2600",
+    "output": {
+      "pair": "SIGNAL",
+      "direction": "BUY",
+      "entry": [
+        1.25
+      ],
+      "sl": 1.245,
+      "tp": [
+        1.26
+      ],
+      "confidence": 0.6,
+      "parser_method": "fallback_regex",
+      "risk_reward": 2.0000000000000444,
+      "lot_size": 0.01
+    },
+    "success": true,
+    "confidence": 0.6,
+    "parser_method": "fallback"
+  },
+  {
+    "input": "XAUUSD SELL now at 2340, stop 2345, target 2330",
+    "output": {
+      "pair": "EURUSD",
+      "direction": "BUY",
+      "entry": [
+        1.085,
+        1.086
+      ],
+      "sl": 1.08,
+      "tp": [
+        1.09,
+        1.095
+      ],
+      "confidence": 0.8,
+      "risk_reward": 1.2727272727272396,
+      "lot_size": 0.01,
+      "parser_method": "mock_ai"
+    },
+    "success": true,
+    "confidence": 0.8,
+    "parser_method": "ai"
+  },
+  {
+    "input": "BUY EURUSD @ 1.0850, SL: 1.0800, TP1: 1.0900, TP2: 1.0950, TP3: 1.1000",
+    "output": {
+      "pair": "EURUSD",
+      "direction": "BUY",
+      "entry": [
+        1.085,
+        1.086
+      ],
+      "sl": 1.08,
+      "tp": [
+        1.09,
+        1.095
+      ],
+      "confidence": 0.8,
+      "risk_reward": 1.2727272727272396,
+      "lot_size": 0.01,
+      "parser_method": "mock_ai"
+    },
+    "success": true,
+    "confidence": 0.8,
+    "parser_method": "ai"
+  },
+  {
+    "input": "Entry: EURUSD BUY 1.0850, Stop Loss: 1.0800, Take Profit: 1.0900",
+    "output": {
+      "pair": "EURUSD",
+      "direction": "BUY",
+      "entry": [
+        1.085,
+        1.086
+      ],
+      "sl": 1.08,
+      "tp": [
+        1.09,
+        1.095
+      ],
+      "confidence": 0.8,
+      "risk_reward": 1.2727272727272396,
+      "lot_size": 0.01,
+      "parser_method": "mock_ai"
+    },
+    "success": true,
+    "confidence": 0.8,
+    "parser_method": "ai"
+  },
+  {
+    "input": "Invalid signal text",
+    "output": null,
+    "success": false,
+    "confidence": 0.0,
+    "parser_method": "ai_parser"
+  },
+  {
+    "input": "BUY EURUSD @ 1.0850, SL: 1.0800, TP: 1.0900",
+    "output": {
+      "pair": "EURUSD",
+      "direction": "BUY",
+      "entry": [
+        1.085
+      ],
+      "sl": 1.08,
+      "tp": [
+        1.09
+      ],
+      "confidence": 0.85,
+      "parser_method": "ai"
+    },
+    "success": true,
+    "confidence": 0.85,
+    "parser_method": "ai_parser"
+  }
+]

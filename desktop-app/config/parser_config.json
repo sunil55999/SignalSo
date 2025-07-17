@@ -1,0 +1,28 @@
+{
+  "max_retries": 3,
+  "timeout_seconds": 30,
+  "enable_ai_parser": true,
+  "enable_fallback": true,
+  "log_failures": true,
+  "require_all_fields": true,
+  "min_confidence": 0.7,
+  "allowed_pairs": [
+    "EURUSD", "GBPUSD", "USDJPY", "USDCHF", "AUDUSD", "USDCAD", "NZDUSD",
+    "EURJPY", "EURGBP", "EURCHF", "EURAUD", "EURCAD", "EURNZD",
+    "GBPJPY", "GBPCHF", "GBPAUD", "GBPCAD", "GBPNZD",
+    "XAUUSD", "XAGUSD", "USOIL", "UK100", "US30", "NAS100", "SPX500"
+  ],
+  "required_fields": ["pair", "direction", "entry", "sl", "tp"],
+  "optional_fields": ["confidence", "risk_reward", "lot_size", "parser_method"],
+  "performance_tracking": {
+    "log_every_n_attempts": 10,
+    "max_log_file_size_mb": 100,
+    "keep_logs_days": 30
+  },
+  "fallback_settings": {
+    "generate_sl_if_missing": true,
+    "generate_tp_if_missing": true,
+    "default_sl_percentage": 0.5,
+    "default_tp_percentage": 1.0
+  }
+}
