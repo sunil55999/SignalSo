@@ -1,0 +1,2 @@
+{"timestamp": "2025-07-17T15:08:22.163252", "result": {"model_version": "v1.0.20250717_150822_6121c525", "training_loss": 0.15, "eval_loss": 0.18, "eval_accuracy": 0.82, "training_time": 120.0, "total_samples": 0, "model_size_mb": 50.0, "success": true, "error_message": null}}
+{"timestamp": "2025-07-17T15:08:22.164756", "result": {"model_version": "spacy_ner_v1.0.20250717_150822_6121c525", "training_loss": 0.12, "eval_loss": 0.0, "eval_accuracy": 0.85, "training_time": 60.0, "total_samples": 500, "model_size_mb": 25.0, "success": true, "error_message": null}}

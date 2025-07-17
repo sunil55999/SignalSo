@@ -1,0 +1,1 @@
+{"timestamp": "2025-07-17T15:08:22.311320", "accuracy": 0.5, "threshold": 0.8, "status": "fail", "latency": 0.0008955, "recommendations": ["Performance below threshold - consider retraining"]}

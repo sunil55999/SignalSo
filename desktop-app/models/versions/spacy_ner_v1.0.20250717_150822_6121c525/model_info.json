@@ -1,0 +1,13 @@
+{
+  "model_type": "mock_spacy_ner",
+  "version": "spacy_ner_v1.0.20250717_150822_6121c525",
+  "trained_on": "2025-07-17T15:08:22.163897",
+  "labels": [
+    "PAIR",
+    "DIRECTION",
+    "ENTRY",
+    "SL",
+    "TP",
+    "PROVIDER"
+  ]
+}

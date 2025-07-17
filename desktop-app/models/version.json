@@ -1,8 +1,29 @@
 {
-  "version": "1.0.0",
-  "model_name": "signalojs_ai_model",
-  "last_updated": null,
-  "checksum": "",
-  "size": 0,
-  "download_url": null
+  "current_version": "spacy_ner_v1.0.20250717_150822_6121c525",
+  "last_updated": "2025-07-17T15:08:22.164185",
+  "training_result": {
+    "model_version": "spacy_ner_v1.0.20250717_150822_6121c525",
+    "training_loss": 0.12,
+    "eval_loss": 0.0,
+    "eval_accuracy": 0.85,
+    "training_time": 60.0,
+    "total_samples": 500,
+    "model_size_mb": 25.0,
+    "success": true,
+    "error_message": null
+  },
+  "versions": [
+    {
+      "version": "v1.0.20250717_150822_6121c525",
+      "timestamp": "2025-07-17T15:08:22.162888",
+      "success": true,
+      "eval_accuracy": 0.82
+    },
+    {
+      "version": "spacy_ner_v1.0.20250717_150822_6121c525",
+      "timestamp": "2025-07-17T15:08:22.164462",
+      "success": true,
+      "eval_accuracy": 0.85
+    }
+  ]
 }

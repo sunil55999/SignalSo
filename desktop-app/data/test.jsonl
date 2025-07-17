@@ -1,0 +1,2 @@
+{"raw": "🟢 BUY EURUSD @ 1.0850-1.0860 SL: 1.0800 TP1: 1.0900 TP2: 1.0950", "parsed": {"pair": "EURUSD", "direction": "BUY", "entry": [1.085, 1.086], "sl": 1.08, "tp": [1.09, 1.095]}, "metadata": {"provider": "ForexPro", "language": "en"}}
+{"raw": "SELL XAUUSD Entry: 2345 Stop Loss: 2350 TP: 2339, 2333, 2327", "parsed": {"pair": "XAUUSD", "direction": "SELL", "entry": [2345], "sl": 2350, "tp": [2339, 2333, 2327]}, "metadata": {"provider": "GoldSignals", "language": "en"}}

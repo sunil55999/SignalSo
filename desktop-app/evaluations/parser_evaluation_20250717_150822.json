@@ -1,0 +1,265 @@
+{
+  "evaluation_metadata": {
+    "timestamp": "2025-07-17T15:08:22.171332",
+    "total_samples": 2,
+    "evaluation_version": "1.0"
+  },
+  "summary_metrics": {
+    "accuracy": 0.5,
+    "field_f1_scores": {
+      "pair": 0.5,
+      "direction": 0.5,
+      "entry": 0.5,
+      "sl": 0.5,
+      "tp": 0.5
+    },
+    "average_latency": 0.0025745,
+    "error_breakdown": {
+      "no_error": 2
+    },
+    "confidence_distribution": {
+      "high": 1,
+      "medium": 0,
+      "low": 1
+    },
+    "method_performance": {
+      "mock_ai": {
+        "count": 2,
+        "accuracy": 0.5
+      }
+    },
+    "temporal_performance": [
+      {
+        "period": 0,
+        "accuracy": 1.0,
+        "latency": 0.004523,
+        "samples": 1
+      },
+      {
+        "period": 1,
+        "accuracy": 0.0,
+        "latency": 0.000626,
+        "samples": 1
+      }
+    ]
+  },
+  "detailed_results": [
+    {
+      "sample_id": "sample_1",
+      "raw_text": "🟢 BUY EURUSD @ 1.0850-1.0860 SL: 1.0800 TP1: 1.0900 TP2: 1.0950",
+      "expected_result": {
+        "pair": "EURUSD",
+        "direction": "BUY",
+        "entry": [
+          1.085,
+          1.086
+        ],
+        "sl": 1.08,
+        "tp": [
+          1.09,
+          1.095
+        ]
+      },
+      "predicted_result": {
+        "pair": "EURUSD",
+        "direction": "BUY",
+        "entry": [
+          1.085,
+          1.086
+        ],
+        "sl": 1.08,
+        "tp": [
+          1.09,
+          1.095
+        ],
+        "confidence": 0.8,
+        "risk_reward": 1.2727272727272396,
+        "lot_size": 0.01,
+        "parser_method": "mock_ai"
+      },
+      "field_scores": {
+        "pair": 1.0,
+        "direction": 1.0,
+        "entry": 1.0,
+        "sl": 1.0,
+        "tp": 1.0
+      },
+      "overall_score": 1.0,
+      "parse_time": 0.004523,
+      "method_used": "mock_ai",
+      "errors": []
+    },
+    {
+      "sample_id": "sample_2",
+      "raw_text": "SELL XAUUSD Entry: 2345 Stop Loss: 2350 TP: 2339, 2333, 2327",
+      "expected_result": {
+        "pair": "XAUUSD",
+        "direction": "SELL",
+        "entry": [
+          2345
+        ],
+        "sl": 2350,
+        "tp": [
+          2339,
+          2333,
+          2327
+        ]
+      },
+      "predicted_result": {
+        "pair": "EURUSD",
+        "direction": "BUY",
+        "entry": [
+          1.085,
+          1.086
+        ],
+        "sl": 1.08,
+        "tp": [
+          1.09,
+          1.095
+        ],
+        "confidence": 0.8,
+        "risk_reward": 1.2727272727272396,
+        "lot_size": 0.01,
+        "parser_method": "mock_ai"
+      },
+      "field_scores": {
+        "pair": 0.0,
+        "direction": 0.0,
+        "entry": 0.0,
+        "sl": 0.0,
+        "tp": 0.0
+      },
+      "overall_score": 0.0,
+      "parse_time": 0.000626,
+      "method_used": "mock_ai",
+      "errors": []
+    }
+  ],
+  "analysis": {
+    "performance_summary": {
+      "overall_grade": "F (Failing)",
+      "strengths": [
+        "Fast parsing speed"
+      ],
+      "weaknesses": [
+        "Low overall accuracy needs improvement"
+      ],
+      "recommendations": [
+        "Consider retraining with more diverse data"
+      ]
+    },
+    "error_analysis": {
+      "common_errors": {},
+      "error_rate": 0.0,
+      "most_problematic": [
+        {
+          "sample_id": "sample_2",
+          "raw_text": "SELL XAUUSD Entry: 2345 Stop Loss: 2350 TP: 2339, 2333, 2327",
+          "score": 0.0,
+          "errors": [],
+          "expected": {
+            "pair": "XAUUSD",
+            "direction": "SELL",
+            "entry": [
+              2345
+            ],
+            "sl": 2350,
+            "tp": [
+              2339,
+              2333,
+              2327
+            ]
+          },
+          "predicted": {
+            "pair": "EURUSD",
+            "direction": "BUY",
+            "entry": [
+              1.085,
+              1.086
+            ],
+            "sl": 1.08,
+            "tp": [
+              1.09,
+              1.095
+            ],
+            "confidence": 0.8,
+            "risk_reward": 1.2727272727272396,
+            "lot_size": 0.01,
+            "parser_method": "mock_ai"
+          }
+        },
+        {
+          "sample_id": "sample_1",
+          "raw_text": "🟢 BUY EURUSD @ 1.0850-1.0860 SL: 1.0800 TP1: 1.0900 TP2: 1.0950",
+          "score": 1.0,
+          "errors": [],
+          "expected": {
+            "pair": "EURUSD",
+            "direction": "BUY",
+            "entry": [
+              1.085,
+              1.086
+            ],
+            "sl": 1.08,
+            "tp": [
+              1.09,
+              1.095
+            ]
+          },
+          "predicted": {
+            "pair": "EURUSD",
+            "direction": "BUY",
+            "entry": [
+              1.085,
+              1.086
+            ],
+            "sl": 1.08,
+            "tp": [
+              1.09,
+              1.095
+            ],
+            "confidence": 0.8,
+            "risk_reward": 1.2727272727272396,
+            "lot_size": 0.01,
+            "parser_method": "mock_ai"
+          }
+        }
+      ]
+    },
+    "field_analysis": {
+      "pair": {
+        "average_score": 0.5,
+        "success_rate": 0.5,
+        "perfect_rate": 0.5
+      },
+      "direction": {
+        "average_score": 0.5,
+        "success_rate": 0.5,
+        "perfect_rate": 0.5
+      },
+      "entry": {
+        "average_score": 0.5,
+        "success_rate": 0.5,
+        "perfect_rate": 0.5
+      },
+      "sl": {
+        "average_score": 0.5,
+        "success_rate": 0.5,
+        "perfect_rate": 0.5
+      },
+      "tp": {
+        "average_score": 0.5,
+        "success_rate": 0.5,
+        "perfect_rate": 0.5
+      }
+    },
+    "method_analysis": {
+      "mock_ai": {
+        "accuracy": 0.5,
+        "average_latency": 0.0025745,
+        "error_rate": 0.0,
+        "usage_rate": 1.0
+      }
+    }
+  }
+}
