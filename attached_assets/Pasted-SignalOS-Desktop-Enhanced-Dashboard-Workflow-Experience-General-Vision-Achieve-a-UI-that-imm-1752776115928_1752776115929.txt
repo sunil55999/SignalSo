@@ -1,0 +1,78 @@
+SignalOS Desktop: Enhanced Dashboard & Workflow Experience
+General Vision:
+
+Achieve a UI that immediately communicates system status, actionable trading insights, and user control—more like a Bloomberg terminal for signal automation, not just a copier.
+
+Key Additions & Improvements:
+
+System Health Central:
+
+Integrate real-time status indicators for every core module (Parser, MT5 Bridge, Licensing, Telegram, AI Engine).
+
+Add animated or color-dynamic signals for warnings, errors, and needs-attention items.
+
+Actionable Recent Activity & Notifications:
+
+Display log/event timeline with filters (errors/warnings/success/info).
+
+Mark unresolved alerts with badges; allow quick resolution/diagnostics from popups.
+
+Smart Trading Metrics:
+
+Surface today’s performance: number of signals processed, win rate, execution speed, and parsing confidence.
+
+Compact mini-panels for account equity, risk usage, daily PnL, and prop-firm rules status.
+
+Strategy & Parser Insights:
+
+Integrate a “Test Strategy” button and quick backtest link.
+
+Show parser confidence percentage and a tooltip or warning if any AI or regex fallback was triggered.
+
+Offer a “Replay Signal” feature to review how recent trades/signals were processed.
+
+Quick Access Panel:
+
+One-click access to logs, settings, license info, and support/help.
+
+Floating or sidebar shortcuts for commonly used actions (pause automation, reload, manual signal input).
+
+Visual Layering & Hierarchy:
+
+Use subtle gradients, shadows, and clear grouping to separate key sections (status, activity, performance).
+
+Apply brand accent color to highlight interactive elements and system health.
+
+Accessibility & Responsive Design:
+
+Ensure all critical metrics are readable at a glance, even on smaller screens or lower resolutions.
+
+Light/dark mode toggle for better usability.
+
+Future-Proofing:
+
+Reserve space for “Marketplace”, “Signal Credibility”, and “Strategy Builder” widgets in future phases.
+
+Design Reference:
+
+Draw on the clarity and actionable nature of dashboards like TradingView, Bloomberg Terminal, or Binance Pro—focusing on clarity, speed, and user empowerment.
+
+Feature-Inspired UI Components Table
+Component	Purpose	UI Element Type
+System Health Center	Live status for core modules & warnings	Multi-indicator panel
+Event/Log Timeline	View activity history, errors, success events	Filterable timeline
+Trading Metrics	Key stats: signals, win rate, parsing confidence	Mini-stat boxes
+Parser/AI Insights	Display parsing method, fallback use, confidence	Badge & tooltip
+Quick Actions Panel	Fast access to logs, pause, reload, help	Sticky sidebar/footer
+Account/Risk Panel	Live equity, balance, risk status	Compact summary card
+Backtest/Replay Button	Backtest strategies, replay signal flow	Inline button/link
+Notification Badges	Highlight pending issues and new events	Badges on nav/timeline
+Styling Guidelines
+Use a modern, flat UI kit—ample white space, clean icons, moderate contrast.
+
+Choose readable fonts and large, actionable buttons for critical operations.
+
+Prioritize consistent color/contrast cues for error, warning, info, and success states.
+
+Final Note
+The goal is to deliver a desktop application UI that not only matches TSC’s utility, but clearly surpasses it in actionable transparency, control, and user satisfaction, making SignalOS feel like the industry’s smartest, most transparent copy trading platform.
