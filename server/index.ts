@@ -126,6 +126,115 @@ app.post('/api/bridge/connect', (req, res) => {
   res.json({ success: true });
 });
 
+// Import/Export endpoints
+app.post('/api/import', (req, res) => {
+  // Mock import functionality
+  const success = Math.random() > 0.2; // 80% success rate
+  
+  if (success) {
+    res.json({
+      success: true,
+      message: 'Import completed successfully',
+      items: Math.floor(Math.random() * 50) + 1,
+      warnings: Math.random() > 0.5 ? ['Some duplicate items were skipped'] : []
+    });
+  } else {
+    res.json({
+      success: false,
+      message: 'Import failed',
+      errors: ['Invalid file format', 'Unable to parse data']
+    });
+  }
+});
+
+app.get('/api/export/:type', (req, res) => {
+  const { type } = req.params;
+  
+  // Mock export data
+  const exportData = {
+    signals: [
+      { id: 1, symbol: 'EURUSD', action: 'BUY', price: 1.0850, tp: 1.0900, sl: 1.0800 },
+      { id: 2, symbol: 'GBPUSD', action: 'SELL', price: 1.2650, tp: 1.2600, sl: 1.2700 }
+    ],
+    strategies: [
+      { id: 1, name: 'EUR/USD Scalping', symbols: ['EURUSD'], riskPercent: 2 },
+      { id: 2, name: 'GBP/USD Swing', symbols: ['GBPUSD'], riskPercent: 1.5 }
+    ],
+    providers: [
+      { id: 1, name: 'Premium Signals', channel: '@premium_signals', active: true },
+      { id: 2, name: 'Forex Pro', channel: '@forex_pro', active: false }
+    ]
+  };
+  
+  res.json(exportData[type as keyof typeof exportData] || []);
+});
+
+// Telegram connection endpoints
+app.post('/api/telegram/connect', (req, res) => {
+  const { apiId, apiHash, phoneNumber } = req.body;
+  
+  // Mock connection logic
+  setTimeout(() => {
+    if (apiId && apiHash && phoneNumber) {
+      res.json({
+        success: true,
+        message: 'Connected to Telegram successfully'
+      });
+    } else {
+      res.json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+  }, 2000);
+});
+
+app.get('/api/telegram/scan-channels', (req, res) => {
+  // Mock channel scan
+  const channels = [
+    'Premium Forex Signals',
+    'Daily Trading Alerts',
+    'Crypto Signals Pro',
+    'FX Market Updates',
+    'Elite Trading Group'
+  ];
+  
+  res.json({
+    success: true,
+    channels: channels
+  });
+});
+
+// Test endpoints
+app.post('/api/test/parse-signal', (req, res) => {
+  const { signal } = req.body;
+  
+  // Mock signal parsing
+  const parsed = {
+    symbol: 'EURUSD',
+    action: 'BUY',
+    price: 1.0850,
+    tp: 1.0900,
+    sl: 1.0800,
+    confidence: 0.92
+  };
+  
+  res.json({
+    success: true,
+    parsed: parsed,
+    message: 'Signal parsed successfully'
+  });
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    version: '1.0.0'
+  });
+});
+
 // Serve static files from dist directory (production build)
 const distDir = path.join(__dirname, '../dist');
 app.use(express.static(distDir));

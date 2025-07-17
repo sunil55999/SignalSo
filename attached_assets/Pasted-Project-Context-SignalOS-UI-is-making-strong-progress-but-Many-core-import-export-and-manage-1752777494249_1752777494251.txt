@@ -1,0 +1,72 @@
+Project Context
+SignalOS UI is making strong progress, but:
+
+Many core import, export, and management functions are not fully accessible or operational through the UI.
+
+The current workflow is less streamlined and less user-friendly than TSC, especially for importing signals, strategies, and provider management.
+
+Main Problems to Fix
+Unconnected Core Functions: Importing, linking, and managing signals/providers/strategies are not seamless or fully available via the UI.
+
+Lack of UX Feedback: Users don’t see immediate progress, errors, or success when taking these actions from the UI.
+
+Difficult Onboarding: Users lack guided wizards, one-click integrations, or intuitive bulk operations.
+
+Poor Discoverability: Actions are hidden or multiple clicks away, slowing workflow and increasing frustration.
+
+🧑‍💻 For the Development & UI/UX Team
+1. Wire ALL Import/Export and Provider Functions to the UI
+Expose importing of signals, strategies, and providers directly from the main dashboard or a persistent sidebar.
+
+Allow import via drag-and-drop (CSV, JSON, PDF), and show real-time parsing/validation (surface errors/warnings before confirming).
+
+2. Add Robust Feedback for Every User Action
+After each import/export, display modal or toast with:
+
+Progress bar (during upload/processing)
+
+Inline errors (duplicates, invalid fields, unsupported file formats)
+
+Clear final status (Success/Fail) with “Next Action” buttons (e.g., Backtest now, Assign provider)
+
+All errors must be contextual and provide actionable suggestions.
+
+3. Implement a Guided Onboarding Wizard
+Guide new users through setup: connecting Telegram, importing initial providers/strategies, test parsing a demo signal.
+
+Use step-by-step visual progress, tooltips, inline help, and auto-detection (e.g., scan for accessible Telegram channels they belong to).
+
+4. Create a Global “Import” & “Test” Panel
+Add a prominent, always-visible “Import” (and “Test Strategy”) button on the top bar or sidebar.
+
+After import, show summary and instant option to assign, backtest, or troubleshoot imported items.
+
+5. Enhance the Activity/Notification Center
+Log every import/export with timestamp, file details, affected items.
+
+Allow users to undo or revisit past imports with a click.
+
+6. Improve Discoverability & Workflow Speed
+Ensure the most-used actions (import, test, assign, connect Telegram) are 1–2 clicks away from anywhere.
+
+Use badges, banners, or highlights to alert users to unresolved issues from imports or integrations.
+
+🎯 Success = End Result
+Every import/export/management task can be executed and tracked entirely through the UI with real-time feedback
+
+Errors are actionable, visible, and easy to fix immediately
+
+Users get contextual guidance and rapid onboarding
+
+All new signals/providers/strategies are ready-to-use within seconds
+
+Benchmark your flows against TSC. If any workflow is longer, less discoverable, or gives less feedback, redesign until it’s faster and clearer.
+
+⏩ Deliverable
+A revised desktop application build where:
+
+All import, export, connection, and basic management features operate directly from the UI.
+
+No core function is left “backend-only.”
+
+Users can complete onboarding and setup without referring to documentation or making support requests.
