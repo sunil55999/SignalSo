@@ -1,31 +1,14 @@
-# SignalOS - Trading Automation Platform
+# SignalOS - Trading Automation Desktop App
 
 ## Overview
 
-SignalOS is a comprehensive trading automation platform that parses Telegram signals, executes trades on MT5, and provides real-time monitoring through a web dashboard. The system consists of three main components: a Python desktop application for signal processing and MT5 integration, an Express.js server with TypeScript for API services, and a React web dashboard for monitoring and administration.
+SignalOS is a Python desktop application for trading automation that parses Telegram signals and executes trades on MT5. The application includes comprehensive signal processing, risk management, and trade execution engines.
 
 ## Status: Production Ready with Complete Synchronization
 
 All critical synchronization issues have been resolved. The system now features robust real-time communication between web dashboard, backend server, and desktop application with comprehensive error handling and recovery mechanisms.
 
 ## System Architecture
-
-### Frontend Architecture
-- **Framework**: React 18 with TypeScript
-- **Build Tool**: Vite with custom configuration for client-side bundling
-- **UI Library**: Radix UI components with Tailwind CSS styling
-- **State Management**: TanStack Query (React Query) for server state management
-- **Routing**: Wouter for lightweight client-side routing
-- **Form Handling**: React Hook Form with Zod validation
-- **Authentication**: Context-based auth provider with protected routes
-
-### Backend Architecture
-- **Runtime**: Node.js 20 with Express.js framework
-- **Language**: TypeScript with ES modules
-- **Session Management**: Express-session with PostgreSQL session store
-- **Authentication**: Passport.js with local strategy and bcrypt password hashing
-- **API Design**: RESTful endpoints with WebSocket support for real-time updates
-- **Error Handling**: Centralized error middleware with structured error responses
 
 ### Desktop Application Architecture
 - **Language**: Python 3.11+ with asyncio for concurrent operations
@@ -150,13 +133,11 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### June 26, 2025 - Comprehensive Security Hardening Completed
-- **All Critical Vulnerabilities Fixed**: Addressed all 30 critical/major security issues from SignalOS_Project_Issues.md
-- **Enterprise Security Modules**: Implemented encryption.ts, backup-recovery.ts, query-optimizer.ts, dependency-audit.ts, api-versioning.ts
-- **Secure Python Components**: Created secure versions of signal parser, MT5 bridge, and conflict resolver with comprehensive input validation
-- **Authentication Enhancement**: Upgraded session management with rolling sessions, secure cookies, and reduced timeout
-- **Data Protection**: AES-256-GCM encryption for sensitive trading data, API keys, and user credentials
-- **System Resilience**: Automated encrypted backups, dependency auditing, and performance optimization
+### July 17, 2025 - Project Simplified to Desktop App Only
+- **Web Components Removed**: Deleted React frontend, Express.js backend, and all web-related dependencies
+- **Python Desktop App Preserved**: Maintained complete desktop application with all trading engines
+- **Simplified Architecture**: Focus on core trading automation functionality
+- **Replit Migration**: Successfully migrated to Replit environment with Python support
 
 ### June 25, 2025 - Complete UI-Backend-Desktop Synchronization
 - **WebSocket Infrastructure**: Implemented robust WebSocket server with client tracking, heartbeat monitoring, and exponential backoff reconnection
