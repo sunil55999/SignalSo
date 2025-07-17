@@ -112,38 +112,64 @@ export function Dashboard() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-4">
       {/* Header with Title and Main Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col space-y-4">
         <div>
           <h1 className="text-3xl font-bold text-foreground">SignalOS Trading Terminal</h1>
           <p className="text-muted-foreground mt-1">Professional signal automation and trading control</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button 
-            variant={currentView === 'manage' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setCurrentView('manage')}
-          >
-            <Settings className="h-4 w-4 mr-2" />
-            Manage
-          </Button>
-          <Button 
-            variant={currentView === 'import' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setCurrentView('import')}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            Import
-          </Button>
-          <Button 
-            variant={currentView === 'activity' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setCurrentView('activity')}
-          >
-            <Activity className="h-4 w-4 mr-2" />
-            Activity
-          </Button>
+        
+        {/* Core Navigation - Primary Functions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="cursor-pointer transition-all hover:shadow-lg border-2 hover:border-blue-500" onClick={() => setCurrentView('manage')}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Settings className="h-8 w-8 text-blue-600" />
+                  <div>
+                    <h3 className="font-semibold text-lg">Manage</h3>
+                    <p className="text-sm text-muted-foreground">Signals, Strategies & Providers</p>
+                  </div>
+                </div>
+                {currentView === 'manage' && <CheckCircle className="h-6 w-6 text-green-500" />}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer transition-all hover:shadow-lg border-2 hover:border-green-500" onClick={() => setCurrentView('import')}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Upload className="h-8 w-8 text-green-600" />
+                  <div>
+                    <h3 className="font-semibold text-lg">Import</h3>
+                    <p className="text-sm text-muted-foreground">Add signals & data</p>
+                  </div>
+                </div>
+                {currentView === 'import' && <CheckCircle className="h-6 w-6 text-green-500" />}
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="cursor-pointer transition-all hover:shadow-lg border-2 hover:border-purple-500" onClick={() => setCurrentView('activity')}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Activity className="h-8 w-8 text-purple-600" />
+                  <div>
+                    <h3 className="font-semibold text-lg">Activity</h3>
+                    <p className="text-sm text-muted-foreground">View logs & history</p>
+                  </div>
+                </div>
+                {currentView === 'activity' && <CheckCircle className="h-6 w-6 text-green-500" />}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Quick Actions & Tools */}
+        <div className="flex flex-wrap items-center gap-2 bg-white dark:bg-gray-800 p-3 rounded-lg border">
           <Button 
             variant="outline" 
             size="sm"
