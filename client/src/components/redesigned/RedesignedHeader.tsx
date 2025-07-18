@@ -28,6 +28,13 @@ import { Input } from '@/components/ui/input';
 export function RedesignedHeader() {
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
+  
+  // Mock user for development
+  const mockUser = user || {
+    id: 'demo',
+    username: 'Demo User',
+    email: 'demo@signalos.com'
+  };
   const [notifications] = useState(3); // Mock notification count
 
   const handleLogout = async () => {
@@ -116,7 +123,7 @@ export function RedesignedHeader() {
                   <User className="h-4 w-4 text-white" />
                 </div>
                 <div className="text-left">
-                  <div className="text-sm font-medium">{user?.username}</div>
+                  <div className="text-sm font-medium">{mockUser.username}</div>
                   <div className="text-xs text-muted-foreground">Admin</div>
                 </div>
                 <ChevronDown className="h-4 w-4" />
@@ -128,8 +135,8 @@ export function RedesignedHeader() {
                   <User className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <div className="font-medium">{user?.username}</div>
-                  <div className="text-sm text-muted-foreground">{user?.email}</div>
+                  <div className="font-medium">{mockUser.username}</div>
+                  <div className="text-sm text-muted-foreground">{mockUser.email}</div>
                   <div className="text-xs text-muted-foreground">Administrator</div>
                 </div>
               </div>

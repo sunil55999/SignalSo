@@ -22,6 +22,9 @@ export function RedesignedApp() {
     checkAuth();
   }, [checkAuth]);
 
+  // For development/demo purposes, we'll show the redesigned interface
+  // In production, uncomment the authentication check below
+  /*
   if (!isAuthenticated) {
     return (
       <ThemeProvider defaultTheme="light">
@@ -32,6 +35,7 @@ export function RedesignedApp() {
       </ThemeProvider>
     );
   }
+  */
 
   const renderContent = () => {
     switch (activeSection) {
