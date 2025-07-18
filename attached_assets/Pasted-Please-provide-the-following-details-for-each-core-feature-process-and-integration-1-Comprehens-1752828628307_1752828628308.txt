@@ -1,0 +1,61 @@
+Please provide the following details for each core feature, process, and integration:
+1. Comprehensive Feature List
+Every backend function, API, or CLI that must be controlled or displayed in the UI.
+
+Use cases and business logic for each function (e.g., import, export, backtest, link account, parse signal, error log review, etc.).
+
+Any conditional or dependent behaviors.
+
+2. Input/Output Requirements
+Input fields, data types, and validation rules for each UI action.
+
+Expected outputs, states, and all possible feedback/errors users might encounter.
+
+Exact data formats (e.g., JSON, CSV) for all importing/exporting features.
+
+3. Process Flows and User Journeys
+Step-by-step process for every key workflow (from user’s first click to final backend response).
+
+Success, error, and edge-case handling required at each stage.
+
+Automated vs. manual triggers (e.g., auto-refresh, manual sync).
+
+4. API and Integration Specifications
+Full endpoint specs (methods, URIs, payloads, expected responses, error codes) for every backend service the UI will wire to.
+
+Authentication requirements (e.g., JWT, session token, 2FA) and required sequence.
+
+Real-time updates needed (e.g., via sockets, polling).
+
+5. State Management
+Which UI components need to reflect real-time backend state or events (e.g., connection health, account status, pending actions).
+
+How long each state should persist and how transitions are handled.
+
+6. Permissioning and Security
+Which functions or panels are role-restricted (admin/user/guest) and how UI must adapt.
+
+Any audit logging, error reporting, or feedback loops required.
+
+7. UI/UX Detailing
+Layout or component references for all interactions (dashboard cards, modals, wizards, lists, status badges).
+
+Error, status, and success notifications/visuals for every workflow.
+
+Third-party design inspirations, if any (attach references/screenshots or Figma files if available).
+
+8. Miscellaneous/Advanced
+Requirements for multi-language support, accessibility, dark/light mode, and device compatibility.
+
+Any anticipated future features or integrations that need “reserved space” in the UI.
+
+Reporting and analytics needs tied to any function.
+
+Example Response Format (One Per Function):
+
+Functionality	Input/Output	Process Flow	API Details	State Mgmt	Permissions	UI Notes
+Import Signals	File (CSV/JSON), Validate entries, Preview table, Import/Cancel	User selects file → Preview data → Confirm → Backend processes → UI shows result/errors	POST /api/import, auth required, returns list of imported/skipped/failures	Show "Importing..." → Success/Error → Update dashboard	User/Admin only	Modal window, log entry, badges for invalid data
+Please give these details for every function and workflow involved in the application.
+This will ensure the UI can be fully designed, wired, and tested so every feature is immediately usable and visible in the desktop app—mirroring or exceeding competitor standards.
+
+If you have data dictionaries, ERDs, API doc files, or workflow charts, please attach or export them as well.
