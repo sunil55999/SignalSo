@@ -226,6 +226,361 @@ app.post('/api/test/parse-signal', (req, res) => {
   });
 });
 
+// Signal Provider Management
+app.get('/api/providers', (req, res) => {
+  const providers = [
+    {
+      id: '1',
+      name: 'Premium Forex Signals',
+      channel: '@premium_signals',
+      description: 'Professional forex trading signals with high accuracy',
+      active: true,
+      stats: {
+        totalSignals: 1250,
+        winRate: 72.5,
+        avgPnL: 245.8,
+        lastSignal: '2 minutes ago',
+        status: 'active'
+      }
+    },
+    {
+      id: '2',
+      name: 'Gold Trading Pro',
+      channel: '@gold_signals',
+      description: 'Specialized gold and precious metals signals',
+      active: true,
+      stats: {
+        totalSignals: 856,
+        winRate: 68.9,
+        avgPnL: 189.2,
+        lastSignal: '15 minutes ago',
+        status: 'active'
+      }
+    }
+  ];
+  res.json(providers);
+});
+
+app.post('/api/providers', (req, res) => {
+  const provider = req.body;
+  provider.id = Date.now().toString();
+  provider.stats = {
+    totalSignals: 0,
+    winRate: 0,
+    avgPnL: 0,
+    lastSignal: 'Never',
+    status: 'inactive'
+  };
+  res.json({ success: true, provider });
+});
+
+app.put('/api/providers/:id', (req, res) => {
+  const { id } = req.params;
+  const updatedProvider = req.body;
+  res.json({ success: true, provider: updatedProvider });
+});
+
+app.delete('/api/providers/:id', (req, res) => {
+  const { id } = req.params;
+  res.json({ success: true, message: 'Provider deleted' });
+});
+
+// Strategy Management
+app.get('/api/strategies', (req, res) => {
+  const strategies = [
+    {
+      id: '1',
+      name: 'EUR/USD Scalping',
+      description: 'High-frequency scalping strategy for EUR/USD pair',
+      type: 'visual',
+      conditions: [
+        { type: 'rsi', value: 30, operator: 'below' },
+        { type: 'macd', value: 0, operator: 'above' }
+      ],
+      riskManagement: {
+        maxLotSize: 0.1,
+        stopLoss: 20,
+        takeProfit: 30,
+        riskPercent: 2.0
+      },
+      symbols: ['EURUSD'],
+      active: true,
+      backtest: {
+        period: '3M',
+        results: {
+          totalTrades: 245,
+          winRate: 68.5,
+          totalPnL: 2840.50,
+          maxDrawdown: 12.3
+        }
+      }
+    }
+  ];
+  res.json(strategies);
+});
+
+app.post('/api/strategies', (req, res) => {
+  const strategy = req.body;
+  strategy.id = Date.now().toString();
+  res.json({ success: true, strategy });
+});
+
+app.put('/api/strategies/:id', (req, res) => {
+  const { id } = req.params;
+  const updatedStrategy = req.body;
+  res.json({ success: true, strategy: updatedStrategy });
+});
+
+app.post('/api/strategies/:id/backtest', (req, res) => {
+  const { id } = req.params;
+  
+  // Mock backtest results
+  const results = {
+    totalTrades: Math.floor(Math.random() * 500) + 100,
+    winRate: Math.floor(Math.random() * 40) + 50,
+    totalPnL: Math.floor(Math.random() * 5000) + 1000,
+    maxDrawdown: Math.floor(Math.random() * 20) + 5
+  };
+  
+  res.json({ success: true, results });
+});
+
+// Active Trades Management
+app.get('/api/trades', (req, res) => {
+  const trades = [
+    {
+      id: '1',
+      ticket: '123456789',
+      symbol: 'EURUSD',
+      action: 'BUY',
+      volume: 0.1,
+      openPrice: 1.0850,
+      currentPrice: 1.0875,
+      stopLoss: 1.0800,
+      takeProfit: 1.0950,
+      profit: 25.0,
+      openTime: new Date(Date.now() - 3600000).toISOString(),
+      status: 'open',
+      comment: 'Premium Signals'
+    },
+    {
+      id: '2',
+      ticket: '123456790',
+      symbol: 'GBPUSD',
+      action: 'SELL',
+      volume: 0.05,
+      openPrice: 1.2650,
+      currentPrice: 1.2625,
+      stopLoss: 1.2700,
+      takeProfit: 1.2600,
+      profit: 12.5,
+      openTime: new Date(Date.now() - 7200000).toISOString(),
+      status: 'open',
+      comment: 'Gold Signals Pro'
+    }
+  ];
+  res.json(trades);
+});
+
+app.put('/api/trades/:id', (req, res) => {
+  const { id } = req.params;
+  const updatedTrade = req.body;
+  res.json({ success: true, trade: updatedTrade });
+});
+
+app.post('/api/trades/:id/close', (req, res) => {
+  const { id } = req.params;
+  const { type, volume } = req.body;
+  res.json({ success: true, message: `Trade ${type} close executed` });
+});
+
+// Signal Parsing and Validation
+app.post('/api/signals/parse', (req, res) => {
+  const { signal } = req.body;
+  
+  // Mock advanced parsing
+  const parsed = {
+    symbol: 'EURUSD',
+    action: 'BUY',
+    entryPrice: 1.0850,
+    stopLoss: 1.0800,
+    takeProfit: [1.0900, 1.0950],
+    confidence: 0.92,
+    metadata: {
+      provider: 'Premium Signals',
+      timestamp: new Date().toISOString(),
+      language: 'English'
+    }
+  };
+  
+  res.json({
+    success: true,
+    parsed: parsed,
+    message: 'Signal parsed successfully'
+  });
+});
+
+app.post('/api/signals/validate', (req, res) => {
+  const { signal } = req.body;
+  
+  const validation = {
+    isValid: true,
+    confidence: 0.89,
+    warnings: ['Price levels may be outdated'],
+    suggestions: ['Consider updating stop loss level']
+  };
+  
+  res.json({
+    success: true,
+    validation: validation,
+    message: 'Signal validation completed'
+  });
+});
+
+// System Health and Diagnostics
+app.get('/api/system/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    modules: {
+      parser: { status: 'healthy', uptime: '99.9%' },
+      router: { status: 'running', uptime: '100h 25m' },
+      mt5: { status: 'connected', uptime: '98.5%' },
+      telegram: { status: 'active', uptime: '99.1%' },
+      database: { status: 'healthy', uptime: '99.9%' },
+      risk: { status: 'healthy', uptime: '100%' }
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/api/system/diagnostics', (req, res) => {
+  res.json({
+    cpu: { usage: 15.2, cores: 4 },
+    memory: { used: 2.1, total: 8.0, unit: 'GB' },
+    network: { latency: 12, bandwidth: 100 },
+    disk: { used: 45.3, total: 100, unit: 'GB' },
+    processes: {
+      parser: { pid: 1234, memory: 128, cpu: 2.3 },
+      router: { pid: 1235, memory: 256, cpu: 5.1 },
+      mt5: { pid: 1236, memory: 512, cpu: 8.7 }
+    }
+  });
+});
+
+// Data Export/Import Enhancement
+app.post('/api/data/import', (req, res) => {
+  const { type, data, options } = req.body;
+  
+  // Mock comprehensive import
+  const result = {
+    success: true,
+    imported: Math.floor(Math.random() * 100) + 50,
+    skipped: Math.floor(Math.random() * 10),
+    errors: Math.floor(Math.random() * 3),
+    warnings: ['Some duplicate entries were merged'],
+    summary: {
+      signals: 45,
+      providers: 3,
+      strategies: 2
+    }
+  };
+  
+  res.json(result);
+});
+
+app.get('/api/data/export/:type', (req, res) => {
+  const { type } = req.params;
+  const { format = 'json' } = req.query;
+  
+  // Mock export data based on type
+  const exportData = {
+    signals: Array(50).fill(null).map((_, i) => ({
+      id: i + 1,
+      symbol: ['EURUSD', 'GBPUSD', 'USDJPY'][i % 3],
+      action: ['BUY', 'SELL'][i % 2],
+      price: (1.0 + Math.random() * 0.5).toFixed(5),
+      timestamp: new Date(Date.now() - i * 3600000).toISOString()
+    })),
+    providers: [
+      { id: 1, name: 'Premium Signals', channel: '@premium_signals' },
+      { id: 2, name: 'Gold Pro', channel: '@gold_signals' }
+    ],
+    strategies: [
+      { id: 1, name: 'EUR/USD Scalping', type: 'visual' },
+      { id: 2, name: 'Gold Trend', type: 'code' }
+    ]
+  };
+  
+  res.json(exportData[type] || []);
+});
+
+// Enhanced Logs API
+app.get('/api/logs/stats', (req, res) => {
+  const stats = {
+    total: 1247,
+    byLevel: {
+      info: 856,
+      warning: 234,
+      error: 157
+    },
+    byComponent: {
+      router: 445,
+      mt5: 321,
+      telegram: 289,
+      system: 192
+    },
+    lastUpdated: new Date().toISOString()
+  };
+  res.json(stats);
+});
+
+// Import/Export API enhancement
+app.post('/api/import', (req, res) => {
+  const { data, options } = req.body;
+  
+  // Mock import processing
+  const result = {
+    success: true,
+    items: Math.floor(Math.random() * 50) + 20,
+    warnings: options?.skipInvalid ? ['3 invalid entries skipped'] : [],
+    timestamp: new Date().toISOString()
+  };
+  
+  res.json(result);
+});
+
+app.get('/api/export/:type', (req, res) => {
+  const { type } = req.params;
+  
+  // Mock export data
+  const mockData = {
+    signals: Array(25).fill(null).map((_, i) => ({
+      id: i + 1,
+      symbol: ['EURUSD', 'GBPUSD', 'USDJPY'][i % 3],
+      action: ['BUY', 'SELL'][i % 2],
+      price: (1.0 + Math.random() * 0.5).toFixed(5),
+      timestamp: new Date(Date.now() - i * 3600000).toISOString()
+    })),
+    strategies: [
+      { id: 1, name: 'EUR/USD Scalping', type: 'visual', active: true },
+      { id: 2, name: 'Gold Trend Following', type: 'code', active: false }
+    ],
+    providers: [
+      { id: 1, name: 'Premium Signals', channel: '@premium_signals', active: true },
+      { id: 2, name: 'Gold Pro', channel: '@gold_signals', active: true }
+    ],
+    logs: Array(100).fill(null).map((_, i) => ({
+      id: i + 1,
+      timestamp: new Date(Date.now() - i * 60000).toISOString(),
+      level: ['info', 'warning', 'error'][i % 3],
+      component: ['router', 'mt5', 'telegram', 'system'][i % 4],
+      message: `Log entry ${i + 1} from ${['router', 'mt5', 'telegram', 'system'][i % 4]} component`
+    }))
+  };
+  
+  res.json(mockData[type] || []);
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
   res.json({ 
