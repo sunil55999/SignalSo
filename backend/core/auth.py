@@ -50,6 +50,27 @@ class TokenData(BaseModel):
     device_id: str
     license_key: str
     expires_at: datetime
+    token_type: str = "access"  # access or refresh
+
+
+class RefreshTokenData(BaseModel):
+    """Refresh token data"""
+    user_id: str
+    device_id: str
+    token_id: str
+    expires_at: datetime
+
+
+class DeviceBinding(BaseModel):
+    """Device binding data"""
+    device_id: str
+    user_id: str
+    device_uuid: str
+    ip_address: str
+    user_agent: str
+    created_at: datetime
+    last_seen: datetime
+    is_active: bool = True
 
 
 class AuthService:
@@ -59,6 +80,9 @@ class AuthService:
         self.secret_key = settings.JWT_SECRET_KEY
         self.algorithm = settings.JWT_ALGORITHM
         self.expiration_hours = settings.JWT_EXPIRATION_HOURS
+        self.refresh_expiration_days = 30
+        self.device_bindings: Dict[str, DeviceBinding] = {}  # In production, use database
+        self.refresh_tokens: Dict[str, RefreshTokenData] = {}  # In production, use database
     
     def hash_password(self, password: str) -> str:
         """Hash password"""
@@ -94,6 +118,35 @@ class AuthService:
         
         return token
     
+    def create_refresh_token(self, user_id: str, device_id: str) -> str:
+        """Create JWT refresh token"""
+        token_id = uuid.uuid4().hex
+        expires_at = datetime.utcnow() + timedelta(days=self.refresh_expiration_days)
+        
+        refresh_data = RefreshTokenData(
+            user_id=user_id,
+            device_id=device_id,
+            token_id=token_id,
+            expires_at=expires_at
+        )
+        
+        payload = {
+            "user_id": user_id,
+            "device_id": device_id,
+            "token_id": token_id,
+            "exp": expires_at,
+            "iat": datetime.utcnow(),
+            "type": "refresh"
+        }
+        
+        token = jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
+        
+        # Store refresh token (in production, use database)
+        self.refresh_tokens[token_id] = refresh_data
+        
+        logger.info(f"Refresh token created for user {user_id}")
+        return token
+    
     def verify_token(self, token: str) -> Optional[TokenData]:
         """Verify JWT token"""
         try:
@@ -114,6 +167,81 @@ class AuthService:
         except jwt.InvalidTokenError as e:
             logger.warning(f"Invalid token: {e}")
             return None
+    
+    def bind_device(self, user_id: str, device_uuid: str, ip_address: str, user_agent: str) -> DeviceBinding:
+        """Bind device to user account"""
+        device_id = f"{user_id}_{hashlib.sha256(device_uuid.encode()).hexdigest()[:8]}"
+        
+        device_binding = DeviceBinding(
+            device_id=device_id,
+            user_id=user_id,
+            device_uuid=device_uuid,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            created_at=datetime.utcnow(),
+            last_seen=datetime.utcnow(),
+            is_active=True
+        )
+        
+        # Store device binding (in production, use database)
+        self.device_bindings[device_id] = device_binding
+        
+        logger.info(f"Device {device_uuid} bound to user {user_id}")
+        return device_binding
+    
+    def verify_device_binding(self, user_id: str, device_id: str) -> bool:
+        """Verify device is bound to user"""
+        device_binding = self.device_bindings.get(device_id)
+        if not device_binding:
+            logger.warning(f"Device {device_id} not found for user {user_id}")
+            return False
+        
+        if device_binding.user_id != user_id or not device_binding.is_active:
+            logger.warning(f"Device {device_id} not authorized for user {user_id}")
+            return False
+        
+        # Update last seen
+        device_binding.last_seen = datetime.utcnow()
+        return True
+    
+    def refresh_access_token(self, refresh_token: str) -> Optional[str]:
+        """Refresh access token using refresh token"""
+        try:
+            payload = jwt.decode(refresh_token, self.secret_key, algorithms=[self.algorithm])
+            
+            if payload.get("type") != "refresh":
+                logger.warning("Invalid token type for refresh")
+                return None
+            
+            token_id = payload.get("token_id")
+            stored_token = self.refresh_tokens.get(token_id)
+            
+            if not stored_token or stored_token.expires_at < datetime.utcnow():
+                logger.warning("Refresh token expired or not found")
+                return None
+            
+            # Create new access token
+            expires_at = datetime.utcnow() + timedelta(hours=self.expiration_hours)
+            token_data = TokenData(
+                user_id=stored_token.user_id,
+                device_id=stored_token.device_id,
+                license_key="",  # Will be filled by license validator
+                expires_at=expires_at
+            )
+            
+            return self.create_access_token(token_data)
+            
+        except jwt.InvalidTokenError as e:
+            logger.warning(f"Invalid refresh token: {e}")
+            return None
+    
+    def revoke_refresh_token(self, token_id: str) -> bool:
+        """Revoke refresh token"""
+        if token_id in self.refresh_tokens:
+            del self.refresh_tokens[token_id]
+            logger.info(f"Refresh token {token_id} revoked")
+            return True
+        return False
     
     def validate_license(self, license_info: LicenseInfo) -> bool:
         """Validate license"""

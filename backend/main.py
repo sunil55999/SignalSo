@@ -39,10 +39,29 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     logger.info("🚀 SignalOS Backend starting up...")
     
-    # Initialize queue manager
+    # Start background workers
+    from workers.queue_manager import QueueManager
+    from workers.parse_worker import get_parse_worker
+    from workers.trade_retry import get_retry_worker
+    from workers.cleaner_worker import get_cleaner_worker
+    
+    # Start queue manager
     queue_manager = QueueManager()
     await queue_manager.start()
     app.state.queue_manager = queue_manager
+    
+    # Start Part 2 workers
+    parse_worker = get_parse_worker()
+    await parse_worker.start()
+    app.state.parse_worker = parse_worker
+    
+    retry_worker = get_retry_worker()
+    await retry_worker.start()
+    app.state.retry_worker = retry_worker
+    
+    cleaner_worker = get_cleaner_worker()
+    await cleaner_worker.start()
+    app.state.cleaner_worker = cleaner_worker
     
     logger.info("✅ SignalOS Backend startup complete")
     
@@ -50,6 +69,9 @@ async def lifespan(app: FastAPI):
     
     # Cleanup
     logger.info("🔄 SignalOS Backend shutting down...")
+    await cleaner_worker.stop()
+    await retry_worker.stop()
+    await parse_worker.stop()
     await queue_manager.stop()
     logger.info("✅ SignalOS Backend shutdown complete")
 
