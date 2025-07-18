@@ -1,0 +1,55 @@
+Recommended Core Modifications
+A. Enhance Dashboard Structure
+Replace static summary cards with "Mission Control" live tiles—balance, PnL, license, real-time module health.
+
+Add a persistent, floating Quick Actions bar: Import, Backtest, Pause, Add Provider, Help.
+
+B. Integrate Advanced Performance & Analytics
+Smart analytics panels for:
+
+Parsing accuracy/confidence
+
+Execution latency
+
+Equity and PnL trends (mini-charts)
+
+Provider/strategy snapshot metrics
+
+C. Implement Interactive Activity Timeline
+Filterable live feed for trade events, errors, signals, and system health—drilldown reveals actionable context and options (retry, acknowledge, investigate).
+
+D. Build Provider & Strategy Intelligence Widgets
+Consolidated provider table with live status, testing, analytics, and quick connect/disconnect.
+
+Visual strategy board: active rule display, backtest button, assignment controls, edit simulation in-place.
+
+E. Always-On Risk & Compliance Panel
+Display live exposure, open trades, prop firm rules status, with warnings, and one-click to view or resolve risk events.
+
+F. Centralized Notification & Support Hub
+All alerts/errors/updates filterable in a notification center—actions to resolve, mute, or get help.
+
+Add onboarding/tutorial wizard for new users or after major updates.
+
+G. Customization, Accessibility, and Experience
+Allow users to customize/pin/rearrange panels.
+
+Ensure light/dark mode toggle, high-contrast settings, keyboard navigation, and tooltip help for complex metrics.
+
+Example: Enhanced Dashboard Layout
+Section	Functions/Widgets
+Top Bar	Account health, live license, notification icons, quick actions (Import, Pause, Backtest, Provider+)
+Main Tiles	Equity/PnL cards, parsing success/confidence, execution speed, win rate, mini-charts, risk panel
+Activity Feed	Live timeline with filters (trade, error, system, parsing, provider), clickable events
+Providers Table	Status, performance, error alerts, analytics, "Test Parse"/"Sim Trade" button
+Strategy Board	Rules summary, assign/modify/backtest for each strategy, live performance metrics
+Notification Hub	Real-time alerts, error logs, warnings, achievements, onboarding/tip banners, "Fix" and "Help" actions
+Customization	Pin/hide/reorder any dashboard panel, theme toggle, assistive tooltips
+Action Steps
+Redesign the dashboard layout as above, referencing leading trading apps.
+
+Enumerate every backend function and control, and ensure a corresponding dashboard panel, button, or workflow exists.
+
+Add instant feedback/user response mechanisms for every event, action, and error.
+
+Test with mock and live data to validate actionable, real-time insights and workflows.
