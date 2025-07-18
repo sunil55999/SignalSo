@@ -1,0 +1,194 @@
+# SignalOS Desktop UI Redesign & Complete Wiring Guide
+
+## Overview
+
+This guide provides a comprehensive approach to redesigning the SignalOS desktop user interface and ensuring every backend function is fully and transparently integrated with the frontend. The goal: an intuitive, modern desktop trading dashboard with seamless interaction, robust feedback, and full control for all key workflows.
+
+---
+
+## 1. Redesign Goals
+
+- **Unify Experience:** All features are accessed directly from the UI — nothing is hidden or backend-only.
+- **Real-Time Feedback:** Instant progress, errors, and results shown for every user action.
+- **Guided Workflows:** Wizards and context help for onboarding and complex operations.
+- **Scalable Design:** Room for enhancements like analytics, signal marketplace, mobile/cloud sync, and more.
+
+---
+
+## 2. UI Structure and Layout
+
+### 2.1 Core Layout
+
+- **Header:** App name, version, licensing/status/settings.
+- **Sidebar or Topbar:** Navigation for:
+  - Dashboard (main overview)
+  - Import/Export
+  - Manage Signals/Providers
+  - Strategy Builder & Backtester
+  - Active Trades/Positions
+  - Logs & Activity
+  - Settings
+
+### 2.2 Main Dashboard Area
+
+| Panel                    | Function                                                                        |
+|--------------------------|---------------------------------------------------------------------------------|
+| **System Health**        | Status (Parser, MT5, Telegram, AI, Licensing) with live color-coded badges      |
+| **Account Summary**      | Balance, equity, risk, prop firm compliance, current user role                  |
+| **Signal Activity Feed** | Filterable, timestamped log: parsing, trade actions, errors, system events      |
+| **Quick Actions**        | Import, Export, Test, Replay, Pause/Resume, Connect/Disconnect                  |
+| **Notification Center**  | Alerts, confirmations, actionable error info                                    |
+
+---
+
+## 3. Key UI Components
+
+### 3.1 Import/Export
+
+- Drag-and-drop importer (CSV, JSON, PDF)
+- File preview panel: entries and deduplicated/invalid highlights
+- Progress/results for all major actions
+- Download/export with selectable formats
+
+### 3.2 Signal & Provider Management
+
+- Add/edit/remove Telegram channels and providers
+- Configure per-provider or per-channel rules/strategies
+- Analytics: win rate, PnL, drawdown, latency
+
+### 3.3 Strategy Builder & Backtest
+
+- Visual and low-code/no-code strategy editing
+- Natural language editor option
+- Integrated backtesting wizard: visual results, assign/deploy with one click
+
+### 3.4 Signal Parsing & Execution
+
+- Parsing queue: status, confidence, fallback triggers
+- Each signal: original, parsed, edits, reparse buttons
+
+### 3.5 Active Trades & Risk
+
+- Open positions, pending orders—all editable in-line
+- Real-time PnL, health status
+- SL/TP, partial close, risk event alerts
+
+### 3.6 Logs & Activity Center
+
+- Time-stamped, filterable logs (success, error, type)
+- Undo/retry for failures
+
+---
+
+## 4. Backend Wiring & API Integration
+
+### 4.1 Required Endpoints
+
+| UI Component        | API (examples)                              |
+|---------------------|---------------------------------------------|
+| Licensing/Auth      | `/api/auth/activate`, `/api/auth/login`     |
+| Telegram            | `/api/telegram/auth`, `/api/telegram/session`|
+| Signal Parser       | `/api/parser/parse`, `/api/parser/confidence`|
+| Trade Execution     | `/api/mt5/execute`, `/api/mt5/account`      |
+| Import/Export       | `/api/import`, `/api/export`                |
+| Strategy Mgmt       | `/api/strategies`, `/api/backtest/run`      |
+| Logging/Monitoring  | `/api/logs/*`                               |
+
+All endpoints should:
+- Validate all inputs (surface UI errors)
+- Return standardized data, statuses, and error codes
+- Provide real-time updates (WebSocket/polling) for stateful events
+- Be well-documented for frontend dev integration
+
+---
+
+## 5. User Workflows
+
+### 5.1 Importing
+
+1. Click “Import” and provide file via drag/drop or file picker.
+2. Preview file, validate entries, fix errors/duplicates.
+3. Confirm → progress + summary shown.
+4. Present next actions: assign, backtest, edit, discard.
+
+### 5.2 Connecting Integrations
+
+1. Use “Connect” (MT5/Telegram): enter credentials.
+2. Visual status updates and auto-reconnect on error.
+3. Dashboard reflects live status and operation readiness.
+
+### 5.3 Managing Strategies
+
+1. Edit/create in visual or natural language builder.
+2. Save and optionally backtest/activate.
+3. Results and audit trail update instantly.
+
+### 5.4 Full Error/Feedback Loop
+
+- Every error is contextual and actionable.
+- All errors/event logs routed to UI activity center for review and debugging.
+
+---
+
+## 6. Security, Permissions, and Roles
+
+- Hide/show admin features per role/license.
+- Enforce 2FA, hardware checks in interface.
+- Secure credential entry and storage.
+
+---
+
+## 7. UI/UX Best Practices
+
+- Modern, flat card-based style; color-coded statuses (green/yellow/red).
+- Large, accessible buttons; tooltips for all advanced options.
+- Complete keyboard/assistive navigation support.
+- Responsive layout (support window resizing, light/dark theme).
+
+---
+
+## 8. Testing & QA
+
+- Input validation: valid/invalid/edge cases.
+- Real-time UI reflects all backend state.
+- Automated UI scripts for major workflows.
+- UAT checklist: onboarding, import/export, connection, live trades, error handling.
+
+---
+
+## 9. Resources
+
+- Feature spec documentation
+- API docs/Swagger files or Postman collections
+- Example data files for import/export
+- Wireframes/Figma/UI mockups
+- User feedback reports (if available)
+- Security and licensing constraints
+
+---
+
+## Appendix: UI Wiring Table
+
+| Feature              | User Inputs / Actions    | Endpoint                   | UI Feedback                    |
+|----------------------|-------------------------|----------------------------|--------------------------------|
+| Import Signals       | File, mapping selectors | `POST /api/import`         | Progress, error/success badge  |
+| MT5 Connection       | Account/login form      | `POST /api/mt5/connect`    | Status badge, error alert      |
+| Parse Signal         | Message/image input     | `POST /api/parser/parse`   | Parsing result, confidence bar |
+| Execute Trade        | Trade/risk params       | `POST /api/mt5/execute`    | Success/error notification     |
+| Backtest Strategy    | Select params/date      | `POST /api/backtest/run`   | Result chart, log entry        |
+| Logs                 | N/A                     | `GET /api/logs/*`          | Real-time timeline             |
+
+---
+
+## Implementation Steps
+
+1. **Gather All Specs:** Ensure every function, endpoint, and process is documented (see previous prompts).
+2. **Redesign UI Wireframes:** Use Figma or similar for mockups; get stakeholder feedback.
+3. **Establish API Contracts:** Finalize endpoint specs and error/success codes.
+4. **Develop in Sprints:** UI functional shell → endpoint wiring → live state feedback → workflow polish.
+5. **Test Individually and E2E:** Both manual edge tests and automated UI regression.
+6. **Review with Users:** UAT walkthrough and rapid iteration.
+7. **Document for Support/Training:** Write user guides and troubleshooting docs.
+
+---
+
