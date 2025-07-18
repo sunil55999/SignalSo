@@ -1,0 +1,177 @@
+Objective
+Reorganize all desktop application files into a structured desktop-app folder to improve project organization, maintainability, and separation of concerns.
+
+File Reorganization Instructions
+Create Main Directory Structure
+text
+desktop-app/
+├── frontend/                 # React/TypeScript UI
+├── backend/                  # Python desktop core
+├── config/                   # Configuration files
+├── assets/                   # Images, icons, resources
+├── build/                    # Build outputs
+├── tests/                    # Test files
+├── docs/                     # Desktop app documentation
+└── scripts/                  # Build and deployment scripts
+Move Frontend Files
+Move all UI-related files to desktop-app/frontend/:
+
+text
+- All React components (.jsx, .tsx files)
+- TypeScript files (.ts, .tsx)
+- CSS/SCSS stylesheets
+- Package.json and package-lock.json
+- Tailwind configuration
+- Vite/Webpack configuration
+- Public folder with HTML files
+- Node_modules (if present)
+Move Backend/Python Files
+Move all Python desktop core files to desktop-app/backend/:
+
+text
+- All Python modules (.py files)
+- Requirements.txt
+- Virtual environment folders
+- Python configuration files
+- Database files (SQLite, etc.)
+- Log files and session data
+- MT5 integration modules
+- Signal processing modules
+- AI/ML model files
+Move Configuration Files
+Move all configuration to desktop-app/config/:
+
+text
+- JSON configuration files
+- Environment variables (.env files)
+- Application settings
+- Database configurations
+- API endpoint configurations
+- Security and licensing configs
+Move Asset Files
+Move all resources to desktop-app/assets/:
+
+text
+- Images and icons
+- Fonts
+- Audio files
+- Binary resources
+- Brand assets and logos
+Update File References
+After moving files, update all import paths and references:
+
+text
+- Frontend import statements
+- Python module imports
+- Configuration file paths
+- Asset references in UI
+- Build script paths
+- Test file imports
+Implementation Commands
+Step 1: Create Directory Structure
+bash
+mkdir -p desktop-app/{frontend,backend,config,assets,build,tests,docs,scripts}
+Step 2: Move Frontend Files
+bash
+# Move React/TypeScript files
+mv client/* desktop-app/frontend/
+mv src/components desktop-app/frontend/
+mv src/pages desktop-app/frontend/
+mv src/hooks desktop-app/frontend/
+mv src/utils desktop-app/frontend/
+mv package.json desktop-app/frontend/
+mv tailwind.config.js desktop-app/frontend/
+mv vite.config.ts desktop-app/frontend/
+mv index.html desktop-app/frontend/
+Step 3: Move Backend Files
+bash
+# Move Python files
+mv *.py desktop-app/backend/
+mv src/python/* desktop-app/backend/
+mv requirements.txt desktop-app/backend/
+mv logs/ desktop-app/backend/
+mv sessions/ desktop-app/backend/
+mv database/ desktop-app/backend/
+Step 4: Move Configuration Files
+bash
+# Move config files
+mv configuration\ files/* desktop-app/config/
+mv *.json desktop-app/config/
+mv .env* desktop-app/config/
+Step 5: Move Assets
+bash
+# Move assets
+mv assets/* desktop-app/assets/
+mv public/images/* desktop-app/assets/
+mv public/icons/* desktop-app/assets/
+Post-Move Updates Required
+Update Package.json Scripts
+json
+{
+  "scripts": {
+    "dev": "cd desktop-app/frontend && npm run dev",
+    "build": "cd desktop-app/frontend && npm run build",
+    "start-backend": "cd desktop-app/backend && python main.py"
+  }
+}
+Update Import Paths in Frontend
+typescript
+// Before
+import { Component } from '../components/Component'
+
+// After
+import { Component } from './components/Component'
+Update Python Import Paths
+python
+# Before
+from src.parser import SignalParser
+
+# After
+from .parser import SignalParser
+Update Configuration References
+typescript
+// Before
+const config = require('./config.json')
+
+// After
+const config = require('../config/config.json')
+Validation Checklist
+✅ File Organization
+ All frontend files in desktop-app/frontend/
+
+ All Python files in desktop-app/backend/
+
+ All configs in desktop-app/config/
+
+ All assets in desktop-app/assets/
+
+✅ Functionality
+ Frontend builds without errors
+
+ Python backend starts successfully
+
+ All imports resolve correctly
+
+ Configuration files load properly
+
+ Assets display correctly in UI
+
+✅ Clean Up
+ Remove empty directories from old structure
+
+ Update .gitignore for new structure
+
+ Update README with new folder structure
+
+ Update deployment scripts
+
+Benefits of This Reorganization
+Clear Separation: Frontend and backend are clearly separated
+
+Improved Maintainability: Easy to locate and modify files
+
+Better Collaboration: Teams can work on specific areas independently
+
+Scalability: Structure supports future growth and features
+
+Professional Organization: Industry-standard project structure
