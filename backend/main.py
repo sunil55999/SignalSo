@@ -96,6 +96,8 @@ app.add_middleware(
 )
 
 # Add custom middleware
+from middleware.rate_limit import RateLimitMiddleware, RateLimitRule
+app.add_middleware(RateLimitMiddleware, default_rule=RateLimitRule(requests=1000, window=60))
 app.add_middleware(ErrorHandlerMiddleware)
 app.add_middleware(AuthMiddleware)
 
