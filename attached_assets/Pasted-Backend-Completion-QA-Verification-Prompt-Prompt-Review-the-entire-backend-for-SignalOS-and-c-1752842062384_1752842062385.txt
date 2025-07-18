@@ -1,0 +1,57 @@
+Backend Completion & QA Verification Prompt
+Prompt:
+
+Review the entire backend for SignalOS and confirm it is fully completed, stable, and bug-free by providing clear evidence for each area below:
+
+1. API & Endpoint Coverage
+
+List all API routes with request/response examples.
+
+Confirm that every planned feature/module has an exposed, documented, and tested endpoint.
+
+2. Backend Functionality Checklist
+
+Provide a feature checklist mapped to business requirements (auth, licensing, import/export, integration, parsing, trading, analytics, system health, config, notifications, audit, advanced features).
+
+Show proof that ALL critical functions are implemented and working.
+
+3. Automated Test Coverage
+
+Attach current automated test results (unit, integration, acceptance).
+
+Share test case summaries, code coverage percentage, and a log of last successful full test run.
+
+Prove all critical workflows (auth, trade, license, sync, offline) pass with zero errors.
+
+4. Error & Exception Handling
+
+Detail how errors are logged, reported, and surfaced to users/monitoring.
+
+Prove that all endpoints and background processes fail gracefully, log all unexpected issues, and that recovery/alerts are in place.
+
+5. Performance & Load Testing
+
+Provide results for performance benchmarks under peak load (req/sec, response latency, CPU/memory usage).
+
+Ensure no instability or leaks when processing bulk imports, concurrent trades, or sync jobs.
+
+6. Security & Data Integrity
+
+Describe measures for authentication, authorization, rate limiting, and data validation.
+
+Confirm encrypted handling of all sensitive data and secure error logging.
+
+7. Documentation & Deployment
+
+Attach API docs (Swagger/OpenAPI), ER diagrams, and deployment instructions.
+
+Confirm all documentation is current and matches the deployed system.
+
+8. Final Verification
+
+Confirm a successful end-to-end test of every business-critical workflow through the UI and/or API.
+
+Share any known issues or limitations.
+
+Result:
+A clear, comprehensive report proving the backend is bug-free, stable, and completely production-ready for integration with the SignalOS desktop app and other clients.
