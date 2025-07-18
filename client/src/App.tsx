@@ -1,7 +1,7 @@
-import { RedesignedApp } from '@/components/redesigned/RedesignedApp';
+import { SimpleRedesignedApp } from '@/components/redesigned/SimpleRedesignedApp';
 
 function App() {
-  return <RedesignedApp />;
+  return <SimpleRedesignedApp />;
 }
 
 export default App;
