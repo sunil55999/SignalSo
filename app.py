@@ -1,7 +1,7 @@
 import os
 import logging
 
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -32,28 +32,67 @@ db.init_app(app)
 
 @app.route('/')
 def index():
-    """Main dashboard page"""
-    return render_template('index.html')
+    """API root endpoint"""
+    return jsonify({
+        "name": "SignalOS API",
+        "version": "1.0.0",
+        "status": "running",
+        "description": "AI-powered trading automation platform API",
+        "endpoints": {
+            "health": "/health",
+            "status": "/api/status",
+            "signals": "/api/signals",
+            "trades": "/api/trades"
+        }
+    })
 
-@app.route('/dashboard')
-def dashboard():
-    """Trading dashboard"""
-    return render_template('dashboard.html')
+@app.route('/health')
+def health():
+    """Health check endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "database": "connected",
+        "timestamp": "2025-07-21T21:05:00Z"
+    })
 
-@app.route('/signals')
-def signals():
-    """Signal processing page"""
-    return render_template('signals.html')
+@app.route('/api/status')
+def api_status():
+    """System status endpoint"""
+    return jsonify({
+        "system": "SignalOS",
+        "status": "active",
+        "components": {
+            "database": "connected",
+            "ai_parser": "ready",
+            "mt5_bridge": "configuring",
+            "telegram": "setup_required"
+        },
+        "stats": {
+            "signals_today": 0,
+            "active_trades": 0,
+            "total_profit": 0.0,
+            "win_rate": 0.0
+        }
+    })
 
-@app.route('/trades')
-def trades():
-    """Trade management page"""
-    return render_template('trades.html')
+@app.route('/api/signals')
+def api_signals():
+    """Signals endpoint"""
+    return jsonify({
+        "signals": [],
+        "count": 0,
+        "status": "No signals received yet"
+    })
 
-@app.route('/settings')
-def settings():
-    """Settings and configuration page"""
-    return render_template('settings.html')
+@app.route('/api/trades')
+def api_trades():
+    """Trades endpoint"""
+    return jsonify({
+        "trades": [],
+        "open_positions": 0,
+        "total_profit": 0.0,
+        "status": "No active trades"
+    })
 
 with app.app_context():
     # Make sure to import the models here or their tables won't be created
