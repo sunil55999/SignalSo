@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}SignalOS - Home{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card p-4 text-center">
+                <h1 class="text-white mb-3">
+                    <i class="fas fa-rocket me-2"></i>
+                    Welcome to SignalOS
+                </h1>
+                <p class="text-white-50 mb-4">
+                    Advanced AI-powered trading automation platform designed to outperform traditional signal copiers
+                </p>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-chart-line me-2"></i>
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Cards -->
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="stat-card p-4 h-100">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="fas fa-robot text-primary fs-1 me-3"></i>
+                    <div>
+                        <h5 class="text-white mb-1">AI Signal Processing</h5>
+                        <small class="text-white-50">Hybrid LLM + regex engine</small>
+                    </div>
+                </div>
+                <p class="text-white-50">
+                    Advanced AI parser with confidence scoring, OCR support, and multilingual capabilities for accurate signal extraction.
+                </p>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="stat-card p-4 h-100">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="fas fa-exchange-alt text-success fs-1 me-3"></i>
+                    <div>
+                        <h5 class="text-white mb-1">Smart Trading</h5>
+                        <small class="text-white-50">MT5 integration</small>
+                    </div>
+                </div>
+                <p class="text-white-50">
+                    Async parallel execution engine with risk management, position sizing, and intelligent entry timing.
+                </p>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="stat-card p-4 h-100">
+                <div class="d-flex align-items-center mb-3">
+                    <i class="fas fa-shield-alt text-warning fs-1 me-3"></i>
+                    <div>
+                        <h5 class="text-white mb-1">Security & Compliance</h5>
+                        <small class="text-white-50">Prop firm ready</small>
+                    </div>
+                </div>
+                <p class="text-white-50">
+                    JWT licensing, device binding, magic number obfuscation, and stealth trading features for prop firm compliance.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <h5 class="text-white mb-3">
+                    <i class="fas fa-server me-2"></i>
+                    System Status
+                </h5>
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <i class="fas fa-database text-success fs-2"></i>
+                        <p class="text-white mt-2 mb-0">Database</p>
+                        <small class="text-success">Connected</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <i class="fas fa-brain text-primary fs-2"></i>
+                        <p class="text-white mt-2 mb-0">AI Parser</p>
+                        <small class="text-primary">Ready</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <i class="fas fa-chart-area text-info fs-2"></i>
+                        <p class="text-white mt-2 mb-0">MT5 Bridge</p>
+                        <small class="text-warning">Configuring</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <i class="fas fa-telegram text-primary fs-2"></i>
+                        <p class="text-white mt-2 mb-0">Telegram</p>
+                        <small class="text-warning">Setup Required</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

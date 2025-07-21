@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}SignalOS - Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Dashboard Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2 class="text-white mb-0">
+                            <i class="fas fa-tachometer-alt me-2"></i>
+                            Trading Dashboard
+                        </h2>
+                        <small class="text-white-50">Real-time trading performance and analytics</small>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="d-inline-flex align-items-center bg-success bg-opacity-25 px-3 py-2 rounded">
+                            <i class="fas fa-circle text-success me-2"></i>
+                            <span class="text-white">System Active</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="stat-card p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Total Profit</h6>
+                        <h4 class="text-success mb-0">$0.00</h4>
+                        <small class="text-white-50">+0.00% today</small>
+                    </div>
+                    <i class="fas fa-dollar-sign text-success fs-2"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="stat-card p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Active Trades</h6>
+                        <h4 class="text-primary mb-0">0</h4>
+                        <small class="text-white-50">0 pending</small>
+                    </div>
+                    <i class="fas fa-chart-line text-primary fs-2"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="stat-card p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Win Rate</h6>
+                        <h4 class="text-warning mb-0">0%</h4>
+                        <small class="text-white-50">0 trades</small>
+                    </div>
+                    <i class="fas fa-trophy text-warning fs-2"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3 mb-3">
+            <div class="stat-card p-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-white-50 mb-1">Signals Today</h6>
+                        <h4 class="text-info mb-0">0</h4>
+                        <small class="text-white-50">0 processed</small>
+                    </div>
+                    <i class="fas fa-satellite-dish text-info fs-2"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts and Activity -->
+    <div class="row">
+        <div class="col-md-8 mb-4">
+            <div class="glass-card p-4">
+                <h5 class="text-white mb-4">
+                    <i class="fas fa-chart-area me-2"></i>
+                    Portfolio Performance
+                </h5>
+                <div class="text-center py-5">
+                    <i class="fas fa-chart-line text-white-50" style="font-size: 4rem;"></i>
+                    <p class="text-white-50 mt-3 mb-0">Performance chart will appear here</p>
+                    <small class="text-white-50">Start trading to see your performance metrics</small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="glass-card p-4">
+                <h5 class="text-white mb-4">
+                    <i class="fas fa-clock me-2"></i>
+                    Recent Activity
+                </h5>
+                <div class="text-center py-4">
+                    <i class="fas fa-history text-white-50" style="font-size: 3rem;"></i>
+                    <p class="text-white-50 mt-3 mb-0">No recent activity</p>
+                    <small class="text-white-50">Trading activity will appear here</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12">
+            <div class="glass-card p-4">
+                <h5 class="text-white mb-3">
+                    <i class="fas fa-bolt me-2"></i>
+                    Quick Actions
+                </h5>
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('signals') }}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-satellite-dish me-2"></i>
+                            View Signals
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('trades') }}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-exchange-alt me-2"></i>
+                            Manage Trades
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('settings') }}" class="btn btn-outline-light w-100">
+                            <i class="fas fa-cog me-2"></i>
+                            Settings
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <button class="btn btn-success w-100" disabled>
+                            <i class="fas fa-play me-2"></i>
+                            Start Trading
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-refresh dashboard data every 30 seconds
+setInterval(function() {
+    // This will be connected to the backend API later
+    console.log('Dashboard refresh - backend integration pending');
+}, 30000);
+</script>
+{% endblock %}
