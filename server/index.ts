@@ -1,51 +1,56 @@
-import express from 'express';
-import cors from 'cors';
+#!/usr/bin/env node
+/**
+ * SignalOS Backend Proxy
+ * 
+ * This server acts as a proxy to the Python FastAPI backend.
+ * The UI has been removed and only the backend API services remain.
+ */
+
+import { spawn } from 'child_process';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const app = express();
+const BACKEND_DIR = path.resolve(__dirname, '../backend');
 const PORT = process.env.PORT || 5000;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+console.log('🚀 SignalOS Backend Proxy starting...');
+console.log(`📁 Backend directory: ${BACKEND_DIR}`);
 
-// API Routes
-app.get('/api/router/status', (req, res) => {
-  console.log('[SERVER] GET /api/router/status');
-  res.json({ status: 'running' });
+// Start the Python FastAPI backend
+const pythonProcess = spawn('python3', ['main.py'], {
+  cwd: BACKEND_DIR,
+  stdio: 'inherit',
+  env: {
+    ...process.env,
+    PORT: PORT.toString(),
+  }
 });
 
-app.get('/api/mt5/status', (req, res) => {
-  console.log('[SERVER] GET /api/mt5/status');
-  res.json({ status: 'connected' });
+pythonProcess.on('error', (error) => {
+  console.error('❌ Failed to start Python backend:', error);
+  process.exit(1);
 });
 
-app.get('/api/telegram/status', (req, res) => {
-  console.log('[SERVER] GET /api/telegram/status');
-  res.json({ status: 'active' });
+pythonProcess.on('exit', (code) => {
+  console.log(`🔄 Python backend process exited with code ${code}`);
+  if (code !== 0) {
+    console.error('❌ Backend process failed');
+    process.exit(code || 1);
+  }
 });
 
-app.get('/api/status', (req, res) => {
-  res.json({
-    status: 'online',
-    timestamp: new Date().toISOString(),
-    version: '1.0.0'
-  });
+// Handle graceful shutdown
+process.on('SIGINT', () => {
+  console.log('\n🛑 Shutting down SignalOS Backend...');
+  pythonProcess.kill('SIGINT');
+  process.exit(0);
 });
 
-// Serve the React-based SignalOS dashboard
-app.use(express.static(path.join(__dirname, '..', 'dist')));
-
-// Serve the main React app for all routes
-app.get('*', (req, res) => {
-  console.log('[SERVER] GET /');
-  res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+process.on('SIGTERM', () => {
+  console.log('\n🛑 Terminating SignalOS Backend...');
+  pythonProcess.kill('SIGTERM');
+  process.exit(0);
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 SignalOS server running on http://0.0.0.0:${PORT}`);
-});
+// Keep the process running
+console.log(`🚀 SignalOS Backend Proxy is running on port ${PORT}`);
+console.log('✅ UI components have been removed - Backend API services only');
