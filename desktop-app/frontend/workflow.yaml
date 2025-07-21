@@ -1,0 +1,6 @@
+name: Desktop Frontend Dev Server
+command: npm run dev
+workdir: desktop-app/frontend
+port: 3000
+env:
+  - VITE_API_URL=http://localhost:5000
